@@ -15,14 +15,20 @@
                 extend: {
                     colors: {
                         'blynk-primary': '#4B87FF', // Biru Blynk
-                        'solar-dark': '#0F172A', // Biru tua untuk latar belakang
-                        'dc-color': '#FACC15', // Kuning untuk DC (Solar)
-                        'ac-color': '#10B981', // Hijau untuk AC (Output)
-                        'blue-bat': '#60A5FA', // Biru muda untuk Baterai
-                        // Warna dasar untuk text di atas kartu
-                        'text-solar': '#FACC15', // Emas
-                        'text-battery': '#60A5FA', // Biru
-                        'text-ac': '#10B981', // Hijau
+                        'bg-main': '#03030D', // Biru Dongker Sangat Gelap
+                        'card-bg': '#142B41', // Latar Belakang Kartu Lebih Terang
+                        
+                        // SKEMA WARNA PROFESIONAL (FUNGSI)
+                        'dc-color': '#BFFF00', // Hijau Lime Lembut (PV/DC)
+                        'ac-color': '#FFB900', // Kuning Emas Hangat (AC/Beban)
+                        'blue-bat': '#00FFFF', // Cyan Cerah (Baterai)
+                        'green-400': '#00C853', // Hijau Cerah (Rupiah)
+                        
+                        // WARNA SEKUNDER (HIGH PRIORITY)
+                        'pink-med': '#FF69B4', 
+                        'purple-med': '#8E44AD', 
+                        'orange-red': '#E74C3C', 
+                        'warning-red': '#EF4444', // Merah Peringatan Terang
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -33,7 +39,7 @@
     </script>
     <style>
         body {
-            background-color: #08101F; /* Hitam Sangat Gelap */
+            background-color: #03030D; /* Biru Dongker Sangat Gelap */
             font-family: 'Inter', sans-serif;
             color: #F8FAFC;
         }
@@ -49,28 +55,39 @@
             50% { opacity: 0.5; }
         }
         
-        /* Kartu Utama dengan Gradasi Sangat Gelap */
+        /* Kartu Utama: Efek Ungu Gelap */
         .solar-card {
-            background: linear-gradient(145deg, #182030 0%, #101625 100%);
+            /* PERUBAHAN UTAMA: Gradasi Ungu Gelap */
+            background: linear-gradient(145deg, #1C0F32 0%, #0F091A 100%); 
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); /* Shadow lebih kuat */
+            /* Shadow Halus agar terlihat mengambang di atas latar belakang #03030D */
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.6), 
+                        -2px -2px 5px rgba(15, 15, 15, 0.1); 
+            transition: all 0.3s ease;
+        }
+        .solar-card:hover {
+            box-shadow: 0px 8px 18px rgba(0, 0, 0, 0.8), 
+                        -3px -3px 6px rgba(30, 30, 30, 0.15);
         }
         
-        /* GAYA FROSTED/AERO GLASS UNTUK DETAIL ITEM */
+        /* GAYA AERO GLASS UNTUK DETAIL ITEM */
         .detail-item {
-            background-color: rgba(255, 255, 255, 0.05); /* Latar belakang semi-transparan */
-            border-radius: 8px; /* Sudut membulat */
-            margin-bottom: 0.5rem; /* Jarak antar item */
-            padding: 0.75rem 1rem; /* Padding internal */
-            border-bottom: none; 
+            /* Latar belakang semi-transparan yang menyatu dengan ungu gelap */
+            background-color: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px); 
+            
+            border-radius: 8px; 
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1rem; 
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.3s;
         }
         .detail-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.15);
         }
         
         /* Hapus margin bawah item terakhir di setiap kolom detail */
@@ -85,14 +102,14 @@
             justify-content: flex-start;
         }
         .summary-value {
-            font-size: 2.25rem; 
-            font-weight: 800; 
+            font-size: 2.5rem; /* Lebih besar */
+            font-weight: 900; /* Lebih tebal */
             line-height: 1; 
         }
         .summary-unit {
-            font-size: 1rem; 
+            font-size: 1.1rem; 
             font-weight: 500; 
-            margin-left: 0.35rem; 
+            margin-left: 0.5rem; 
             line-height: 1;
         }
 
@@ -105,15 +122,24 @@
             background-color: #1E293B;
         }
         
-        /* Warna Nominal di Detail Item */
+        /* Gaya Nominal di Detail Item (Efek Neon Glow) */
         .detail-item .nominal-color {
             font-weight: 800; 
-            font-size: 1.25rem; 
+            font-size: 1.3rem; 
         }
         
-        /* Penyesuaian Detail Item Title Color */
-        .detail-item .text-gray-300 {
-            color: #D1D5DB; /* Teks abu-abu terang */
+        /* Efek Shadow Teks Berdasarkan Warna (Soft Glow) */
+        .text-dc-color, .text-ac-color, .text-blue-bat, .text-green-400, .text-pink-med, .text-purple-med, .text-orange-red, .text-warning-red, .text-white-nominal {
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.2); 
+        }
+
+        /* Penyesuaian Detail Item Title Color: DIBUAT PUTIH */
+        .detail-item .metric-title {
+            color: #FFFFFF; /* Putih Penuh */
+        }
+        /* Definisikan warna nominal putih khusus */
+        .text-white-nominal {
+            color: #FFFFFF;
         }
     </style>
 </head>
@@ -213,9 +239,10 @@
                     <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
                     <i data-lucide="zap" class="lucide w-6 h-6 text-ac-color"></i>
                 </div>
+                <!-- Perubahan: Nominal Daya AC di Ringkasan diubah menjadi PUTIH -->
                 <div class="summary-block">
-                    <span id="v14-power" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v14-power-unit" class="summary-unit text-white"></span>
+                    <span id="v14-power" class="data-value summary-value text-white-nominal loading-animation">...</span>
+                    <span id="v14-power-unit" class="summary-unit text-white-nominal"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Daya yang sedang digunakan.</p>
             </div>
@@ -227,8 +254,8 @@
                     <i data-lucide="power-square" class="lucide w-6 h-6 text-ac-color"></i>
                 </div>
                 <div class="summary-block">
-                    <span id="v21-kwh-today-ac" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v21-kwh-today-ac-unit" class="summary-unit text-white"></span>
+                    <span id="v21-kwh-today-ac" class="data-value summary-value text-ac-color loading-animation">...</span>
+                    <span id="v21-kwh-today-ac-unit" class="summary-unit text-ac-color"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
             </div>
@@ -267,24 +294,24 @@
             <!-- Kolom 1: Panel Surya (DC) -->
             <div class="solar-card">
                 <h3 class="text-xl font-semibold text-dc-color mb-4 flex items-center border-b border-gray-700 pb-2">
-                    <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2"></i>
+                    <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2 text-dc-color"></i>
                     PANEL SURYA (DC)
                 </h3>
                 <div>
                     <!-- V0: Voltage DC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                        <div class="flex items-center metric-title">
+                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
                             BUS VOLTAGE
                         </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
+                        <div class="flex items-baseline text-pink-med nominal-color">
                             <span id="v0-pzem-voltage" class="text-xl font-bold loading-animation">...</span>
                             <span id="v0-pzem-voltage-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V1: Current DC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             ARUS PV
                         </div>
@@ -295,7 +322,7 @@
                     </div>
                     <!-- V2: Power DC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="zap" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             DAYA PV
                         </div>
@@ -306,18 +333,18 @@
                     </div>
                     <!-- V6: PV Peak -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                            <i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                        <div class="flex items-center metric-title">
+                            <i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-orange-red"></i>
                             PV PEAK
                         </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
+                        <div class="flex items-baseline text-orange-red nominal-color">
                             <span id="v6-pv-peak" class="text-xl font-bold loading-animation">...</span>
                             <span id="v6-pv-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V5: PV Persen -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             DAYA PV
                         </div>
@@ -331,14 +358,14 @@
             
             <!-- Kolom 2: Baterai & Total Energi -->
             <div class="solar-card">
-                <h3 class="text-xl font-semibold text-blue-400 mb-4 flex items-center border-b border-gray-700 pb-2">
-                    <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
+                <h3 class="text-xl font-semibold text-blue-bat mb-4 flex items-center border-b border-gray-700 pb-2">
+                    <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2 text-blue-bat"></i>
                     BATERAI & ENERGY
                 </h3>
                 <div>
                     <!-- V7: Baterai Peak -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="battery-full" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI PEAK
                         </div>
@@ -347,20 +374,20 @@
                             <span id="v7-batere-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V8: Baterai Low -->
+                    <!-- V8: Baterai Low (KRITIS: MERAH) -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                            <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
+                        <div class="flex items-center metric-title">
+                            <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
                             BATERAI LOW
                         </div>
-                        <div class="flex items-baseline text-blue-bat nominal-color">
+                        <div class="flex items-baseline text-warning-red nominal-color">
                             <span id="v8-batere-low" class="text-xl font-bold loading-animation">...</span>
                             <span id="v8-batere-low-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V9: Baterai AH -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI AH
                         </div>
@@ -371,7 +398,7 @@
                     </div>
                     <!-- V4: SunHour -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             MATAHARI EFEKTIF
                         </div>
@@ -382,7 +409,7 @@
                     </div>
                     <!-- V3: Total Energy DC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="gauge" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TOTAL ENERGY DC
                         </div>
@@ -393,7 +420,7 @@
                     </div>
                     <!-- V11: Total PV (Total Lifetime Energy) -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TOTAL ENERGY PV
                         </div>
@@ -408,13 +435,13 @@
             <!-- Kolom 3: Beban & Biaya (AC) -->
             <div class="solar-card">
                 <h3 class="text-xl font-semibold text-ac-color mb-4 flex items-center border-b border-gray-700 pb-2">
-                    <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2"></i>
+                    <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2 text-ac-color"></i>
                     BEBAN & BIAYA (AC)
                 </h3>
                 <div>
                     <!-- V12: Voltage AC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TEGANGAN AC 
                         </div>
@@ -425,7 +452,7 @@
                     </div>
                     <!-- V13: Current AC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             ARUS AC
                         </div>
@@ -436,7 +463,7 @@
                     </div>
                     <!-- V15: Energy AC -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TOTAL ENERGY AC
                         </div>
@@ -447,40 +474,40 @@
                     </div>
                     <!-- V16: Frequency -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                            <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
+                        <div class="flex items-center metric-title">
+                            <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
                             FREQUENSI
                         </div>
-                        <div class="flex items-baseline text-ac-color nominal-color">
+                        <div class="flex items-baseline text-pink-med nominal-color">
                             <span id="v16-frequency" class="text-xl font-bold loading-animation">...</span>
                             <span id="v16-frequency-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V20: Inverter Peak -->
+                    <!-- V20: Inverter Peak (PUNCAK: MERAH) -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                            <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
+                        <div class="flex items-center metric-title">
+                            <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
                             INVERTER PEAK
                         </div>
-                        <div class="flex items-baseline text-ac-color nominal-color">
+                        <div class="flex items-baseline text-warning-red nominal-color">
                             <span id="v20-inverter-peak" class="text-xl font-bold loading-animation">...</span>
                             <span id="v20-inverter-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V17: Power Factor -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
-                            <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
+                        <div class="flex items-center metric-title">
+                            <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-purple-med"></i>
                             FAKTOR DAYA
                         </div>
-                        <div class="flex items-baseline text-ac-color nominal-color">
+                        <div class="flex items-baseline text-purple-med nominal-color">
                             <span id="v17-pf" class="text-xl font-bold loading-animation">...</span>
                             <span id="v17-pf-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V18: Rupiah Total -->
                     <div class="detail-item">
-                        <div class="flex items-center text-gray-300">
+                        <div class="flex items-center metric-title">
                             <i data-lucide="trending-up" class="lucide w-4 h-4 mr-3 text-green-400"></i>
                             TOTAL PENGHEMATAN
                         </div>
@@ -765,39 +792,81 @@
                     
                     // 3. Logic Warna Nominal di Detail System
                     let nominalColorClass = '';
-                    if (['V0', 'V1', 'V2', 'V6', 'V5', 'V3', 'V10', 'V11', 'V4'].includes(pin)) {
+                    let iconColorClass = '';
+
+                    // Tentukan kelas warna
+                    if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V10', 'V11'].includes(pin)) {
+                        // PV/DC/Energy/SunHour -> Hijau Lime Lembut (DC-Color)
                         nominalColorClass = 'text-dc-color'; 
-                    } else if (['V7', 'V8', 'V9'].includes(pin)) {
+                        iconColorClass = 'text-dc-color'; 
+                    } else if (['V7', 'V9'].includes(pin)) {
+                         // Baterai (Normal) -> Cyan Cerah (Blue-Bat)
                          nominalColorClass = 'text-blue-bat';
-                    } else if (['V12', 'V13', 'V15', 'V16', 'V20', 'V17'].includes(pin)) {
+                         iconColorClass = 'text-blue-bat';
+                    } else if (pin === 'V14') {
+                        // KASUS KHUSUS: DAYA AC (Ringkasan & Detail) -> PUTIH
+                        nominalColorClass = 'text-white-nominal';
+                        iconColorClass = 'text-ac-color'; 
+                    } else if (['V12', 'V13', 'V15', 'V21'].includes(pin)) {
+                        // AC/Beban/Energi AC -> Kuning Emas Hangat (AC-Color)
                         nominalColorClass = 'text-ac-color';
+                        iconColorClass = 'text-ac-color'; 
+                    } else if (pin === 'V16') {
+                        // Frekuensi -> Pink/Magenta
+                        nominalColorClass = 'text-pink-med';
+                        iconColorClass = 'text-pink-med'; 
+                    } else if (pin === 'V17') {
+                        // Power Factor -> Ungu
+                        nominalColorClass = 'text-purple-med';
+                        iconColorClass = 'text-purple-med';
+                    } else if (pin === 'V19' || pin === 'V18') { 
+                        // Rupiah -> Hijau Cerah
+                        nominalColorClass = 'text-green-400';
+                        iconColorClass = 'text-green-400'; 
                     }
                     
-                    // Reset dan Terapkan Warna
-                    const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400'];
+                    // --- KASUS KHUSUS MERAH (PUNCAK/PERINGATAN) ---
+                    if (pin === 'V8') { // Baterai Low
+                        nominalColorClass = 'text-warning-red';
+                        iconColorClass = 'text-warning-red';
+                    } else if (pin === 'V20' || pin === 'V6') { // Inverter Peak / PV Peak
+                         nominalColorClass = 'text-warning-red';
+                         iconColorClass = 'text-warning-red';
+                    } else if (pin === 'V0') { // BUS VOLTAGE -> PINK/MAGENTA (Karena ini berbeda dari V PV lainnya)
+                        iconColorClass = 'text-pink-med';
+                    }
                     
-                    // Kasus Khusus: Kartu Ringkasan (V14, V21, V10, V19)
-                    if (['V14', 'V21'].includes(pin)) { // Daya AC & Beban Harian: Putih
+                    // --- APPLY COLOR ---
+                    const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal'];
+                    
+                    // A. Kasus Khusus: Kartu Ringkasan (Summary Card)
+                    if (['V14', 'V21', 'V10', 'V19'].includes(pin)) { 
+                        // Angka & Unit
                         element.classList.remove(...colorsToRemove);
-                        element.classList.add('text-white');
-                        if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add('text-white'); }
-                    } else if (pin === 'V10') { // Energi PV Harian: DC Color
-                        element.classList.remove(...colorsToRemove);
-                        element.classList.add('text-dc-color');
-                        if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add('text-dc-color'); }
-                    } else if (pin === 'V19' || pin === 'V18') { // Rupiah: Green
-                        element.classList.remove(...colorsToRemove);
-                        element.classList.add('text-green-400');
-                        // Tidak ada unit di Ringkasan Rupiah
+                        element.classList.add(nominalColorClass);
+                        if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add(nominalColorClass); }
+                        // Ikon di Summary Card
+                        let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
+                        if (summaryIcon) {
+                             summaryIcon.classList.remove(...colorsToRemove);
+                             summaryIcon.classList.add(iconColorClass);
+                        }
                     } 
                     
-                    // Kasus Detail Item (di dalam Kolom Gradien)
-                    else if (element.parentElement.classList.contains('detail-item')) {
+                    // B. Kasus Detail Item (Per Fungsi)
+                    else if (element.closest('.detail-item')) {
+                        // Nominal Angka
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
                         if(unitElement) {
                             unitElement.classList.remove(...colorsToRemove);
                             unitElement.classList.add(nominalColorClass);
+                        }
+                        // Ikon
+                        let detailIconElement = element.closest('.detail-item')?.querySelector('.lucide');
+                        if (detailIconElement) {
+                            detailIconElement.classList.remove(...colorsToRemove);
+                            detailIconElement.classList.add(iconColorClass);
                         }
                     }
 
