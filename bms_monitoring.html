@@ -155,47 +155,104 @@
         border-left: 4px solid var(--warning); /* Default: Kuning */
         background-color: #1E293B; /* Warna card */
     }
+
+    /* Gaya Kartu Ringkasan (Untuk 6 Metrik) */
+    .metric-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .metric-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem; /* text-sm */
+    }
+    .metric-value {
+        font-weight: 600; /* font-semibold */
+        margin-left: auto;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-<!-- Header (Disesuaikan agar lebih simple dan fokus) -->
+<!-- Header (Revisi Akhir: Tata Letak 3 Bagian di Desktop, Tengah/Bawah di Mobile) -->
 <header id="mainHeader" class="text-white w-full p-4 sm:p-6 mb-4">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     
-    <!-- Tombol Kembali (Biru dan Elegan, Hanya Teks "KEMBALI") -->
-    <button onclick="window.location.href='./blynk_solar_dashboard.html'" 
-            class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center mb-4 md:mb-0 text-sm">
-        <i data-lucide="arrow-left" class="lucide w-4 h-4 mr-2"></i>
-        KEMBALI
-    </button>
+    <!-- Struktur Desktop (Grid 3 Kolom) -->
+    <div class="hidden md:grid md:grid-cols-3 md:items-center">
+        <!-- 1. Tombol Kembali (Kiri) -->
+        <div class="flex justify-start">
+             <button onclick="window.location.href='./aeproplts.html'" 
+                    class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center text-sm">
+                <i data-lucide="arrow-left" class="lucide w-4 h-4 mr-2"></i>
+                KEMBALI
+            </button>
+        </div>
 
-    <!-- Judul, Deskripsi, Jam/ID Container -->
-    <div class="flex flex-col w-full md:flex-row md:justify-end md:items-center mt-2 md:mt-0">
-        
-        <!-- Judul Kiri & Deskripsi -->
-        <div class="flex items-start md:items-center mr-4 w-full md:w-auto">
-            <div class="flex items-center">
-                <div class="p-2 rounded-lg mr-3">
+        <!-- 2. Judul dan Deskripsi (Tengah, Rata Tengah) -->
+        <div class="flex flex-col items-center text-center">
+            <div class="flex items-center justify-center">
+                <div class="p-2 rounded-lg mr-2">
                     <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
                 </div>
                 <div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-bat tracking-tight">
                         BMS MONITORING
                     </h1>
-                    <!-- Deskripsi kini selalu terlihat di mobile -->
-                    <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
                 </div>
             </div>
+            <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
         </div>
 
-        <!-- Bagian Kanan: Jam & ID Logger -->
-        <div class="flex flex-col items-end mt-4 md:mt-0">
-            <div id="time-display">
-                <p id="current-date" class="text-sm text-gray-400"></p>
-                <p id="current-time" class="text-2xl font-bold text-white"></p>
+        <!-- 3. Jam & ID Logger (Kanan) -->
+        <div class="flex flex-col items-end">
+            <div id="time-display-desktop">
+                <p id="current-date-desktop" class="text-sm text-gray-400"></p>
+                <p id="current-time-desktop" class="text-2xl font-bold text-white"></p>
             </div>
             <div class="mt-1 text-xs text-gray-400">
-                ID: <span class="font-bold text-white" id="bms-logger-id-header"></span>
+                ID: <span class="font-bold text-white" id="bms-logger-id-header-desktop"></span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Struktur Mobile (STACKING/TENGAH) -->
+    <div class="md:hidden flex flex-col items-center text-center w-full">
+        
+        <!-- ROW 1: Judul & Deskripsi (Tengah) -->
+        <div class="flex flex-col items-center justify-center mb-4">
+            <div class="flex items-center">
+                <div class="p-2 rounded-lg mr-2">
+                    <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-blue-bat tracking-tight">
+                        BMS MONITORING
+                    </h1>
+                </div>
+            </div>
+            <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
+        </div>
+
+        <!-- ROW 2: Tombol Kembali, Jam & ID (Di bawah Judul, Rata Samping) -->
+        <!-- Perbaikan: Menggunakan justify-between untuk memisahkan Tombol dan Waktu -->
+        <div class="flex justify-between items-center w-full px-2">
+            <!-- Tombol Kembali (Kiri) -->
+            <button onclick="window.location.href='./aeproplts.html'" 
+                    class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center text-xs">
+                <i data-lucide="arrow-left" class="lucide w-3 h-3 mr-1"></i>
+                KEMBALI
+            </button>
+            
+            <!-- Jam & ID Logger (Kanan) -->
+            <div class="flex flex-col items-end text-right">
+                <div id="time-display-mobile">
+                    <p id="current-date-mobile" class="text-xs text-gray-400"></p>
+                    <p id="current-time-mobile" class="text-lg font-bold text-white"></p>
+                </div>
+                <div class="mt-0.5 text-xs text-gray-400">
+                    ID: <span class="font-bold text-white" id="bms-logger-id-header-mobile"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -421,8 +478,9 @@
         }
     }
 
-    // Set ID Logger di header dan footer
-    safeUpdate("bms-logger-id-header", BMS_LOGGER_ID);
+    // Set ID Logger di header dan footer (Desktop dan Mobile)
+    safeUpdate("bms-logger-id-header-desktop", BMS_LOGGER_ID);
+    safeUpdate("bms-logger-id-header-mobile", BMS_LOGGER_ID);
     safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
     
     // Fungsi untuk menampilkan Jam dan Tanggal (diambil dari Dasbor PLTS)
@@ -434,8 +492,12 @@
       const dateStr = now.toLocaleDateString('id-ID', dateOptions);
       const timeStr = now.toLocaleTimeString('id-ID', timeOptions);
 
-      safeUpdate('current-date', dateStr);
-      safeUpdate('current-time', timeStr);
+      // Desktop
+      safeUpdate('current-date-desktop', dateStr);
+      safeUpdate('current-time-desktop', timeStr);
+      // Mobile
+      safeUpdate('current-date-mobile', dateStr);
+      safeUpdate('current-time-mobile', timeStr);
     }
 
     function startMQTT(){
@@ -515,33 +577,41 @@
       const cells = cellVoltages.map(v => (v/1000).toFixed(3));
       
       // Menggunakan spread operator hanya jika array tidak kosong
-      const cell_vmax = cellVoltages.length > 0 ? Math.max(...cellVoltages) / 1000 : 0;
-      const cell_vmin = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 0;
-      const cell_vdiff = (cell_vmax - cell_vmin) * 1000;
+      const cell_vmax_val = cellVoltages.length > 0 ? Math.max(...cellVoltages) / 1000 : 'N/A';
+      const cell_vmin_val = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 'N/A';
+      
+      let cell_vdiff_val = 'N/A';
+      if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number') {
+          cell_vdiff_val = (cell_vmax_val - cell_vmin_val) * 1000;
+      }
       
       // Hitung Daya/Power
-      const voltage = (data.bat_voltage !== undefined) ? data.bat_voltage : 0;
-      const current = (data.bat_current !== undefined) ? data.bat_current : 0;
-      const power = voltage * current;
+      const voltage = (data.bat_voltage !== undefined) ? data.bat_voltage : 'N/A';
+      const current = (data.bat_current !== undefined) ? data.bat_current : 'N/A';
+
+      let power = 'N/A';
+      if (typeof voltage === 'number' && typeof current === 'number') {
+        power = (voltage * current).toFixed(2);
+      }
       
       return {
         typeBattery: data.typeBattery || 'Baterai',
         addr: data.AddrBattery || 'N/A',
         soc: (data.SOC !== undefined) ? data.SOC.toFixed(0) : 'N/A',
         soh: (data.SOH !== undefined) ? data.SOH.toFixed(0) : 'N/A',
-        voltage: voltage.toFixed(2), // Tegangan Pack
+        voltage: typeof voltage === 'number' ? voltage.toFixed(2) : voltage, // Tegangan Pack
         busVoltage: (data.bus_voltage !== undefined) ? data.bus_voltage.toFixed(2) : 'N/A',
-        current: current.toFixed(2), // Arus Pack
+        current: typeof current === 'number' ? current.toFixed(2) : current, // Arus Pack
         capacity: (data.full_capacity !== undefined) ? data.full_capacity.toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
         remaining: (data.rem_capacity !== undefined) ? data.rem_capacity.toFixed(2) : 'N/A', // Sisa Kapasitas (Ah)
         cycles: data.cycle_count || 0,
-        cell_vmax: cell_vmax.toFixed(3),
-        cell_vmin: cell_vmin.toFixed(3),
-        cell_vdif: cell_vdiff.toFixed(0),
+        cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A', // Pastikan N/A jika bukan angka
+        cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A', // Pastikan N/A jika bukan angka
+        cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
         tempStatus: data.temp_status || 'Normal', // Status Suhu (Placeholder)
         time: getCurrentTimeHHMMSS(),
         cells: cells, // Tambahkan data cell voltages
-        power: power.toFixed(2) // Daya 2 desimal
+        power: power // Daya 2 desimal
       };
     }
 
@@ -610,51 +680,96 @@
             // Gunakan bg-gray-800 untuk kartu agar berbeda dari background solar-card
             card.className = "bg-gray-800 rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition fade-in";
             card.dataset.addr = String(batt.addr);
+            
+            // =========================================================================
+            // PERBAIKAN URUTAN PARAMETER DI CARD RINGKASAN (Sesuai Screenshot Terbaru)
+            // =========================================================================
             card.innerHTML = `
-              <div class="flex items-center justify-between mb-4 border-b border-gray-700 pb-2">
+              <div class="flex items-center justify-between mb-3 border-b border-gray-700 pb-2">
                 <h3 class="text-lg font-bold text-white">${batt.typeBattery} <span class="text-blue-400 font-semibold">#${batt.addr}</span></h3>
                 <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
               </div>
-              <div class="mb-4">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="text-sm text-gray-400">SOC / SOH</span>
+              
+              <!-- SOC / SOH BAR -->
+              <div class="mb-3">
+                <div class="flex justify-between items-center mb-1 text-sm">
+                  <span class="text-gray-400">SOC / SOH</span>
                   <span class="font-bold text-blue-bat">${batt.soc}% / <span class="text-green-400">${batt.soh}%</span></span>
                 </div>
                 <div class="progress-bar mt-1">
                     <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill bg-blue-500" style="width: ${batt.soc}%"></div>
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <i data-lucide="bolt" class="lucide w-4 h-4 text-yellow-500 mr-2"></i>
-                    <div class="text-gray-500">Tegangan</div>
-                    <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
-                  </div>
-                   <div class="flex justify-between items-center">
-                    <i data-lucide="minus-circle" class="lucide w-4 h-4 text-red-500 mr-2"></i>
-                    <div class="text-gray-500">Sel Min</div>
-                    <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div>
-                  </div>
+
+              <!-- GRID METRIK DETAIL 3x2 (Diurutkan sesuai permintaan terakhir) -->
+              <div class="metric-group text-xs mt-2">
+                
+                <!-- ROW 1 | KIRI: Voltage -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="zap" class="lucide w-4 h-4 text-yellow-500"></i>
+                    <div>
+                        <div class="text-gray-500">Tegangan</div>
+                        <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
+                    </div>
                 </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500 mr-2"></i>
-                    <div class="text-gray-500">Arus</div>
-                    <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.current} A</div>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <i data-lucide="divide" class="lucide w-4 h-4 text-blue-500 mr-2"></i>
-                    <div class="text-gray-500">Selisih Sel</div>
-                    <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold text-blue-400">${batt.cell_vdif} mV</div>
-                  </div>
+                
+                <!-- ROW 1 | KANAN: Current -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500"></i>
+                    <div>
+                        <div class="text-gray-500">Arus</div>
+                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.current} A</div>
+                    </div>
                 </div>
+
+                <!-- ROW 2 | KIRI: Diff Cell (Selisih Sel) -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="divide" class="lucide w-4 h-4 text-blue-400"></i>
+                    <div>
+                        <div class="text-gray-500">Selisih Sel</div>
+                        <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold text-blue-400">${batt.cell_vdif} mV</div>
+                    </div>
+                </div>
+                
+                <!-- ROW 2 | KANAN: Power (Daya) -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="power" class="lucide w-4 h-4 text-red-400"></i>
+                    <div>
+                        <div class="text-gray-500">Daya</div>
+                        <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.power} W</div>
+                    </div>
+                </div>
+                
+                <!-- ROW 3 | KIRI: Min Cell -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="minus-circle" class="lucide w-4 h-4 text-red-500"></i>
+                    <div>
+                        <div class="text-gray-500">Sel Min</div>
+                        <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div>
+                    </div>
+                </div>
+                
+                <!-- ROW 3 | KANAN: Max Cell -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500"></i>
+                    <div>
+                        <div class="text-gray-500">Sel Max</div>
+                        <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div>
+                    </div>
+                </div>
+                
               </div>
+
+              <!-- Footer Metrik -->
               <div class="mt-4 pt-3 border-t border-gray-700 text-xs text-gray-400 flex justify-between">
                 <span>Siklus: ${batt.cycles}</span>
                 <span class="last-update"><i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>
               </div>
             `;
+            // =========================================================================
+            // AKHIR PERBAIKAN URUTAN PARAMETER
+            // =========================================================================
+
             card.onclick = () => openModal(batt.addr);
             fragment.appendChild(card);
           } else {
@@ -662,8 +777,8 @@
               // Update ringkasan SOH/SOC di kartu utama
               safeUpdate('summary-soc', batt.soc !== 'N/A' ? `${batt.soc}%` : 'N/A');
               safeUpdate('summary-soh', batt.soh !== 'N/A' ? `${batt.soh}%` : 'N/A');
-              safeUpdate('summary-current', batt.current);
-              safeUpdate('summary-voltage', batt.voltage);
+              safeUpdate('summary-current', datane.current);
+              safeUpdate('summary-voltage', datane.voltage);
               
               const socProgress = document.getElementById("soc-progress-summary");
               if (socProgress) {
@@ -683,10 +798,14 @@
                 else socBar.className = 'progress-fill bg-red-500';
               }
               
+              // 🔹 Pembaruan Metrik Detail (Harus sinkron dengan HTML di atas)
+              // Diurutkan sesuai permintaan: Voltage, Current, Diff, Power, Min, Max
               safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`, true);
               safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`, true);
+              safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`, true); 
+              safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`, true);       
               safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`, true);
-              safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`, true);
+              safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`, true); 
               
               const lastUpdateEl = card.querySelector(".last-update");
               if (lastUpdateEl) {
@@ -847,7 +966,8 @@
     // Initialize on load
     window.onload = function() {
       // Patenkan ID ditampilkan
-      safeUpdate("bms-logger-id-header", BMS_LOGGER_ID);
+      safeUpdate("bms-logger-id-header-desktop", BMS_LOGGER_ID);
+      safeUpdate("bms-logger-id-header-mobile", BMS_LOGGER_ID);
       safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
 
       startMQTT();
