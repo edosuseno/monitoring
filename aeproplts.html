@@ -153,6 +153,18 @@
             max-height: 400px; /* Membatasi tinggi grafik */
             padding-bottom: 20px;
         }
+        
+        /* Gaya Fullscreen */
+        .fullscreen-chart {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: #03030D;
+            z-index: 9999;
+            padding: 20px;
+        }
 
     </style>
 </head>
@@ -303,10 +315,14 @@
         <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA (HISTORIS & PAN/ZOOM)</h2>
         <div class="solar-card p-6">
-            <!-- Tombol Reset Zoom -->
-            <div class="flex justify-end mb-3">
+            <!-- Tombol Full Layar & Reset Zoom -->
+            <div class="flex justify-end space-x-3 mb-3">
                 <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
                     Reset Zoom
+                </button>
+                <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1">
+                    <i id="fullscreen-icon" data-lucide="maximize" class="lucide w-4 h-4"></i>
+                    <span id="fullscreen-text">Full Layar</span>
                 </button>
             </div>
 
@@ -817,17 +833,20 @@
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Daya (Watt)',
-                                color: '#FFFFFF'
-                            },
-                            ticks: { 
+                            // PENGATURAN SKALA Y BARU (Max 5000W, Kelipatan 500W)
+                            min: 0,
+                            max: 5000, 
+                            ticks: {
+                                stepSize: 500, // Kelipatan 500W
                                 color: '#FFFFFF',
                                 callback: function(value) {
                                     return value + ' W';
                                 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Daya (Watt)',
+                                color: '#FFFFFF'
                             },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         }
@@ -842,6 +861,37 @@
         function resetChartZoom() {
             if (energyChartInstance) {
                 energyChartInstance.resetZoom();
+            }
+        }
+        
+        /**
+         * Mengaktifkan atau menonaktifkan mode layar penuh
+         */
+        function toggleFullscreen() {
+            const chartContainer = document.getElementById('realtime-chart-container').parentElement; // Mengambil solar-card container
+            const chartIcon = document.getElementById('fullscreen-icon');
+            const chartText = document.getElementById('fullscreen-text');
+
+            if (chartContainer.classList.contains('fullscreen-chart')) {
+                // Keluar dari mode fullscreen
+                chartContainer.classList.remove('fullscreen-chart');
+                chartIcon.setAttribute('data-lucide', 'maximize');
+                chartText.textContent = 'Full Layar';
+                lucide.createIcons();
+                // Opsional: reset chart zoom setelah keluar fullscreen
+                // energyChartInstance.resetZoom(); 
+            } else {
+                // Masuk ke mode fullscreen
+                chartContainer.classList.add('fullscreen-chart');
+                chartIcon.setAttribute('data-lucide', 'minimize');
+                chartText.textContent = 'Keluar';
+                lucide.createIcons();
+            }
+            // Memastikan chart di-resize setelah perubahan ukuran kontainer
+            if (energyChartInstance) {
+                setTimeout(() => {
+                     energyChartInstance.resize();
+                }, 10);
             }
         }
 
