@@ -78,7 +78,7 @@
                 <p id="current-time" class="text-3xl font-bold text-white"></p>
             </div>
             <!-- Tombol Navigasi dan Logout di Desktop -->
-            <div class="flex space-x-3 items-center">
+            <div class="hidden md:flex space-x-3 items-center">
                  <button onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                     <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
                     Detail Baterai
@@ -111,7 +111,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain Blynk</label>
-                <input type="text" id="server-ip" placeholder="contoh: blynk.cloud atau 192.168.1.100:8080" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="blynk.cloud">
+                <input type="text" id="server-ip" placeholder="contoh: blynk.cloud atau 192.168.1.100:8080" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
             </div>
             <div>
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
@@ -595,8 +595,26 @@
                     const rawValue = result.value || '0';
                     const formattedValue = formatValue(pin, rawValue);
                     
-                    element.textContent = formattedValue;
+                    // Logic untuk menghilangkan satuan dari elemen Rupiah
+                    let contentToDisplay = formattedValue;
+
+                    // Tambahkan Unit untuk pin non-Rupiah
+                    if (pin !== 'V18' && pin !== 'V19') {
+                        // Tambahkan unit ke contentToDisplay
+                        let unit = '';
+                        if (pin === 'V0' || pin === 'V12') unit = ' V';
+                        else if (pin === 'V1' || pin === 'V13') unit = ' A';
+                        else if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20') unit = ' W';
+                        else if (pin === 'V3' || pin === 'V10' || pin === 'V11' || pin === 'V15' || pin === 'V21') unit = ' kWh';
+                        else if (pin === 'V4') unit = ' jam';
+                        else if (pin === 'V5') unit = ' %';
+                        else if (pin === 'V16') unit = ' Hz';
+
+                        contentToDisplay += unit;
+                    }
                     
+                    element.textContent = contentToDisplay;
+
                     // Tambahkan efek kilat/update
                     element.style.transform = 'scale(1.05)';
                     setTimeout(() => {
@@ -616,9 +634,6 @@
             } else {
                 showMessage('Beberapa data gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error');
             }
-
-            // Jika masih ada masalah besar (semua gagal), mungkin perlu menghentikan interval, 
-            // tetapi dengan retry, kita biarkan saja interval tetap berjalan.
         }
 
         /**
@@ -654,9 +669,11 @@
             // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
-            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout Desktop
             
-            if (logoutButtonMobile) logoutButtonMobile.classList.remove('hidden');
+            // Tampilkan tombol Logout Desktop dan Mobile
+            logoutButton.classList.remove('hidden'); 
+            const mobileLogout = document.getElementById('logout-button-mobile');
+            if (mobileLogout) mobileLogout.classList.remove('hidden');
 
 
             // Mulai fetch pertama segera
@@ -695,8 +712,8 @@
             document.getElementById('monitoring-dashboard').classList.add('hidden');
             document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout Desktop
             
-            const logoutButtonMobile = document.getElementById('logout-button-mobile');
-            if (logoutButtonMobile) logoutButtonMobile.classList.add('hidden');
+            const mobileLogout = document.getElementById('logout-button-mobile');
+            if (mobileLogout) mobileLogout.classList.add('hidden');
 
 
             showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
