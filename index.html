@@ -1,21 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AE BMS ONLINE</title>
+  <title>BMS MONITORING</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Memuat ikon Lucide untuk Navigasi -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
   <style>
+    /* Menggunakan skema warna Dark dari Dasbor PLTS */
     :root {
-      --primary: #2563eb;
-      --secondary: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --dark: #1f2937;
-      --light: #f9fafb;
+      --primary: #4B87FF; 
+      --secondary: #10B981;
+      --danger: #F87171;
+      --warning: #FACC15;
+      --solar-dark: #0F172A;
+      --solar-card: #1E293B;
+      --blue-bat: #60A5FA; /* Biru muda Baterai */
+      --red-cell: #F87171;
+      --green-cell: #34D399;
     }
      .led {
       display: inline-block;
@@ -29,40 +36,27 @@
     }
     
     .led.active {
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
+      background: var(--secondary);
+      box-shadow: 0 0 8px var(--secondary);
     }
-    
     
     body {
       font-family: 'Inter', sans-serif;
+      background-color: var(--solar-dark);
+      color: #F8FAFC; /* Light text on dark background */
     }
     
     .battery-card {
-      background-color: var(--card-lapis);
-      color: var(--card-text);
-      transition: all 0.3s ease;
-      border-left: 5px solid var(--card-bg);
-    }
-
-    .battery-card h3 {
-      color: var(--card-text);
-    }
-
-    .battery-card span {
-      color: var(--card-subtext);
-    }
-
-    .battery-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.1);
+      background-color: var(--solar-card);
+      color: #F8FAFC;
+      border-left: 5px solid var(--primary); /* Memberi aksen biru */
     }
     
     .progress-bar {
       height: 8px;
       border-radius: 4px;
       overflow: hidden;
-      background-color: #e5e7eb;
+      background-color: #334155; /* Slate-700 */
     }
     
     .progress-fill {
@@ -86,9 +80,9 @@
       border-radius: 2px;
     }
     
-    .cell-normal::before { background-color: #10b981; }
-    .cell-warning::before { background-color: #f59e0b; }
-    .cell-danger::before { background-color: #ef4444; }
+    .cell-normal::before { background-color: #34D399; } /* Green */
+    .cell-warning::before { background-color: #FACC15; } /* Yellow */
+    .cell-danger::before { background-color: #F87171; } /* Red */
     
     @keyframes pulse {
       0% { opacity: 1; }
@@ -108,246 +102,357 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    #id_monitoring_footer {
-  display: none;
-}
-body {
-  background-color: #ffffff;
-  color: #000000;
-  transition: background-color 0.3s, color 0.3s;
-}
 
-body[data-theme="dark"] {
-  background-color: #111;
-  color: #222;
-}
+    /* Styling Modal agar konsisten */
+    #batteryModal {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    #batteryModal > div {
+        background-color: var(--solar-card);
+        color: #F8FAFC;
+    }
+    
+    /* Styling khusus untuk modal header (mirip screenshot) */
+    .modal-summary-card {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 120px;
+    }
 
-/* Header ikut dark mode */
-header {
-  background-color: #0455D1;
-  color: #000000;
-  transition: background-color 0.3s, color 0.3s;
-}
+    .modal-soc {
+        background-color: #1e3a8a; /* Blue-900 */
+        border-bottom: 5px solid #3b82f6; /* Blue-500 */
+    }
+    .modal-soh {
+        background-color: #14532d; /* Green-900 */
+        border-bottom: 5px solid #22c55e; /* Green-500 */
+    }
+    .modal-cycles {
+        background-color: #581c87; /* Purple-900 */
+        border-bottom: 5px solid #a855f7; /* Purple-500 */
+    }
 
-body[data-theme="dark"] header {
-  background-color: #1f1f1f;
-  color: #ffffff;
-}
+    /* Gaya Card Detail Sesuai Screenshot */
+    .detail-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #334155; /* Abu-abu gelap */
+    }
+    .detail-metric:last-child {
+        border-bottom: none;
+    }
+    .detail-icon {
+        margin-right: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    .cell-box-style {
+        border-left: 4px solid var(--warning); /* Default: Kuning */
+        background-color: #1E293B; /* Warna card */
+    }
 
-.battery-card i {
-  /* tidak usah pakai var() */
-}
-
-/* khusus dark kita override */
-body.dark .battery-card i {
-
-}
+    /* Gaya Kartu Ringkasan (Untuk 6 Metrik) */
+    .metric-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .metric-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem; /* text-sm */
+    }
+    .metric-value {
+        font-weight: 600; /* font-semibold */
+        margin-left: auto;
+    }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-<!-- Header -->
-<header id="mainHeader" class="bg-gradient-to-r text-white shadow-lg w-full relative">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex justify-between items-center">
-    <div class="flex items-center">
-      <div class="bg-white/20 p-2 rounded-lg mr-3">
-        <i class="fas fa-car-battery text-2xl"></i>
-      </div>
-      <h1 class="text-2xl font-bold">AE BMS MONITORING</h1>
-    </div>
+<body class="min-h-screen flex flex-col">
+<!-- Header (Disesuaikan agar lebih simple dan fokus) -->
+<header id="mainHeader" class="text-white w-full p-4 sm:p-6 mb-4">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+    
+    <!-- Tombol Kembali (Biru dan Elegan, Hanya Teks "KEMBALI") -->
+    <button onclick="window.location.href='./blynk_solar_dashboard.html'" 
+            class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center mb-4 md:mb-0 text-sm">
+        <i data-lucide="arrow-left" class="lucide w-4 h-4 mr-2"></i>
+        KEMBALI
+    </button>
 
-    <div class="flex items-center space-x-4">
-      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
-        <i class="fas fa-satellite-dish"></i>
-        <span id="id_monitoring">-</span>
-      </div>
-
-      <!-- Tombol Settings dengan Dropdown -->
-      <div class="relative">
-        <!-- Ikon Roda Gigi -->
-        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
-          <i class="fas fa-cog"></i>
-        </button>
-
-        <!-- Dropdown Menu -->
-        <div id="dropdownMenu"
-          class="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg hidden">
-            <a id="batteryConfigLink" href="#" class="block px-4 py-2 hover:bg-gray-100">⚙️ Device Config</a>
-            <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-100">📡 Network</a>
-            <a id="timerLink" href="#" class="block px-4 py-2 hover:bg-gray-100">⏱ Timer</a>
-          <hr class="my-1">
-          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-100">🌙 Dark Mode</a>
+    <!-- Judul, Deskripsi, Jam/ID Container -->
+    <div class="flex flex-col w-full md:flex-row md:justify-end md:items-center mt-2 md:mt-0">
+        
+        <!-- Judul Kiri & Deskripsi -->
+        <div class="flex items-start md:items-center mr-4 w-full md:w-auto">
+            <div class="flex items-center">
+                <div class="p-2 rounded-lg mr-3">
+                    <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-bat tracking-tight">
+                        BMS MONITORING
+                    </h1>
+                    <!-- Deskripsi kini selalu terlihat di mobile -->
+                    <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- Bagian Kanan: Jam & ID Logger -->
+        <div class="flex flex-col items-end mt-4 md:mt-0">
+            <div id="time-display">
+                <p id="current-date" class="text-sm text-gray-400"></p>
+                <p id="current-time" class="text-2xl font-bold text-white"></p>
+            </div>
+            <div class="mt-1 text-xs text-gray-400">
+                ID: <span class="font-bold text-white" id="bms-logger-id-header"></span>
+            </div>
+        </div>
     </div>
   </div>
 </header>
-<!-- Modal Network -->
-<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-white rounded-lg shadow-lg w-96 p-6 relative">
-    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-      ✖
-    </button>
-    <h2 class="text-xl font-bold mb-4">Network Info</h2>
-    <p id="network_ip" class="mb-2">IP Address: -</p>
-    <p id="network_signal">Signal: -</p>
-  </div>
-</div>
 
   <!-- Main content -->
   <main class="flex-1 p-4 sm:p-6 w-full">
     <div class="max-w-7xl mx-auto">
-      <div class="mb-6 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-500">Battery Systems</h2>
-        <div class="text-sm text-gray-500">
-          <span id="total-batteries">0</span> batteries connected
+      
+      <!-- RINGKASAN SOH/SOC (Sederhana di Luar Modal) -->
+      <h2 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          
+        <!-- SOC (State of Charge) -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="battery-charging" class="lucide w-7 h-7 text-blue-bat"></i>
+                <span class="text-3xl font-extrabold text-blue-bat" id="summary-soc">N/A</span>
+            </div>
+            <p class="text-sm font-medium text-gray-400">SOC</p>
+            <div class="progress-bar mt-2">
+                <div id="soc-progress-summary" class="progress-fill bg-blue-500" style="width: 0%"></div>
+            </div>
         </div>
+
+        <!-- SOH (State of Health) -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400"></i>
+                <span class="text-3xl font-extrabold text-green-400" id="summary-soh">N/A</span>
+            </div>
+            <p class="text-sm font-medium text-gray-400">SOH</p>
+            <div class="progress-bar mt-2">
+                <div id="soh-progress-summary" class="progress-fill bg-green-500" style="width: 0%"></div>
+            </div>
+        </div>
+          
+        <!-- Arus Baterai -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color"></i>
+                <div class="flex items-baseline">
+                    <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
+                    <span class="text-sm ml-1 text-dc-color">A</span>
+                </div>
+            </div>
+            <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
+            <p class="text-xs text-gray-500 mt-1">Status Charging/Discharging</p>
+        </div>
+          
+        <!-- Tegangan Pack -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="bolt" class="lucide w-7 h-7 text-yellow-500"></i>
+                <div class="flex items-baseline">
+                    <span class="text-3xl font-extrabold text-yellow-500" id="summary-voltage">N/A</span>
+                    <span class="text-sm ml-1 text-yellow-500">V</span>
+                </div>
+            </div>
+            <p class="text-sm font-medium text-gray-400">Tegangan Pack</p>
+            <p class="text-xs text-gray-500 mt-1">Total Tegangan Baterai</p>
+        </div>
+
       </div>
+      
+      <!-- LIST KARTU BATERAI (Grid Baterai yang Terhubung) -->
+      <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Baterai Terhubung (<span id="total-batteries">0</span>)</h2>
       
       <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
       
-      <div id="empty-state" class="hidden text-center py-12 bg-white rounded-xl shadow-sm">
+      <div id="empty-state" class="hidden text-center py-12 bg-solar-card rounded-xl shadow-sm">
         <div class="text-blue-500 mb-4">
           <i class="fas fa-car-battery text-5xl opacity-50"></i>
         </div>
-        <h3 class="text-lg font-medium text-gray-700 mb-2">No batteries connected</h3>
-        <p class="text-gray-500 max-w-md mx-auto">Battery data will appear here once your BMS systems are connected and sending data.</p>
+        <h3 class="text-lg font-medium text-gray-300 mb-2">Tidak ada baterai terhubung</h3>
+        <p class="text-gray-400 max-w-md mx-auto">Data baterai akan muncul di sini setelah sistem BMS Anda terhubung dan mengirim data.</p>
       </div>
     </div>
   </main>
 
   <!-- Footer -->
-<footer class="bg-gray-800 text-gray-300 py-4 w-full">
+<footer class="bg-solar-dark text-gray-500 py-4 w-full">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
     <div class="text-sm">
-      © 2025 BMS Monitor System |
-      <a href="https://wa.me/628972309993" class="no-underline hover:text-white">
-        Hubungi Developer
-      </a>
-      <label id="id_monitoring_footer" style="display:none;"></label>
+      © 2025 BMS Monitor System | ID Logger: <span class="font-bold text-white" id="bms-logger-id-footer"></span>
     </div>
   </div>
 </footer>
 
-  <!-- Modal -->
+  <!-- Modal Detail Baterai (Disesuaikan agar mirip Screenshot) -->
   <div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-      <!-- Header Modal -->
-      <div class="flex items-center justify-between px-6 py-4 border-b">
+    <div class="bg-solar-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header Modal (Sesuai Screenshot: Judul Baterai & Tombol Tutup) -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
         <div class="flex items-center">
-          <div id="led-modal" class="w-3 h-3 rounded-full bg-gray-300 mr-3"></div>
-          <h2 id="modalTitle" class="text-xl font-semibold text-gray-800"></h2>
+          <h2 id="modalTitle" class="text-xl font-semibold text-white">Baterai #<span id="modalAddr">N/A</span></h2>
+          <div id="led-modal" class="led ml-4"></div>
         </div>
-        <button id="closeModal" class="text-gray-500 hover:text-gray-700">
-          <i class="fas fa-times text-xl"></i>
+        <button id="closeModal" class="text-gray-400 hover:text-white">
+          <i data-lucide="x" class="lucide w-6 h-6"></i>
         </button>
       </div>
 
       <div class="overflow-y-auto flex-1 p-6">
-        <!-- Battery Status Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div class="bg-blue-50 p-4 rounded-lg">
-            <div class="flex justify-between items-start mb-2">
-              <div class="text-blue-700 font-medium">State of Charge</div>
-              <div class="text-2xl font-bold text-blue-700" id="modalSOC"></div>
-            </div>
-            <div class="progress-bar">
-              <div id="soc-progress" class="progress-fill bg-blue-500"></div>
-            </div>
-            <div class="text-xs text-gray-500 mt-1">Remaining: <span id="modalRemaining"></span> Ah</div>
-          </div>
+        <!-- BARIS KARTU RINGKASAN DI MODAL (SOC, SOH, CYCLE) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           
-          <div class="bg-green-50 p-4 rounded-lg">
-            <div class="flex justify-between items-start mb-2">
-              <div class="text-green-700 font-medium">State of Health</div>
-              <div class="text-2xl font-bold text-green-700" id="modalSOH"></div>
-            </div>
-            <div class="progress-bar">
-              <div id="soh-progress" class="progress-fill bg-green-500"></div>
-            </div>
-            <div class="text-xs text-gray-500 mt-1">Full Capacity: <span id="modalCapacity"></span> Ah</div>
+          <!-- State of Charge (SOC) -->
+          <div class="modal-summary-card modal-soc text-white">
+            <h3 class="text-sm font-medium">State of Charge</h3>
+            <div class="text-4xl font-extrabold"><span id="modalSOCPercent">N/A</span>%</div>
+            <div class="text-xs text-blue-300 mt-2">Sisa Kapasitas: <span id="modalRemaining">N/A</span> Ah</div>
           </div>
-          
-          <div class="bg-purple-50 p-4 rounded-lg">
-            <div class="flex justify-between items-center mb-2">
-              <div class="text-purple-700 font-medium">Cycle Count</div>
-              <div class="text-2xl font-bold text-purple-700" id="modalCycles"></div>
-            </div>
-            <div class="text-xs text-gray-500 mt-1">Last updated: <span id="modalLastUpdate"></span></div>
+
+          <!-- State of Health (SOH) -->
+          <div class="modal-summary-card modal-soh text-white">
+            <h3 class="text-sm font-medium">State of Health</h3>
+            <div class="text-4xl font-extrabold"><span id="modalSOHPercent">N/A</span>%</div>
+            <div class="text-xs text-green-300 mt-2">Kapasitas Penuh: <span id="modalCapacity">N/A</span> Ah</div>
+          </div>
+
+          <!-- Cycle Count -->
+          <div class="modal-summary-card modal-cycles text-white">
+            <h3 class="text-sm font-medium">Cycle Count</h3>
+            <div class="text-4xl font-extrabold"><span id="modalCycles">N/A</span></div>
+            <div class="text-xs text-purple-300 mt-2">Terakhir diperbarui: <span id="modalLastUpdate">N/A</span></div>
           </div>
         </div>
-
-        <!-- 2 Kolom -->
+        
+        <!-- 2 Kolom Detail (Mengikuti gaya card yang di-upload) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <!-- Left -->
-          <div class="space-y-4">
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h3 class="font-medium text-gray-700 mb-3 flex items-center">
-                <i class="fas fa-bolt text-yellow-500 mr-2"></i> Voltage Metrics
-              </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Pack Voltage</span>
-                  <span class="font-semibold text-gray-800" id="modalVoltage"></span>
+          <!-- Left: Voltage Metrics -->
+          <div class="bg-gray-800 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+                <i data-lucide="zap" class="lucide w-4 h-4 text-yellow-500 mr-2"></i> Metrik Tegangan
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Pack</span>
+                    <span class="font-semibold text-white" id="modalVoltage">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Bus Voltage</span>
-                  <span class="font-semibold text-gray-800" id="modalBusVoltage"></span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Bus</span>
+                    <span class="font-semibold text-white" id="modalBusVoltage">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Min Cell Voltage</span>
-                  <span class="font-semibold text-gray-800" id="modalcellmin"></span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Sel Min</span>
+                    <span class="font-semibold text-white" id="modalcellmin">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Max Cell Voltage</span>
-                  <span class="font-semibold text-gray-800" id="modalcellmax"></span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Sel Max</span>
+                    <span class="font-semibold text-white" id="modalcellmax">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Voltage Difference</span>
-                  <span class="font-semibold text-gray-800" id="modalcelldif"></span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Perbedaan Tegangan</span>
+                    <span class="font-semibold text-white" id="modalcelldif">N/A</span>
                 </div>
-              </div>
             </div>
           </div>
 
-          <!-- Right --> 
-          <div class="space-y-4">
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <h3 class="font-medium text-gray-700 mb-3 flex items-center">
-                <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i> Current Metrics
-              </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Pack Current</span>
-                  <span class="font-semibold text-gray-800" id="modalCurrent"></span>
+          <!-- Right: Current & Power Metrics --> 
+          <div class="bg-gray-800 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+                <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500 mr-2"></i> Metrik Arus & Daya
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="detail-metric">
+                    <span class="text-gray-400">Arus Pack</span>
+                    <span class="font-semibold text-white" id="modalCurrent">N/A</span>
                 </div>
-               
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Power</span>
-                  <span class="font-semibold text-gray-800" id="modalPower"></span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Daya (Power)</span>
+                    <span class="font-semibold text-white" id="modalPower">N/A</span>
                 </div>
-              </div>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Status Temp</span>
+                    <span class="font-semibold text-white" id="modalTemp">N/A</span>
+                </div>
+                <!-- Tambahan agar sejajar -->
+                 <div class="detail-metric opacity-0">
+                    <span class="text-gray-400">_</span>
+                    <span class="font-semibold text-white">_</span>
+                </div>
+                 <div class="detail-metric opacity-0">
+                    <span class="text-gray-400">_</span>
+                    <span class="font-semibold text-white">_</span>
+                </div>
             </div>
           </div>
         </div>
 
-        <!-- Cell Voltages -->
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <h3 class="font-medium text-gray-700 mb-4 flex items-center">
-            <i class="fas fa-battery-three-quarters text-green-500 mr-2"></i> Cell Voltages
+        <!-- Cell Voltages (Sesuai Screenshot - Kotak Kuning Vertikal) -->
+        <div class="bg-solar-card p-4 rounded-lg mt-6">
+          <h3 class="font-medium text-gray-300 mb-4 flex items-center">
+            <i data-lucide="layout-grid" class="lucide w-4 h-4 text-green-500 mr-2"></i> Tegangan Sel (Cell Voltages)
           </h3>
-          <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+          <!-- Responsive grid 3, 4, 5 kolom -->
+          <div id="modalCells" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3"></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    let id_logger = "-";
+    // Patenkan ID Logger
+    const BMS_LOGGER_ID = "316506218";
+    
     let client;
     let batteries = [];
     
-    //document.getElementById("id_monitoring").innerText = id_logger;
-    //document.getElementById("id_monitoring_footer").innerText = id_logger;
+    // Fungsi pembantu untuk memperbarui elemen DOM dengan aman
+    function safeUpdate(id, content, isHtml = false) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (isHtml) {
+                el.innerHTML = content;
+            } else {
+                el.textContent = content;
+            }
+        } else {
+            // console.warn(`Element ID not found: ${id}`);
+        }
+    }
+
+    // Set ID Logger di header dan footer
+    safeUpdate("bms-logger-id-header", BMS_LOGGER_ID);
+    safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
+    
+    // Fungsi untuk menampilkan Jam dan Tanggal (diambil dari Dasbor PLTS)
+    function updateTime() {
+      const now = new Date();
+      const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+      const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+      
+      const dateStr = now.toLocaleDateString('id-ID', dateOptions);
+      const timeStr = now.toLocaleTimeString('id-ID', timeOptions);
+
+      safeUpdate('current-date', dateStr);
+      safeUpdate('current-time', timeStr);
+    }
 
     function startMQTT(){
       client = mqtt.connect("wss://public.cloud.shiftr.io", {
@@ -357,31 +462,25 @@ body.dark .battery-card i {
       
       client.on("connect", () => {
         console.log("Connected to MQTT");
-        client.subscribe("sysMon/"+id_logger+"/AutoPoll/#");
-        client.subscribe("sysMon/"+id_logger+"/info/#");
+        client.subscribe("sysMon/"+BMS_LOGGER_ID+"/AutoPoll/#");
+        client.subscribe("sysMon/"+BMS_LOGGER_ID+"/info/#");
         
         // Update connection status
         updateConnectionStatus(true);
       });
 
       client.on("message", (topic, message) => {
-        if(topic == "sysMon/"+id_logger+"/info" ){
+        if(topic == "sysMon/"+BMS_LOGGER_ID+"/info" ){
           let a = message.toString().split(",");
-            // 🔥 Update Network Modal lebih dulu
-  document.getElementById("network_ip").innerText = "IP Address: " + a[0];
-  document.getElementById("network_signal").innerText = "Signal: " + a[1];
-          document.getElementById("id_monitoring").innerText = " 🌐 " + a[0] + " 📶"+a[1];
-          document.getElementById("id_monitoring_footer").innerText =" 🌐 " + a[0] + " 📶"+a[1];
           
-      // 🔥 update link Battery Config sesuai IP dari MQTT
-  let batteryLink = document.getElementById("batteryConfigLink");
-  if (batteryLink) {
-    batteryLink.href = "http://" + a[0] + "/";
-  }
-            let timerLink = document.getElementById("timerLink");
-  if (timerLink) {
-    timerLink.href = "http://" + a[0] + "/timer";
-  }
+          let batteryLink = document.getElementById("batteryConfigLink");
+          if (batteryLink) {
+            batteryLink.href = "http://" + a[0] + "/";
+          }
+          let timerLink = document.getElementById("timerLink");
+          if (timerLink) {
+            timerLink.href = "http://" + a[0] + "/timer";
+          }
         } else {
           try {
             const raw = JSON.parse(message.toString());
@@ -390,17 +489,15 @@ body.dark .battery-card i {
             const idx = batteries.findIndex(b => (b.addr === batt.addr)&&(b.typeBattery === batt.typeBattery));
             if (idx >= 0) {
               batteries[idx] = batt; // update
-              // console.log("update")
             } else {
               batt.elementId = `battery-${batt.typeBattery}-${batt.addr}`;
               batteries.push(batt); // kalau address baru
-              // console.log("create")
             }
 
             renderCards(batt);
-            updateModal();
+            updateModal(); // Panggil updateModal di sini
           } catch (e) {
-            console.error("Invalid JSON", e);
+            console.error("Invalid JSON Error: ", e, e.stack); 
           }
         }
       });
@@ -416,14 +513,7 @@ body.dark .battery-card i {
     }
 
     function updateConnectionStatus(connected) {
-      const statusIndicator = document.getElementById('connection-status');
-      if (connected) {
-        document.body.classList.remove('disconnected');
-        document.body.classList.add('connected');
-      } else {
-        document.body.classList.remove('connected');
-        document.body.classList.add('disconnected');
-      }
+      // Logic for connection status LED (not implemented in this simplified version)
     }
 
     function getCurrentTimeHHMMSS() {
@@ -435,29 +525,47 @@ body.dark .battery-card i {
     }
 
     function normalizeFromMqtt(data) {
-      const cells = data.cell_voltages.map(v => (v/1000).toFixed(3));
-      const cell_vmax = Math.max(...data.cell_voltages) / 1000;
-      const cell_vmin = Math.min(...data.cell_voltages) / 1000;
-      const cell_vdiff = (cell_vmax - cell_vmin) * 1000;
+      // Pastikan data.cell_voltages adalah array sebelum diproses
+      const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
+      
+      const cells = cellVoltages.map(v => (v/1000).toFixed(3));
+      
+      // Menggunakan spread operator hanya jika array tidak kosong
+      const cell_vmax_val = cellVoltages.length > 0 ? Math.max(...cellVoltages) / 1000 : 'N/A';
+      const cell_vmin_val = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 'N/A';
+      
+      let cell_vdiff_val = 'N/A';
+      if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number') {
+          cell_vdiff_val = (cell_vmax_val - cell_vmin_val) * 1000;
+      }
+      
+      // Hitung Daya/Power
+      const voltage = (data.bat_voltage !== undefined) ? data.bat_voltage : 'N/A';
+      const current = (data.bat_current !== undefined) ? data.bat_current : 'N/A';
+
+      let power = 'N/A';
+      if (typeof voltage === 'number' && typeof current === 'number') {
+        power = (voltage * current).toFixed(2);
+      }
       
       return {
-        typeBattery: data.typeBattery,
-        addr: data.AddrBattery,
-        soc: data.SOC.toFixed(1),
-        soh: data.SOH.toFixed(1),
-        voltage: data.bat_voltage.toFixed(2),
-        busVoltage: data.bus_voltage.toFixed(2),
-        current: data.bat_current.toFixed(2),
-        capacity: data.full_capacity.toFixed(2),
-        remaining: data.rem_capacity.toFixed(2),
-        cycles: data.cycle_count,
-        cycle_count: data.cycle_count,
-        cells,
-        cell_vmax: cell_vmax.toFixed(3),
-        cell_vmin: cell_vmin.toFixed(3),
-        cell_vdif: cell_vdiff.toFixed(0),
+        typeBattery: data.typeBattery || 'Baterai',
+        addr: data.AddrBattery || 'N/A',
+        soc: (data.SOC !== undefined) ? data.SOC.toFixed(0) : 'N/A',
+        soh: (data.SOH !== undefined) ? data.SOH.toFixed(0) : 'N/A',
+        voltage: typeof voltage === 'number' ? voltage.toFixed(2) : voltage, // Tegangan Pack
+        busVoltage: (data.bus_voltage !== undefined) ? data.bus_voltage.toFixed(2) : 'N/A',
+        current: typeof current === 'number' ? current.toFixed(2) : current, // Arus Pack
+        capacity: (data.full_capacity !== undefined) ? data.full_capacity.toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
+        remaining: (data.rem_capacity !== undefined) ? data.rem_capacity.toFixed(2) : 'N/A', // Sisa Kapasitas (Ah)
+        cycles: data.cycle_count || 0,
+        cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A', // Pastikan N/A jika bukan angka
+        cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A', // Pastikan N/A jika bukan angka
+        cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
+        tempStatus: data.temp_status || 'Normal', // Status Suhu (Placeholder)
         time: getCurrentTimeHHMMSS(),
-        power: (data.bat_voltage * data.bat_current).toFixed(2)
+        cells: cells, // Tambahkan data cell voltages
+        power: power // Daya 2 desimal
       };
     }
 
@@ -466,147 +574,217 @@ body.dark .battery-card i {
     const emptyState = document.getElementById("empty-state");
     let currentAddr = null;
 
-const cardTimers = {};
+    const cardTimers = {};
 
-function renderCards(datane) {
-    if (batteries.length === 0) {
-      grid.classList.add('hidden');
-      emptyState.classList.remove('hidden');
-      document.getElementById('total-batteries').textContent = '0';
-      return;
-    }
-
-    grid.classList.remove('hidden');
-    emptyState.classList.add('hidden');
-    document.getElementById('total-batteries').textContent = batteries.length.toString();
-
-    const fragment = document.createDocumentFragment();
-
-    batteries.forEach(batt => {
-      let cardId = `card-${batt.typeBattery}-${batt.addr}`;
-      let card = document.getElementById(cardId);
-
-      if (!card) {
-        card = document.createElement("div");
-        card.id = cardId;
-        card.className = "battery-card rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md fade-in";
-        card.dataset.addr = String(batt.addr);
-        card.innerHTML = `
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">${batt.typeBattery} <span class="text-blue-600">#${batt.addr}</span></h3>
-            <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
-          </div>
-          <div class="mb-4">
-            <div class="flex justify-between items-center mb-1">
-              <span class="text-sm text-gray-600">SOC</span>
-              <span class="font-semibold" id="soc-value-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
-            </div>
-            <div class="progress-bar">
-              <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill" style="width: ${batt.soc}%"></div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-5 text-sm">
-            <div class="space-y-2">
-              <div class="flex items-center">
-                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Voltage</div>
-                  <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.voltage} V</div>
-                </div>
-              </div>
-               <div class="flex items-center">
-                <i class="fas fa-minus-circle  text-blue-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Diff Cell</div>
-                  <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vdif} mV</div>
-                </div>
-              </div>
-
-              <div class="flex items-center">
-                <i class="fas fa-minus-circle text-red-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Min Cell</div>
-                  <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmin} V</div>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <div class="flex items-center">
-                <i class="fas fa-tachometer-alt text-blue-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Current</div>
-                  <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.current} A</div>
-                </div>
-              </div>
-               <div class="flex items-center">
-                <i class="fas fa-bolt text-red-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Power</div>
-                  <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold">${(batt.voltage*batt.current).toFixed(1)} WA</div>
-                </div>
-              </div>
-              <div class="flex items-center">
-                <i class="fas fa-plus-circle text-green-500 mr-2"></i>
-                <div>
-                  <div class="text-gray-500">Max Cell</div>
-                  <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold">${batt.cell_vmax} V</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
-            <span>Cycles: ${batt.cycles}</span>
-            <span class="last-update"><i class="far fa-clock mr-1"></i>${batt.time}</span>
-          </div>
-        `;
-        card.onclick = () => openModal(batt.addr);
-        fragment.appendChild(card);
-      } else {
-        if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
-          document.getElementById(`soc-value-${batt.typeBattery}-${batt.addr}`).textContent = `${batt.soc}%`;
-          document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`).style.width = `${batt.soc}%`;
-          document.getElementById(`voltage-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.voltage} V`;
-          document.getElementById(`current-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.current} A`;
-          document.getElementById(`cellmin-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmin} V`;
-          document.getElementById(`cellmax-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vmax} V`;
-          document.getElementById(`power-${batt.typeBattery}-${batt.addr}`).innerHTML = `${(batt.voltage*batt.current).toFixed(1)} W`;
-          document.getElementById(`voltagedif-${batt.typeBattery}-${batt.addr}`).innerHTML = `${batt.cell_vdif} mV`;
-
-          const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
-          if (batt.soc > 70) socBar.className = 'progress-fill bg-green-500';
-          else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
-          else socBar.className = 'progress-fill bg-red-500';
-
-          card.querySelector(".last-update").innerHTML = `<i class="far fa-clock mr-1"></i>${batt.time}`;
-
-          const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
-          led.classList.add("active");
-          setTimeout(() => led.classList.remove("active"), 250);
+    function renderCards(datane) {
+        // --- Update elemen summary menggunakan safeUpdate ---
+        const socContent = datane.soc !== 'N/A' ? `${datane.soc}%` : 'N/A';
+        safeUpdate('summary-soc', socContent);
+        
+        if (datane.soc !== 'N/A' && datane.soc !== 0) {
+            const socValue = parseInt(datane.soc);
+            const socProgress = document.getElementById("soc-progress-summary");
+            if(socProgress){
+                socProgress.style.width = `${socValue}%`;
+                if (socValue > 70) socProgress.className = "progress-fill bg-blue-500";
+                else if (socValue > 30) socProgress.className = "progress-fill bg-yellow-500";
+                else socProgress.className = "progress-fill bg-red-500";
+            }
         }
+
+        const sohContent = datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A';
+        safeUpdate('summary-soh', sohContent);
+        
+        if (datane.soh !== 'N/A' && datane.soh !== 0) {
+            const sohValue = parseInt(datane.soh);
+            const sohProgress = document.getElementById("soh-progress-summary");
+            if(sohProgress){
+                sohProgress.style.width = `${sohValue}%`;
+                if (sohValue > 80) sohProgress.className = "progress-fill bg-green-500";
+                else if (sohValue > 60) sohProgress.className = "progress-fill bg-yellow-500";
+                else sohProgress.className = "progress-fill bg-red-500";
+            }
+        }
+
+        safeUpdate('summary-current', datane.current);
+        safeUpdate('summary-voltage', datane.voltage);
+        // --- END Update elemen summary ---
+
+
+        if (batteries.length === 0) {
+          if (grid) grid.classList.add('hidden');
+          if (emptyState) emptyState.classList.remove('hidden');
+          safeUpdate('total-batteries', '0');
+          return;
+        }
+
+        if (grid) grid.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        safeUpdate('total-batteries', batteries.length.toString());
+
+        const fragment = document.createDocumentFragment();
+
+        batteries.forEach(batt => {
+          let cardId = `card-${batt.typeBattery}-${batt.addr}`;
+          let card = document.getElementById(cardId);
+
+          if (!card) {
+            card = document.createElement("div");
+            card.id = cardId;
+            // Gunakan bg-gray-800 untuk kartu agar berbeda dari background solar-card
+            card.className = "bg-gray-800 rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition fade-in";
+            card.dataset.addr = String(batt.addr);
+            card.innerHTML = `
+              <div class="flex items-center justify-between mb-3 border-b border-gray-700 pb-2">
+                <h3 class="text-lg font-bold text-white">${batt.typeBattery} <span class="text-blue-400 font-semibold">#${batt.addr}</span></h3>
+                <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
+              </div>
+              
+              <!-- SOC / SOH BAR -->
+              <div class="mb-3">
+                <div class="flex justify-between items-center mb-1 text-sm">
+                  <span class="text-gray-400">SOC / SOH</span>
+                  <span class="font-bold text-blue-bat">${batt.soc}% / <span class="text-green-400">${batt.soh}%</span></span>
+                </div>
+                <div class="progress-bar mt-1">
+                    <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill bg-blue-500" style="width: ${batt.soc}%"></div>
+                </div>
+              </div>
+
+              <!-- GRID METRIK DETAIL 3x2 -->
+              <div class="metric-group text-xs mt-2">
+                
+                <!-- KIRI -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="zap" class="lucide w-4 h-4 text-yellow-500"></i>
+                    <div>
+                        <div class="text-gray-500">Tegangan</div>
+                        <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="minus-circle" class="lucide w-4 h-4 text-red-500"></i>
+                    <div>
+                        <div class="text-gray-500">Sel Min</div>
+                        <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500"></i>
+                    <div>
+                        <div class="text-gray-500">Sel Max</div>
+                        <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div>
+                    </div>
+                </div>
+
+                <!-- KANAN -->
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500"></i>
+                    <div>
+                        <div class="text-gray-500">Arus</div>
+                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.current} A</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="power" class="lucide w-4 h-4 text-red-400"></i>
+                    <div>
+                        <div class="text-gray-500">Daya</div>
+                        <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.power} W</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 p-1">
+                    <i data-lucide="divide" class="lucide w-4 h-4 text-blue-400"></i>
+                    <div>
+                        <div class="text-gray-500">Selisih Sel</div>
+                        <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold text-blue-400">${batt.cell_vdif} mV</div>
+                    </div>
+                </div>
+              </div>
+
+              <!-- Footer Metrik -->
+              <div class="mt-4 pt-3 border-t border-gray-700 text-xs text-gray-400 flex justify-between">
+                <span>Siklus: ${batt.cycles}</span>
+                <span class="last-update"><i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>
+              </div>
+            `;
+            card.onclick = () => openModal(batt.addr);
+            fragment.appendChild(card);
+          } else {
+            if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
+              // Update ringkasan SOH/SOC di kartu utama
+              safeUpdate('summary-soc', batt.soc !== 'N/A' ? `${batt.soc}%` : 'N/A');
+              safeUpdate('summary-soh', batt.soh !== 'N/A' ? `${batt.soh}%` : 'N/A');
+              safeUpdate('summary-current', batt.current);
+              safeUpdate('summary-voltage', batt.voltage);
+              
+              const socProgress = document.getElementById("soc-progress-summary");
+              if (socProgress) {
+                  socProgress.style.width = `${batt.soc}%`;
+              }
+              const sohProgress = document.getElementById("soh-progress-summary");
+              if (sohProgress) {
+                  sohProgress.style.width = `${batt.soh}%`;
+              }
+
+              // Update kartu individu
+              const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
+              if(socBar){
+                socBar.style.width = `${batt.soc}%`;
+                if (batt.soc > 70) socBar.className = 'progress-fill bg-blue-500';
+                else if (batt.soc > 30) socBar.className = 'progress-fill bg-yellow-500';
+                else socBar.className = 'progress-fill bg-red-500';
+              }
+              
+              // 🔹 Pembaruan Metrik Detail (Harus sinkron dengan HTML di atas)
+              safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`, true);
+              safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`, true);
+              safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`, true);
+              safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`, true); // MAX CELL
+              safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`, true);       // POWER
+              safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`, true);
+              
+              const lastUpdateEl = card.querySelector(".last-update");
+              if (lastUpdateEl) {
+                  lastUpdateEl.innerHTML = `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}`;
+              }
+
+              const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
+              if (led) {
+                led.classList.add("active");
+                setTimeout(() => led.classList.remove("active"), 250);
+              }
+            }
+          }
+
+          // 🔹 RESET / SET timeout tiap update
+          if (cardTimers[cardId]) {
+            clearTimeout(cardTimers[cardId]);
+          }
+          cardTimers[cardId] = setTimeout(() => {
+            let c = document.getElementById(cardId);
+            if (c) c.remove();
+            delete cardTimers[cardId];
+          }, 30000); // 30 detik timeout jika tidak ada data masuk
+
+        });
+
+        if (fragment.childNodes.length > 0) {
+          if (grid) grid.appendChild(fragment);
+        }
+        
+        // Render Lucide icons for new cards
+        lucide.createIcons();
       }
-
-      // 🔹 RESET / SET timeout tiap update
-      if (cardTimers[cardId]) {
-        clearTimeout(cardTimers[cardId]);
-      }
-      cardTimers[cardId] = setTimeout(() => {
-        let c = document.getElementById(cardId);
-        if (c) c.remove();
-        delete cardTimers[cardId];
-      }, 10000); // 30 detik
-
-    });
-
-    if (fragment.childNodes.length > 0) {
-      grid.appendChild(fragment);
-    }
-  }
 
     // Open modal
     function openModal(addr) {
       currentAddr = addr;
       updateModal();
-      modal.classList.remove("hidden");
+      if (modal) modal.classList.remove("hidden");
       document.body.style.overflow = 'hidden';
     }
 
@@ -614,218 +792,132 @@ function renderCards(datane) {
     function updateModal() {
       if (currentAddr === null) return;
       const batt = batteries.find(b => b.addr === currentAddr);
-      if (!batt) return;
-
-      document.getElementById("modalTitle").textContent = `${batt.typeBattery} #${batt.addr}`;
-      document.getElementById("modalSOC").textContent = `${batt.soc}%`;
-      document.getElementById("modalSOH").textContent = `${batt.soh}%`;
-      document.getElementById("modalCycles").textContent = batt.cycles;
-      document.getElementById("modalVoltage").textContent = `${batt.voltage} V`;
-      document.getElementById("modalBusVoltage").textContent = `${batt.busVoltage} V`;
-      document.getElementById("modalCurrent").textContent = `${batt.current} A`;
-      document.getElementById("modalCapacity").textContent = `${batt.capacity} Ah`;
-      document.getElementById("modalRemaining").textContent = `${batt.remaining} Ah`;
-      document.getElementById("modalLastUpdate").textContent = batt.time;
-      document.getElementById("modalcellmin").textContent = `${batt.cell_vmin} V`;
-      document.getElementById("modalcellmax").textContent = `${batt.cell_vmax} V`;
-      document.getElementById("modalcelldif").textContent = `${batt.cell_vdif} mV`;
-      // document.getElementById("modalBusCurrent").textContent = `-`;
-      document.getElementById("modalPower").textContent = `${batt.power} W`;
-
-      // Update progress bars
-      document.getElementById("soc-progress").style.width = `${batt.soc}%`;
-      document.getElementById("soh-progress").style.width = `${batt.soh}%`;
       
-      // Set progress bar colors
-      const socProgress = document.getElementById("soc-progress");
-      const sohProgress = document.getElementById("soh-progress");
-      
-      if (batt.soc > 70) socProgress.className = "progress-fill bg-blue-500";
-      else if (batt.soc > 30) socProgress.className = "progress-fill bg-yellow-500";
-      else socProgress.className = "progress-fill bg-red-500";
-      
-      if (batt.soh > 80) sohProgress.className = "progress-fill bg-green-500";
-      else if (batt.soh > 60) sohProgress.className = "progress-fill bg-yellow-500";
-      else sohProgress.className = "progress-fill bg-red-500";
+      // --- PERBAIKAN KRITIS: Hanya update jika data baterai ditemukan DAN modal sedang TERBUKA ---
+      if (!batt || (modal && modal.classList.contains("hidden"))) return;
 
-      // Render cell voltages
+      safeUpdate("modalAddr", batt.addr);
+      
+      // 1. Update Kartu Header (Sesuai Screenshot)
+      safeUpdate("modalSOCPercent", batt.soc);
+      safeUpdate("modalRemaining", batt.remaining !== 'N/A' ? `${batt.remaining}` : 'N/A');
+      
+      safeUpdate("modalSOHPercent", batt.soh);
+      safeUpdate("modalCapacity", batt.capacity !== 'N/A' ? `${batt.capacity}` : 'N/A');
+      
+      safeUpdate("modalCycles", batt.cycles);
+      safeUpdate("modalLastUpdate", batt.time);
+      
+      // 2. Update Metrik Tegangan
+      safeUpdate("modalVoltage", batt.voltage !== 'N/A' ? `${batt.voltage} V` : 'N/A');
+      safeUpdate("modalBusVoltage", batt.busVoltage !== 'N/A' ? `${batt.busVoltage} V` : 'N/A');
+      // Max Cell - ID: modalcellmax
+      safeUpdate("modalcellmax", batt.cell_vmax !== 'N/A' ? `${batt.cell_vmax} V` : 'N/A');
+      safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
+      safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
+      
+      // 3. Update Metrik Arus & Daya
+      safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
+      // Daya (Power) - ID: modalPower
+      safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
+      safeUpdate("modalTemp", batt.tempStatus); // Placeholder
+      
+      // 4. Render Cell Voltages
       const cellsDiv = document.getElementById("modalCells");
-      cellsDiv.innerHTML = "";
-      
-      batt.cells.forEach((v, i) => {
-        const cellValue = parseFloat(v);
-        let statusClass = "cell-normal";
-        if (cellValue < 3.2) statusClass = "cell-danger";
-        else if (cellValue < 3.4) statusClass = "cell-warning";
-        
-        const cellBox = document.createElement("div");
-        cellBox.className = `cell-voltage ${statusClass} bg-white rounded-lg shadow-sm p-3 flex flex-col items-center`;
-        
-        const label = document.createElement("div");
-        label.className = "text-xs font-medium text-gray-500 mb-1";
-        label.textContent = `Cell ${i + 1}`;
+      if (cellsDiv) {
+          cellsDiv.innerHTML = "";
+          
+          batt.cells.forEach((v, i) => {
+            const cellValue = parseFloat(v);
+            let statusClass = "cell-normal";
+            if (cellValue < 3.2) statusClass = "cell-danger";
+            else if (cellValue < 3.4) statusClass = "cell-warning";
+            
+            const cellBox = document.createElement("div");
+            // Menggunakan grid yang lebih besar untuk tampilan yang lebih lega di modal
+            cellBox.className = `cell-voltage ${statusClass} bg-gray-800 rounded-lg shadow-sm p-2 flex flex-col items-center justify-center text-center h-20`;
+            
+            const label = document.createElement("div");
+            label.className = "text-xs font-medium text-gray-400 mb-0.5";
+            label.textContent = `Sel ${i + 1}`;
 
-        const value = document.createElement("div");
-        value.className = "text-sm font-bold";
-        value.textContent = `${v} V`;
-        
-        if (statusClass === "cell-danger") value.className += " text-red-600";
-        else if (statusClass === "cell-warning") value.className += " text-yellow-600";
-        else value.className += " text-green-600";
+            const value = document.createElement("div");
+            value.className = "text-sm font-bold";
+            value.textContent = `${v} V`;
+            
+            if (statusClass === "cell-danger") value.classList.add("text-red-400");
+            else if (statusClass === "cell-warning") value.classList.add("text-yellow-400");
+            else value.classList.add("text-green-400");
+            
+            // Menggunakan Flexbox untuk vertikal sejajar di dalam kotak
+            cellBox.className = `cell-voltage ${statusClass} bg-gray-800 rounded-lg shadow-sm p-3 flex flex-col items-start justify-center`; // Ubah ke items-start agar teks rata kiri/kiri
+            cellBox.style.borderLeft = '4px solid'; // Aksen Kiri
+            if (statusClass === "cell-danger") cellBox.style.borderColor = '#F87171';
+            else if (statusClass === "cell-warning") cellBox.style.borderColor = '#FACC15';
+            else cellBox.style.borderColor = '#34D399'; 
 
-        cellBox.appendChild(label);
-        cellBox.appendChild(value);
-        cellsDiv.appendChild(cellBox);
-      });
+            cellBox.innerHTML = `
+              <div class="text-xs font-medium text-gray-400 mb-1">Sel ${i + 1}</div>
+              <div class="text-sm font-bold ${statusClass === "cell-danger" ? 'text-red-400' : statusClass === "cell-warning" ? 'text-yellow-400' : 'text-green-400'}">${v} V</div>
+            `;
+
+
+            cellsDiv.appendChild(cellBox);
+          });
+      }
       
       blinkLed("led-modal");
+      lucide.createIcons(); // Re-render icons inside modal
     }
 
     // Close modal
-    document.getElementById("closeModal").onclick = () => {
-      modal.classList.add("hidden");
-      document.body.style.overflow = 'auto';
-      currentAddr = null;
-    };
+    const closeModalEl = document.getElementById("closeModal");
+    if (closeModalEl) {
+        closeModalEl.onclick = () => {
+            if (modal) modal.classList.add("hidden");
+            document.body.style.overflow = 'auto';
+            currentAddr = null;
+        };
+    }
     
-    modal.onclick = e => {
-      if (e.target === modal) {
-        modal.classList.add("hidden");
-        document.body.style.overflow = 'auto';
-        currentAddr = null;
-      }
-    };
+    if (modal) {
+        modal.onclick = e => {
+          if (e.target === modal) {
+            modal.classList.add("hidden");
+            document.body.style.overflow = 'auto';
+            currentAddr = null;
+          }
+        };
+    }
 
     function blinkLed(id) {
       const el = document.getElementById(id);
       if (!el) return;
-      console.log(id);
       
       el.classList.remove("bg-gray-300");
-      el.classList.add("bg-green-500");
+      el.classList.add("active");
       
       setTimeout(() => {
-        el.classList.remove("bg-green-500");
+        el.classList.remove("active");
         el.classList.add("bg-gray-300");
       }, 250);
     }
 
-   
-
-      // Initialize on load
+    // Initialize on load
     window.onload = function() {
-      const params = new URLSearchParams(window.location.search);
+      // Patenkan ID ditampilkan
+      safeUpdate("bms-logger-id-header", BMS_LOGGER_ID);
+      safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
+
+      startMQTT();
       
-      if ([...params].length > 0) {
-        let queryData = {};
-        for (const [key, value] of params.entries()) {
-          queryData[key] = value;
-        }
-        
-        id_logger = queryData.id;
-        
-        if(id_logger === undefined){
-          let userInput = prompt("Masukkan ID Logger:");
-          if (userInput === null || userInput.trim() === "") {
-            alert("Error: Please reload and input a value!");
-          } else {
-            id_logger = userInput;
-            startMQTT();
-            renderCards();
-          }
-        } else {
-          startMQTT();
-          renderCards();
-        }
-      } else {
-        // If no URL parameters, ask for ID
-        let userInput = prompt("Masukkan ID Logger:");
-        if (userInput === null || userInput.trim() === "") {
-          alert("Error: Please reload and input a value!");
-        } else {
-          id_logger = userInput;
-          startMQTT();
-          renderCards();
-        }
-      }
+      // Atur jam
+      updateTime();
+      setInterval(updateTime, 1000); // Perbarui jam setiap detik
+      
+      // Gunakan Lucide icons
+      lucide.createIcons(); 
     };
   </script>
-  <!-- Script -->
-<script>
-  // === Dropdown Toggle ===
-  const btn = document.getElementById("settingsBtn");
-  const menu = document.getElementById("dropdownMenu");
-
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.classList.toggle("hidden");
-  });
-
-  window.addEventListener("click", () => {
-    menu.classList.add("hidden");
-  });
-
-  // === Network Modal Control ===
-  const networkBtn = document.getElementById("networkBtn");
-  const networkModal = document.getElementById("networkModal");
-  const closeNetwork = document.getElementById("closeNetwork");
-
-  networkBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    networkModal.classList.remove("hidden");
-  });
-
-  closeNetwork.addEventListener("click", () => {
-    networkModal.classList.add("hidden");
-  });
-
-  window.addEventListener("click", (e) => {
-    if (e.target === networkModal) {
-      networkModal.classList.add("hidden");
-    }
-  });
-</script>
-<script>
-const themeToggleLink = document.getElementById('themeToggleLink');
-const body = document.body;
-const header = document.getElementById('mainHeader');
-
-function setTheme(theme) {
-  body.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-
-  // Ubah menu link text
-  themeToggleLink.innerHTML = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-
-  // Ubah class header Tailwind untuk dark mode
-  if (theme === 'dark') {
-    document.body.classList.add('dark');
-    document.documentElement.style.setProperty('--card-bg', '#525252');
-    document.documentElement.style.setProperty('--card-lapis', '#222');
-    document.documentElement.style.setProperty('--card-text', '#ddd');
-    document.documentElement.style.setProperty('--card-subtext', '#ccc');
-    document.documentElement.style.setProperty('--icon-voltage', '#666'); 
-    document.documentElement.style.setProperty('--icon-current', '#60a5fa');
-  } else {
-    document.body.classList.remove('dark');
-    document.documentElement.style.setProperty('--card-bg', '#0455D1');
-    document.documentElement.style.setProperty('--card-lapis', '#fff');
-    document.documentElement.style.setProperty('--card-text', '#1f2937');
-    document.documentElement.style.setProperty('--card-subtext', '#4b5563');
-    document.documentElement.style.setProperty('--icon-current', '#3b82f6');
-  }
-}
-
-// Load tema dari localStorage
-const savedTheme = localStorage.getItem('theme') || 'light';
-setTheme(savedTheme);
-
-// Event toggle
-themeToggleLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  setTheme(newTheme);
-});
-</script>
 </body>
 </html>
