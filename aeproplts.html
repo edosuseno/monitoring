@@ -90,7 +90,7 @@
                 <p id="current-time" class="text-3xl font-bold text-white"></p>
             </div>
             <!-- Tombol Navigasi dan Logout di Desktop (Kini dikontrol oleh JS) -->
-            <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
+            <div id="desktop-buttons" class="hidden sm:hidden md:flex space-x-3 items-center">
                  <button id="bms-button-desktop" onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                     <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
                     Detail Baterai
@@ -102,7 +102,7 @@
             </div>
         </div>
         <!-- Tombol Navigasi Mobile (Kini dikontrol oleh JS) -->
-        <div id="mobile-buttons" class="hidden md:hidden w-full flex space-x-3 mt-4">
+        <div id="mobile-buttons" class="hidden sm:flex md:hidden w-full space-x-3 mt-4">
             <button id="bms-button-mobile" onclick="window.location.href='./bms_monitoring.html'" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
                 <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
                 Detail Baterai
@@ -704,9 +704,18 @@
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
             
-            // Tampilkan semua tombol header (Desktop & Mobile)
+            // Tampilkan tombol header (Desktop & Mobile)
             desktopButtons.classList.remove('hidden');
             mobileButtons.classList.remove('hidden');
+            // Pastikan tombol mobile disembunyikan di desktop dan sebaliknya (sudah ada di HTML)
+            // Desktop buttons must be explicitly hidden on small screens
+            desktopButtons.classList.add('sm:hidden');
+            desktopButtons.classList.remove('sm:flex');
+
+            // Mobile buttons must be explicitly shown on small screens
+            mobileButtons.classList.add('sm:flex');
+            mobileButtons.classList.remove('sm:hidden');
+
 
             // Mulai fetch pertama segera
             updateDashboard();
@@ -759,9 +768,6 @@
             const mobileButtons = document.getElementById('mobile-buttons');
             
             // Sembunyikan semua tombol header secara default
-            // Kita sudah menambahkan class 'hidden' di HTML untuk mobile dan desktop
-            // Namun, untuk memastikan konsistensi, kita biarkan saja penambahan class di JS ini
-            
             desktopButtons.classList.add('hidden');
             mobileButtons.classList.add('hidden');
 
