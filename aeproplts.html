@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Monitoring PLTS - Blynk Legacy</title>
+    <!-- Memuat Tailwind CSS CDN untuk styling yang cepat dan responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat ikon Lucide untuk visualisasi data -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Konfigurasi Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'blynk-primary': '#4B87FF', // Biru Blynk
+                        'solar-dark': '#0F172A', // Biru tua untuk latar belakang
+                        'solar-card': '#1E293B', // Biru gelap untuk kartu
+                        'dc-color': '#FACC15', // Kuning untuk DC (Solar)
+                        'ac-color': '#10B981', // Hijau untuk AC (Output)
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0F172A;
+            font-family: 'Inter', sans-serif;
+        }
+        .lucide { stroke-width: 1.75; }
+        .data-value {
+            transition: color 0.3s, transform 0.3s;
+        }
+        .loading-animation {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <!-- Header & Pengaturan -->
+    <header class="mb-8">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Dasbor PLTS
+        </h1>
+        <p class="text-gray-400 mt-1">Integrasi Data Real-time dari Blynk Server.</p>
+    </header>
+
+    <!-- Area Input Konfigurasi -->
+    <div id="config-panel" class="bg-gray-800 p-6 rounded-xl shadow-xl mb-8">
+        <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
+            <i data-lucide="settings" class="lucide w-5 h-5 mr-2 text-blynk-primary"></i>
+            Konfigurasi Blynk API
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain Blynk</label>
+                <!-- Menambahkan catatan port default -->
+                <input type="text" id="server-ip" placeholder="contoh: blynk.cloud atau 192.168.1.100:8080" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="blynk.cloud">
+            </div>
+            <div>
+                <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
+                <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
+            </div>
+            <div class="flex items-end">
+                <button onclick="saveAndFetchData()" class="w-full bg-blynk-primary text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-600 transition duration-300">
+                    Mulai Monitoring
+                </button>
+            </div>
+        </div>
+        <p id="message-box" class="mt-4 text-sm text-yellow-400 hidden"></p>
+    </div>
+
+    <!-- Area Monitoring Utama -->
+    <main id="monitoring-dashboard" class="hidden">
+
+        <!-- RINGKASAN UTAMA (TOTAL) -->
+        <div class="bg-solar-card p-6 rounded-xl shadow-xl mb-8">
+             <h2 class="text-2xl font-semibold text-white mb-4 flex items-center">
+                <i data-lucide="shield-check" class="lucide w-6 h-6 mr-2 text-blynk-primary"></i>
+                Ringkasan Kinerja Harian
+            </h2>
+             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                 <!-- Energi Hari Ini (kWh_today) - V10 -->
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <p class="text-xs font-medium text-gray-400 uppercase">Energi DC (PV) Hari Ini</p>
+                    <span id="v10-kwh-today" class="data-value text-2xl font-bold text-dc-color">...</span>
+                    <span class="text-sm text-gray-500">kWh</span>
+                </div>
+                 <!-- kWh Today AC (V21) -->
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <p class="text-xs font-medium text-gray-400 uppercase">Energi AC (Beban) Hari Ini</p>
+                    <span id="v21-kwh-today-ac" class="data-value text-2xl font-bold text-ac-color">...</span>
+                    <span class="text-sm text-gray-500">kWh</span>
+                </div>
+                <!-- Total PV (V11) -->
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <p class="text-xs font-medium text-gray-400 uppercase">Total Energi PV</p>
+                    <span id="v11-total-pv" class="data-value text-2xl font-bold text-yellow-400">...</span>
+                    <span class="text-sm text-gray-500">kWh</span>
+                </div>
+                 <!-- Rupiah Hari Ini (V19) -->
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <p class="text-xs font-medium text-gray-400 uppercase">Penghematan Hari Ini</p>
+                    <span class="text-sm text-gray-500 mr-1">Rp</span>
+                    <span id="v19-rupiah-day" class="data-value text-2xl font-bold text-green-400">...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bagian Monitoring DC (Panel Surya & Baterai) -->
+        <div class="bg-solar-card p-6 rounded-xl shadow-xl mb-8">
+            <h2 class="text-2xl font-semibold text-white mb-4 flex items-center border-b border-gray-700 pb-2">
+                <i data-lucide="bolt" class="lucide w-6 h-6 mr-2 text-dc-color"></i>
+                Monitoring DC (Panel & Baterai)
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- V0: Voltage DC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Tegangan PV (V)</p>
+                    <span id="v0-pzem-voltage" class="data-value text-3xl font-bold text-dc-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">V</span>
+                </div>
+                <!-- V1: Current DC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Arus PV (A)</p>
+                    <span id="v1-pzem-current" class="data-value text-3xl font-bold text-dc-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">A</span>
+                </div>
+                <!-- V2: Power DC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Daya PV (W)</p>
+                    <span id="v2-pzem-power" class="data-value text-3xl font-bold text-dc-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">W</span>
+                </div>
+                <!-- V3: Energy DC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Total Energi PV (kWh)</p>
+                    <span id="v3-pzem-energy" class="data-value text-3xl font-bold text-dc-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">kWh</span>
+                </div>
+
+                <!-- V4: SunHour -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Jam Sinar Matahari</p>
+                    <span id="v4-sunhour" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                    <span class="text-sm text-gray-500">jam</span>
+                </div>
+                <!-- V5: PV Persen -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Persen Daya PV</p>
+                    <span id="v5-pv-persen" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                    <span class="text-sm text-gray-500">%</span>
+                </div>
+                <!-- V6: PV Peak -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">PV Peak (W)</p>
+                    <span id="v6-pv-peak" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                    <span class="text-sm text-gray-500">W</span>
+                </div>
+                <!-- V7: Baterai Peak -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Baterai Peak</p>
+                    <span id="v7-batere-peak" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                </div>
+                <!-- V8: Baterai Low -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Baterai Low</p>
+                    <span id="v8-batere-low" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                </div>
+                <!-- V9: Baterai AH -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Baterai AH</p>
+                    <span id="v9-batere-ah" class="data-value text-3xl font-bold text-blue-400 loading-animation">...</span>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Bagian Monitoring AC (Beban & Jaringan) -->
+        <div class="bg-solar-card p-6 rounded-xl shadow-xl">
+            <h2 class="text-2xl font-semibold text-white mb-4 flex items-center border-b border-gray-700 pb-2">
+                <i data-lucide="plug-zap" class="lucide w-6 h-6 mr-2 text-ac-color"></i>
+                Monitoring AC (Beban & Inverter)
+            </h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- V12: Voltage AC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Tegangan AC (V)</p>
+                    <span id="v12-voltage" class="data-value text-3xl font-bold text-ac-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">V</span>
+                </div>
+                <!-- V13: Current AC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Arus AC (A)</p>
+                    <span id="v13-current" class="data-value text-3xl font-bold text-ac-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">A</span>
+                </div>
+                <!-- V14: Power AC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Daya AC (W)</p>
+                    <span id="v14-power" class="data-value text-3xl font-bold text-ac-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">W</span>
+                </div>
+                <!-- V15: Energy AC -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Total Energi AC (kWh)</p>
+                    <span id="v15-energy" class="data-value text-3xl font-bold text-ac-color loading-animation">...</span>
+                    <span class="text-sm text-gray-500">kWh</span>
+                </div>
+
+                <!-- V16: Frequency -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Frekuensi (Hz)</p>
+                    <span id="v16-frequency" class="data-value text-3xl font-bold text-purple-400 loading-animation">...</span>
+                    <span class="text-sm text-gray-500">Hz</span>
+                </div>
+                <!-- V17: Power Factor -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Faktor Daya (PF)</p>
+                    <span id="v17-pf" class="data-value text-3xl font-bold text-purple-400 loading-animation">...</span>
+                </div>
+                <!-- V18: Rupiah Total -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Total Penghematan</p>
+                    <span class="text-sm text-gray-500 mr-1">Rp</span>
+                    <span id="v18-rupiah" class="data-value text-3xl font-bold text-green-400 loading-animation">...</span>
+                </div>
+                 <!-- V20: Inverter Peak -->
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm font-medium text-gray-400">Inverter Peak</p>
+                    <span id="v20-inverter-peak" class="data-value text-3xl font-bold text-purple-400 loading-animation">...</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-gray-500 text-sm">
+        <p>Data diambil dari server Blynk, diperbarui setiap 5 detik. Dibuat oleh Gemini.</p>
+    </footer>
+
+    <!-- Script Fungsionalitas -->
+    <script>
+        // Mengubah semua ikon Lucide menjadi SVG
+        lucide.createIcons();
+
+        // Daftar V-Pin dan ID elemen HTML yang sesuai
+        const PIN_MAPPINGS = {
+            // Monitoring DC
+            'V0': 'v0-pzem-voltage',
+            'V1': 'v1-pzem-current',
+            'V2': 'v2-pzem-power',
+            'V3': 'v3-pzem-energy',
+            'V4': 'v4-sunhour',
+            'V5': 'v5-pv-persen',
+            'V6': 'v6-pv-peak',
+            'V7': 'v7-batere-peak',
+            'V8': 'v8-batere-low',
+            'V9': 'v9-batere-ah',
+            'V10': 'v10-kwh-today', // Ringkasan
+            'V11': 'v11-total-pv', // Ringkasan
+
+            // Monitoring AC
+            'V12': 'v12-voltage',
+            'V13': 'v13-current',
+            'V14': 'v14-power',
+            'V15': 'v15-energy',
+            'V16': 'v16-frequency',
+            'V17': 'v17-pf',
+            'V18': 'v18-rupiah',
+            'V19': 'v19-rupiah-day', // Ringkasan
+            'V20': 'v20-inverter-peak',
+            'V21': 'v21-kwh-today-ac', // Ringkasan
+        };
+
+        const STORAGE_KEY_TOKEN = 'blynk_auth_token';
+        const STORAGE_KEY_IP = 'blynk_server_ip';
+        const UPDATE_INTERVAL = 5000; // 5 detik
+
+        let fetchInterval = null; // Untuk menyimpan ID interval
+        let serverIp = '';
+        let authToken = '';
+
+        /**
+         * Utility untuk membuat jeda (delay)
+         * @param {number} ms Milidetik untuk menunggu
+         */
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        /**
+         * Menampilkan pesan notifikasi di bawah panel konfigurasi
+         * @param {string} message Pesan yang akan ditampilkan
+         * @param {string} type Tipe pesan ('success', 'error', 'warning')
+         */
+        function showMessage(message, type = 'warning') {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.className = 'mt-4 text-sm font-semibold p-3 rounded-lg block';
+            if (type === 'error') {
+                msgBox.classList.add('bg-red-900', 'text-red-300');
+            } else if (type === 'success') {
+                msgBox.classList.add('bg-green-900', 'text-green-300');
+            } else {
+                msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+            }
+        }
+
+        /**
+         * Mengambil nilai dari satu V-Pin dari server Blynk dengan Retry (Exponential Backoff)
+         * @param {string} pin Pin Virtual (misalnya 'V0')
+         * @returns {Promise<string>} Nilai dari V-Pin
+         */
+        async function fetchPinValue(pin) {
+            let host = serverIp;
+
+            // 1. Tentukan Host dan Protokol
+            let protocol = 'https'; // Default ke HTTPS untuk kompatibilitas lingkungan sandbox
+            const defaultPort = '8080';
+            
+            // Periksa apakah host sudah mengandung port
+            if (!host.includes(':')) {
+                // Tambahkan port default untuk server lokal/custom jika belum ada, meskipun kita akan coba HTTPS
+                host = `${host}:${defaultPort}`;
+            }
+
+            // Blynk Cloud menggunakan HTTPS di port standar (443) atau 8080/8443
+            if (serverIp.includes('blynk.cloud')) {
+                protocol = 'https';
+            } else if (!serverIp.includes(':')) {
+                // Jika IP lokal tanpa port, coba port 8080
+                host = `${serverIp}:8080`;
+                protocol = 'http'; // Untuk IP lokal, coba HTTP, meskipun mungkin diblokir CORS
+            }
+            
+            // Prioritaskan HTTPS untuk mengatasi masalah CORS/mixed content, meskipun ini akan gagal jika server lokal Anda tidak memiliki SSL
+            if (protocol === 'http' && window.location.protocol === 'https:') {
+                 console.warn(`[WARNING PIN ${pin}] Mencoba HTTP (${host}) dari konteks HTTPS. Ini kemungkinan akan diblokir oleh Mixed Content/CORS. Beralih ke HTTPS.`);
+                 protocol = 'https'; 
+            }
+            
+            const url = `${protocol}://${host}/${authToken}/get/${pin}`;
+            
+            const maxRetries = 3;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Status: ${response.status} (${response.statusText})`);
+                    }
+                    const data = await response.json();
+                    return data[0]; // Data dari Blynk API adalah array, ambil elemen pertama
+                } catch (error) {
+                    if (i < maxRetries - 1) {
+                        const delayTime = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                        // console.log(`[RETRY PIN ${pin}] Gagal (Percobaan ${i + 1}/${maxRetries}). Menunggu ${delayTime / 1000}s...`);
+                        await delay(delayTime);
+                    } else {
+                        console.error(`[ERROR PIN ${pin}] Gagal setelah ${maxRetries} percobaan. URL: ${url}`, error);
+                        throw new Error("Failed to fetch (Check IP/Token/CORS)"); // Kirim error akhir
+                    }
+                }
+            }
+        }
+
+        /**
+         * Memperbarui semua nilai metrik di dashboard
+         */
+        async function updateDashboard() {
+            // Dapatkan semua kunci pin dari PIN_MAPPINGS
+            const pins = Object.keys(PIN_MAPPINGS);
+            
+            // Buat array Promise untuk mengambil semua data secara paralel
+            const fetchPromises = pins.map(pin => fetchPinValue(pin));
+
+            let allSuccessful = true;
+            const results = await Promise.allSettled(fetchPromises);
+
+            results.forEach((result, index) => {
+                const pin = pins[index];
+                const elementId = PIN_MAPPINGS[pin];
+                const element = document.getElementById(elementId);
+
+                if (!element) return; // Lewati jika elemen tidak ditemukan
+
+                element.classList.remove('loading-animation'); // Hapus animasi loading
+
+                if (result.status === 'fulfilled') {
+                    let value = result.value || '0.00';
+                    
+                    // Perlakuan khusus untuk nilai numerik
+                    const numericValue = parseFloat(value);
+                    if (!isNaN(numericValue)) {
+                        // Tampilkan 2 angka di belakang koma, atau biarkan integer jika nilainya 0
+                        value = numericValue.toFixed(2); 
+                    }
+
+                    element.textContent = value;
+                    // Tambahkan efek kilat/update
+                    element.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        element.style.transform = 'scale(1)';
+                    }, 100);
+
+                } else {
+                    // Jika gagal, tampilkan pesan error
+                    allSuccessful = false;
+                    element.textContent = 'N/A';
+                    element.classList.add('text-red-500');
+                }
+            });
+            
+            if (allSuccessful) {
+                showMessage(`Data berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
+            } else {
+                showMessage('Beberapa data gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error');
+            }
+
+            // Jika masih ada masalah besar (semua gagal), mungkin perlu menghentikan interval, 
+            // tetapi dengan retry, kita biarkan saja interval tetap berjalan.
+        }
+
+        /**
+         * Menyimpan konfigurasi, memulai interval fetch, dan menampilkan dashboard
+         */
+        function saveAndFetchData() {
+            const ipInput = document.getElementById('server-ip');
+            const tokenInput = document.getElementById('auth-token');
+
+            const newServerIp = ipInput.value.trim();
+            const newAuthToken = tokenInput.value.trim();
+
+            if (!newAuthToken || !newServerIp) {
+                showMessage('IP Server dan Auth Token harus diisi!', 'warning');
+                return;
+            }
+
+            // Simpan ke Local Storage
+            localStorage.setItem(STORAGE_KEY_IP, newServerIp);
+            localStorage.setItem(STORAGE_KEY_TOKEN, newAuthToken);
+
+            serverIp = newServerIp;
+            authToken = newAuthToken;
+
+            // Hentikan interval lama (jika ada)
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+                fetchInterval = null;
+            }
+
+            // Tampilkan dashboard dan sembunyikan panel config
+            document.getElementById('config-panel').classList.add('hidden');
+            document.getElementById('monitoring-dashboard').classList.remove('hidden');
+
+            // Mulai fetch pertama segera
+            updateDashboard();
+
+            // Atur interval fetch data
+            fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
+
+            showMessage(`Monitoring dimulai ke ${serverIp}. Memuat data...`, 'success');
+        }
+
+        /**
+         * Fungsi inisialisasi saat memuat halaman
+         */
+        function init() {
+            // Muat dari Local Storage
+            const savedIp = localStorage.getItem(STORAGE_KEY_IP);
+            const savedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+
+            if (savedIp) {
+                document.getElementById('server-ip').value = savedIp;
+                serverIp = savedIp;
+            }
+            if (savedToken) {
+                document.getElementById('auth-token').value = savedToken;
+                authToken = savedToken;
+            }
+
+            // Jika keduanya ada, langsung mulai monitoring
+            if (serverIp && authToken) {
+                saveAndFetchData();
+            } else {
+                 showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
+            }
+        }
+
+        // Jalankan inisialisasi saat DOM siap
+        window.onload = init;
+    </script>
+</body>
+</html>
