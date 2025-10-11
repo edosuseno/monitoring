@@ -123,7 +123,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain Blynk</label>
-                <input type="text" id="server-ip" placeholder="contoh: blynk.cloud atau 192.168.1.100:8080" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="blynk.cloud">
+                <input type="text" id="server-ip" placeholder="contoh: iot.serangkota.go.id:9443 atau 192.168.1.100:8080" class="w-full p-2.5 rounded-lg bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
             </div>
             <div>
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
@@ -736,7 +736,7 @@
             authToken = '';
             
             // 4. Reset input field
-            document.getElementById('server-ip').value = '';
+            document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             document.getElementById('auth-token').value = '';
             
             // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
@@ -777,6 +777,9 @@
             if (savedToken) {
                 document.getElementById('auth-token').value = savedToken;
                 authToken = savedToken;
+            } else {
+                 // Set default value if no saved token
+                document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             }
 
             // Atur jam
