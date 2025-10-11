@@ -713,10 +713,9 @@
                 <!-- ROW 1 | KANAN: Current -->
                 <div class="flex items-center space-x-2 p-1">
                     <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500"></i>
-                    <!-- PERBAIKAN: Gunakan Flexbox untuk meratakan kanan -->
-                    <div class="flex flex-col items-start w-full">
-                        <div class="text-gray-500 w-full text-right">Arus</div>
-                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white w-full text-right">${batt.current} A</div>
+                    <div>
+                        <div class="text-gray-500">Arus</div>
+                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.current} A</div>
                     </div>
                 </div>
 
@@ -732,10 +731,9 @@
                 <!-- ROW 2 | KANAN: Power (Daya) -->
                 <div class="flex items-center space-x-2 p-1">
                     <i data-lucide="power" class="lucide w-4 h-4 text-red-400"></i>
-                    <!-- PERBAIKAN: Gunakan Flexbox untuk meratakan kanan -->
-                    <div class="flex flex-col items-start w-full">
-                        <div class="text-gray-500 w-full text-right">Daya</div>
-                        <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white w-full text-right">${batt.power} W</div>
+                    <div>
+                        <div class="text-gray-500">Daya</div>
+                        <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.power} W</div>
                     </div>
                 </div>
                 
@@ -751,10 +749,9 @@
                 <!-- ROW 3 | KANAN: Max Cell -->
                 <div class="flex items-center space-x-2 p-1">
                     <i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500"></i>
-                    <!-- PERBAIKAN: Gunakan Flexbox untuk meratakan kanan -->
-                    <div class="flex flex-col items-start w-full">
-                        <div class="text-gray-500 w-full text-right">Sel Max</div>
-                        <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400 w-full text-right">${batt.cell_vmax} V</div>
+                    <div>
+                        <div class="text-gray-500">Sel Max</div>
+                        <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div>
                     </div>
                 </div>
                 
@@ -800,13 +797,12 @@
               
               // 🔹 Pembaruan Metrik Detail (Harus sinkron dengan HTML di atas)
               // Diurutkan sesuai permintaan: Voltage, Current, Diff, Power, Min, Max
-              // PERBAIKAN: Tambahkan innerHTML untuk merender struktur Flexbox di update
               safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`, true);
-              safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `<div class="text-gray-500 w-full text-right">Arus</div><div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white w-full text-right">${batt.current} A</div>`, true);
+              safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`, true);
               safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`, true); 
-              safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `<div class="text-gray-500 w-full text-right">Daya</div><div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white w-full text-right">${batt.power} W</div>`, true);       
+              safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`, true);       
               safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`, true);
-              safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `<div class="text-gray-500 w-full text-right">Sel Max</div><div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400 w-full text-right">${batt.cell_vmax} V</div>`, true); 
+              safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`, true); 
               
               const lastUpdateEl = card.querySelector(".last-update");
               if (lastUpdateEl) {
