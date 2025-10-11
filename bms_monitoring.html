@@ -204,14 +204,14 @@
             <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
         </div>
 
-        <!-- 3. Jam & ID Logger (Kanan) -->
+        <!-- 3. Jam & IP Logger (Kanan) -->
         <div class="flex flex-col items-end">
             <div id="time-display-desktop">
                 <p id="current-date-desktop" class="text-sm text-gray-400"></p>
                 <p id="current-time-desktop" class="text-2xl font-bold text-white"></p>
             </div>
             <div class="mt-1 text-xs text-gray-400">
-                ID: <span class="font-bold text-white" id="bms-logger-id-header-desktop"></span>
+                IP: <span class="font-bold text-white" id="bms-logger-ip-header-desktop">N/A</span>
             </div>
         </div>
     </div>
@@ -235,7 +235,6 @@
         </div>
 
         <!-- ROW 2: Tombol Kembali, Jam & ID (Di bawah Judul, Rata Samping) -->
-        <!-- Perbaikan: Menggunakan justify-between untuk memisahkan Tombol dan Waktu -->
         <div class="flex justify-between items-center w-full px-2">
             <!-- Tombol Kembali (Kiri) -->
             <button onclick="window.location.href='./aeproplts.html'" 
@@ -244,14 +243,14 @@
                 KEMBALI
             </button>
             
-            <!-- Jam & ID Logger (Kanan) -->
+            <!-- Jam & IP Logger (Kanan) -->
             <div class="flex flex-col items-end text-right">
                 <div id="time-display-mobile">
                     <p id="current-date-mobile" class="text-xs text-gray-400"></p>
                     <p id="current-time-mobile" class="text-lg font-bold text-white"></p>
                 </div>
                 <div class="mt-0.5 text-xs text-gray-400">
-                    ID: <span class="font-bold text-white" id="bms-logger-id-header-mobile"></span>
+                    IP: <span class="font-bold text-white" id="bms-logger-ip-header-mobile">N/A</span>
                 </div>
             </div>
         </div>
@@ -301,7 +300,7 @@
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
-            <p class="text-xs text-gray-500 mt-1">Status Charging/Discharging</p>
+            <p class="text-xs text-gray-500 mt-1">Charging/Discharging</p>
         </div>
           
         <!-- Tegangan Pack -->
@@ -338,7 +337,7 @@
 <footer class="bg-solar-dark text-gray-500 py-4 w-full">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
     <div class="text-sm">
-      © 2025 BMS Monitor System | ID Logger: <span class="font-bold text-white" id="bms-logger-id-footer"></span>
+      © 2025 BMS Monitor System | IP: <span class="font-bold text-white" id="bms-logger-ip-footer">N/A</span>
     </div>
   </div>
 </footer>
@@ -458,9 +457,9 @@
   </div>
 
   <script>
-    // Patenkan ID Logger
-    const BMS_LOGGER_ID = "316506218";
-    
+    // Konstan untuk BMS ID/Key (Digunakan untuk langganan topik MQTT)
+    const BMS_MQTT_TOPIC_KEY = "316506218"; // Tetap gunakan ini untuk subscribe MQTT
+
     let client;
     let batteries = [];
     
@@ -477,11 +476,6 @@
             // console.warn(`Element ID not found: ${id}`);
         }
     }
-
-    // Set ID Logger di header dan footer (Desktop dan Mobile)
-    safeUpdate("bms-logger-id-header-desktop", BMS_LOGGER_ID);
-    safeUpdate("bms-logger-id-header-mobile", BMS_LOGGER_ID);
-    safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
     
     // Fungsi untuk menampilkan Jam dan Tanggal (diambil dari Dasbor PLTS)
     function updateTime() {
@@ -508,25 +502,28 @@
       
       client.on("connect", () => {
         console.log("Connected to MQTT");
-        client.subscribe("sysMon/"+BMS_LOGGER_ID+"/AutoPoll/#");
-        client.subscribe("sysMon/"+BMS_LOGGER_ID+"/info/#");
+        client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/AutoPoll/#");
+        client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/info/#");
         
         // Update connection status
         updateConnectionStatus(true);
       });
 
       client.on("message", (topic, message) => {
-        if(topic == "sysMon/"+BMS_LOGGER_ID+"/info" ){
-          let a = message.toString().split(",");
+        
+        // --- LOGIC PERBAIKAN IP LOKAL ---
+        if(topic == "sysMon/"+BMS_MQTT_TOPIC_KEY+"/info" ){
+          // Pesan info (Contoh: "192.168.1.100,218")
+          let ip_address = message.toString().split(",")[0];
           
-          let batteryLink = document.getElementById("batteryConfigLink");
-          if (batteryLink) {
-            batteryLink.href = "http://" + a[0] + "/";
+          if (ip_address && ip_address !== 'N/A') {
+              safeUpdate("bms-logger-ip-header-desktop", ip_address);
+              safeUpdate("bms-logger-ip-header-mobile", ip_address);
+              safeUpdate("bms-logger-ip-footer", ip_address);
+              // Tambahkan log di sini untuk konfirmasi bahwa data IP diterima dan diperbarui
+              console.log(`[IP Update] IP Local Diterima: ${ip_address}`);
           }
-          let timerLink = document.getElementById("timerLink");
-          if (timerLink) {
-            timerLink.href = "http://" + a[0] + "/timer";
-          }
+
         } else {
           try {
             const raw = JSON.parse(message.toString());
@@ -682,7 +679,7 @@
             card.dataset.addr = String(batt.addr);
             
             // =========================================================================
-            // PERBAIKAN URUTAN PARAMETER DI CARD RINGKASAN (Sesuai Screenshot Terbaru)
+            // STRUKTUR KARTU RINGKASAN (Tampilan 3x2)
             // =========================================================================
             card.innerHTML = `
               <div class="flex items-center justify-between mb-3 border-b border-gray-700 pb-2">
@@ -767,7 +764,7 @@
               </div>
             `;
             // =========================================================================
-            // AKHIR PERBAIKAN URUTAN PARAMETER
+            // AKHIR STRUKTUR KARTU RINGKASAN
             // =========================================================================
 
             card.onclick = () => openModal(batt.addr);
@@ -965,10 +962,10 @@
 
     // Initialize on load
     window.onload = function() {
-      // Patenkan ID ditampilkan
-      safeUpdate("bms-logger-id-header-desktop", BMS_LOGGER_ID);
-      safeUpdate("bms-logger-id-header-mobile", BMS_LOGGER_ID);
-      safeUpdate("bms-logger-id-footer", BMS_LOGGER_ID);
+      // Pastikan IP disetel ke 'N/A' secara eksplisit sebelum data masuk
+      safeUpdate("bms-logger-ip-header-desktop", 'N/A');
+      safeUpdate("bms-logger-ip-header-mobile", 'N/A');
+      safeUpdate("bms-logger-ip-footer", 'N/A');
 
       startMQTT();
       
