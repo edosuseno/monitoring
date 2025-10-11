@@ -72,15 +72,34 @@
             </h1>
             <p class="text-gray-400 mt-1">Status dan Performa Sistem Pembangkit Listrik Tenaga Surya Anda.</p>
         </div>
-        <div class="mt-4 md:mt-0 text-right">
-            <p id="current-date" class="text-sm text-gray-400"></p>
-            <p id="current-time" class="text-3xl font-bold text-white"></p>
+        <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
+            <div class="hidden md:block">
+                <p id="current-date" class="text-sm text-gray-400"></p>
+                <p id="current-time" class="text-3xl font-bold text-white"></p>
+            </div>
+            <!-- Tombol Navigasi dan Logout di Desktop -->
+            <div class="flex space-x-3 items-center">
+                 <button onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+                    <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
+                    Detail Baterai
+                </button>
+                <button id="logout-button" onclick="logoutAndClear()" class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
+                    <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
+                    Hentikan
+                </button>
+            </div>
         </div>
-        <!-- Tombol Logout (Hanya terlihat saat monitoring aktif) -->
-        <button id="logout-button" onclick="logoutAndClear()" class="hidden absolute top-4 right-4 md:static bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
-            <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
-            Hentikan
-        </button>
+        <!-- Tombol Navigasi Mobile -->
+        <div class="md:hidden w-full flex space-x-3 mt-4">
+            <button onclick="window.location.href='./bms_monitoring.html'" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
+                Detail Baterai
+            </button>
+            <button id="logout-button-mobile" onclick="logoutAndClear()" class="hidden w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+                 <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
+                 Hentikan
+            </button>
+        </div>
     </header>
     
     <!-- Area Input Konfigurasi -->
@@ -112,7 +131,7 @@
 
         <!-- RINGKASAN UTAMA (4 Kartu Besar) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
             <!-- V14: DAYA AC (Daya Saat Ini) -->
             <div class="solar-card">
@@ -609,6 +628,7 @@
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
             const logoutButton = document.getElementById('logout-button');
+            const logoutButtonMobile = document.getElementById('logout-button-mobile');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
@@ -634,7 +654,10 @@
             // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
-            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout
+            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout Desktop
+            
+            if (logoutButtonMobile) logoutButtonMobile.classList.remove('hidden');
+
 
             // Mulai fetch pertama segera
             updateDashboard();
@@ -670,7 +693,11 @@
             // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
             document.getElementById('config-panel').classList.remove('hidden');
             document.getElementById('monitoring-dashboard').classList.add('hidden');
-            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout
+            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout Desktop
+            
+            const logoutButtonMobile = document.getElementById('logout-button-mobile');
+            if (logoutButtonMobile) logoutButtonMobile.classList.add('hidden');
+
 
             showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
         }
