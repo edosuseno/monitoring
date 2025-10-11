@@ -8,6 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat ikon Lucide untuk visualisasi data -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Memuat Chart.js untuk membuat grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- Memuat Plugin Chart.js untuk Pan and Zoom -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    
     <!-- Konfigurasi Tailwind -->
     <script>
         tailwind.config = {
@@ -20,7 +25,7 @@
                         
                         // SKEMA WARNA PROFESIONAL (FUNGSI)
                         'dc-color': '#BFFF00', // Hijau Lime Lembut (PV/DC)
-                        'ac-color': '#FFB900', // Kuning Emas Hangat (AC/Beban)
+                        'ac-color': '#FFB900', // Kuning Emas Hangat (AC-Beban)
                         'blue-bat': '#00FFFF', // Cyan Cerah (Baterai)
                         'green-400': '#00C853', // Hijau Cerah (Rupiah)
                         
@@ -29,6 +34,10 @@
                         'purple-med': '#8E44AD', 
                         'orange-red': '#E74C3C', 
                         'warning-red': '#EF4444', // Merah Peringatan Terang
+                        
+                        // Warna Chart.js
+                        'chart-pv': '#BFFF00',
+                        'chart-load': '#FFB900',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -57,11 +66,9 @@
         
         /* Kartu Utama: Efek Hitam Pekat */
         .solar-card {
-            /* PERUBAHAN UTAMA: Ganti Gradasi Ungu menjadi Hitam Pekat */
             background-color: #0C0C0C; /* Hitam Sangat Gelap */
             border-radius: 12px;
             padding: 1.5rem;
-            /* Shadow Halus agar terlihat mengambang di atas latar belakang #03030D */
             box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.6), 
                         -2px -2px 5px rgba(15, 15, 15, 0.1); 
             transition: all 0.3s ease;
@@ -73,7 +80,6 @@
         
         /* GAYA AERO GLASS UNTUK DETAIL ITEM */
         .detail-item {
-            /* Latar belakang semi-transparan yang menyatu dengan ungu gelap */
             background-color: rgba(255, 255, 255, 0.08); 
             border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(5px); 
@@ -122,7 +128,7 @@
             background-color: #1E293B;
         }
         
-        /* Gaya Nominal di Detail Item (Efek Neon Glow) */
+        /* Gaya Nominal di Detail Item (Efek Soft Glow) */
         .detail-item .nominal-color {
             font-weight: 800; 
             font-size: 1.3rem; 
@@ -141,6 +147,13 @@
         .text-white-nominal {
             color: #FFFFFF;
         }
+
+        /* Gaya Canvas */
+        #realtime-chart-container {
+            max-height: 400px; /* Membatasi tinggi grafik */
+            padding-bottom: 20px;
+        }
+
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8">
@@ -239,7 +252,6 @@
                     <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
                     <i data-lucide="zap" class="lucide w-6 h-6 text-ac-color"></i>
                 </div>
-                <!-- Perubahan: Nominal Daya AC di Ringkasan diubah menjadi PUTIH -->
                 <div class="summary-block">
                     <span id="v14-power" class="data-value summary-value text-white-nominal loading-animation">...</span>
                     <span id="v14-power-unit" class="summary-unit text-white-nominal"></span>
@@ -286,6 +298,23 @@
                 <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat.</p>
             </div>
         </div>
+        
+        
+        <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA (HISTORIS & PAN/ZOOM)</h2>
+        <div class="solar-card p-6">
+            <!-- Tombol Reset Zoom -->
+            <div class="flex justify-end mb-3">
+                <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
+                    Reset Zoom
+                </button>
+            </div>
+
+            <div id="realtime-chart-container" class="w-full">
+                <canvas id="realtime-power-chart"></canvas>
+            </div>
+        </div>
+
 
         <!-- DETAIL MONITORING (DC dan AC) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">DETAIL SISTEM</h2>
@@ -562,11 +591,53 @@
 
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
         const STORAGE_KEY_IP = 'blynk_server_ip';
+        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; // Kunci untuk menyimpan data chart
         const UPDATE_INTERVAL = 5000; // 5 detik
 
         let fetchInterval = null; // Untuk menyimpan ID interval
         let serverIp = '';
         let authToken = '';
+        
+        // Variabel Global untuk Chart
+        let energyChartInstance = null;
+        const MAX_DATA_POINTS = 90 * 24 * (3600 / 5); // Target 3 bulan (dibatasi di init agar tidak crash)
+        let realtimeData = {
+            labels: [],
+            pvPower: [],
+            acLoad: []
+        };
+        
+        /**
+         * Memuat data historis dari Local Storage saat inisialisasi.
+         */
+        function loadHistoricalData() {
+            const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    // Ambil maksimal 10000 poin data terakhir (agar browser tidak crash)
+                    const limit = 10000; 
+                    const startIndex = Math.max(0, parsedData.labels.length - limit);
+                    
+                    realtimeData.labels = parsedData.labels.slice(startIndex);
+                    realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
+                    realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
+
+                    console.log(`[CHART] Memuat ${realtimeData.labels.length} titik data historis.`);
+                } catch (e) {
+                    console.error("Gagal memuat data chart historis:", e);
+                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
+                }
+            }
+        }
+        
+        /**
+         * Menyimpan data historis ke Local Storage setiap kali ada update.
+         */
+        function saveHistoricalData() {
+            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(realtimeData));
+        }
+
 
         /**
          * Utility untuk membuat jeda (delay)
@@ -584,6 +655,24 @@
             
             document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', dateOptions);
             document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', timeOptions);
+        }
+
+        /**
+         * Menampilkan pesan notifikasi di bawah panel konfigurasi
+         * @param {string} message Pesan yang akan ditampilkan
+         * @param {string} type Tipe pesan ('success', 'error', 'warning')
+         */
+        function showMessage(message, type = 'warning') {
+            const msgBox = document.getElementById('message-box');
+            msgBox.textContent = message;
+            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-lg block'; // Added w-full for visibility
+            if (type === 'error') {
+                msgBox.classList.add('bg-red-900', 'text-red-300');
+            } else if (type === 'success') {
+                msgBox.classList.add('bg-green-900', 'text-green-300');
+            } else {
+                msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+            }
         }
         
         /**
@@ -618,34 +707,170 @@
             showModal(
                 'Anda akan diarahkan ke halaman "BMS Monitoring". Data real-time di halaman ini akan berhenti di latar belakang. Lanjutkan?', 
                 () => {
+                    saveHistoricalData(); // Simpan data chart sebelum pindah
                     window.location.href = './bms_monitoring.html';
                 }
             );
         }
 
-
         /**
-         * Menampilkan pesan notifikasi di bawah panel konfigurasi
-         * @param {string} message Pesan yang akan ditampilkan
-         * @param {string} type Tipe pesan ('success', 'error', 'warning')
+         * Merender grafik energi real-time dengan Pan & Zoom
          */
-        function showMessage(message, type = 'warning') {
-            const msgBox = document.getElementById('message-box');
-            msgBox.textContent = message;
-            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-lg block'; // Added w-full for visibility
-            if (type === 'error') {
-                msgBox.classList.add('bg-red-900', 'text-red-300');
-            } else if (type === 'success') {
-                msgBox.classList.add('bg-green-900', 'text-green-300');
-            } else {
-                msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+        function renderRealtimeChart() {
+            const ctx = document.getElementById('realtime-power-chart').getContext('2d');
+            
+            const dataConfig = {
+                labels: realtimeData.labels,
+                datasets: [
+                    {
+                        label: 'PV Power (W)',
+                        data: realtimeData.pvPower,
+                        backgroundColor: 'rgba(191, 255, 0, 0.4)', // Background Fill (Soft)
+                        borderColor: tailwind.config.theme.extend.colors['chart-pv'],
+                        borderWidth: 2,
+                        type: 'line',
+                        fill: 'origin', // Isi area di bawah garis
+                        tension: 0.2, // Kurva halus
+                        pointRadius: 0, // Sembunyikan titik
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'AC Load (W)',
+                        data: realtimeData.acLoad,
+                        backgroundColor: 'rgba(255, 185, 0, 0.4)', // Background Fill (Soft)
+                        borderColor: tailwind.config.theme.extend.colors['chart-load'],
+                        borderWidth: 2,
+                        type: 'line',
+                        fill: 'origin', // Isi area di bawah garis
+                        tension: 0.2, // Kurva halus
+                        pointRadius: 0, // Sembunyikan titik
+                        yAxisID: 'y'
+                    }
+                ]
+            };
+
+            // Hancurkan instance lama jika ada
+            if (energyChartInstance) {
+                energyChartInstance.destroy();
+            }
+
+            energyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: dataConfig,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false, 
+                    spanGaps: true, // Untuk mengatasi data yang hilang
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#FFFFFF',
+                                usePointStyle: true,
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Perbandingan Daya PV vs Beban AC (Data Historis)',
+                            color: '#FFFFFF'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItem) {
+                                    return tooltipItem[0].label; // Tampilkan Label Waktu
+                                }
+                            }
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x', // Hanya bisa geser secara horizontal
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true, // Aktifkan zoom dengan scroll/mouse wheel
+                                },
+                                pinch: {
+                                    enabled: true // Aktifkan zoom dengan cubit (touch screen)
+                                },
+                                mode: 'x', // Hanya zoom horizontal
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category', // Tetap sebagai kategori untuk data time string
+                            title: {
+                                display: true,
+                                text: 'Waktu',
+                                color: '#AAAAAA'
+                            },
+                            ticks: { 
+                                color: '#AAAAAA',
+                                autoSkip: true,
+                                maxRotation: 0
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Daya (Watt)',
+                                color: '#FFFFFF'
+                            },
+                            ticks: { 
+                                color: '#FFFFFF',
+                                callback: function(value) {
+                                    return value + ' W';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        /**
+         * Mereset pan dan zoom pada grafik
+         */
+        function resetChartZoom() {
+            if (energyChartInstance) {
+                energyChartInstance.resetZoom();
             }
         }
 
+
+        /**
+         * Memperbarui data chart historis (dan menyimpan ke Local Storage)
+         */
+        function updateRealtimeChartData(pvValue, acValue) {
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString('id-ID');
+
+            // Tambahkan data baru
+            realtimeData.labels.push(timeLabel);
+            realtimeData.pvPower.push(pvValue);
+            realtimeData.acLoad.push(acValue);
+
+            // Perbarui grafik jika instance sudah ada
+            if (energyChartInstance) {
+                energyChartInstance.update();
+            }
+            
+            // Simpan data ke Local Storage (dilakukan setiap update)
+            saveHistoricalData();
+        }
+
+
         /**
          * Mengambil nilai dari satu V-Pin dari server Blynk dengan Retry (Exponential Backoff)
-         * @param {string} pin Pin Virtual (misalnya 'V0')
-         * @returns {Promise<string>} Nilai dari V-Pin
+         * ... (FUNGSI FETCH TIDAK BERUBAH) ...
          */
         async function fetchPinValue(pin) {
             let host = serverIp;
@@ -701,9 +926,6 @@
 
         /**
          * Fungsi untuk memformat nilai berdasarkan kebutuhan pin
-         * @param {string} pin Pin Virtual (misalnya 'V18')
-         * @param {string} value Nilai mentah dari Blynk
-         * @returns {string} Nilai yang sudah diformat
          */
         function formatValue(pin, value) {
             const numericValue = parseFloat(value);
@@ -734,8 +956,6 @@
 
         /**
          * Fungsi pembantu untuk mendapatkan unit berdasarkan pin
-         * @param {string} pin 
-         * @returns {string} Satuan unit
          */
         function getUnit(pin) {
             if (pin === 'V0' || pin === 'V12') return ' V';
@@ -759,6 +979,10 @@
 
             let allSuccessful = true;
             const results = await Promise.allSettled(fetchPromises);
+            
+            let currentPvPower = 0; 
+            let currentAcLoad = 0; 
+
 
             results.forEach((result, index) => {
                 const pin = pins[index];
@@ -774,6 +998,13 @@
                 if (result.status === 'fulfilled') {
                     const rawValue = result.value || '0';
                     const formattedValue = formatValue(pin, rawValue);
+                    
+                    // --- Ambil data daya untuk Realtime Chart ---
+                    if (pin === 'V2') { 
+                        currentPvPower = parseFloat(rawValue) || 0;
+                    } else if (pin === 'V14') { 
+                        currentAcLoad = parseFloat(rawValue) || 0;
+                    }
                     
                     // 1. Tentukan konten teks
                     if (pin === 'V18' || pin === 'V19') {
@@ -795,44 +1026,37 @@
                     let iconColorClass = '';
 
                     // Tentukan kelas warna
-                    if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V10', 'V11'].includes(pin)) {
-                        // PV/DC/Energy/SunHour -> Hijau Lime Lembut (DC-Color)
+                    if (['V14'].includes(pin)) {
+                        nominalColorClass = 'text-white-nominal';
+                        iconColorClass = 'text-ac-color'; 
+                    } else if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V10', 'V11'].includes(pin)) {
                         nominalColorClass = 'text-dc-color'; 
                         iconColorClass = 'text-dc-color'; 
                     } else if (['V7', 'V9'].includes(pin)) {
-                         // Baterai (Normal) -> Cyan Cerah (Blue-Bat)
                          nominalColorClass = 'text-blue-bat';
                          iconColorClass = 'text-blue-bat';
-                    } else if (pin === 'V14') {
-                        // KASUS KHUSUS: DAYA AC (Ringkasan & Detail) -> PUTIH
-                        nominalColorClass = 'text-white-nominal';
-                        iconColorClass = 'text-ac-color'; 
                     } else if (['V12', 'V13', 'V15', 'V21'].includes(pin)) {
-                        // AC/Beban/Energi AC -> Kuning Emas Hangat (AC-Color)
                         nominalColorClass = 'text-ac-color';
                         iconColorClass = 'text-ac-color'; 
                     } else if (pin === 'V16') {
-                        // Frekuensi -> Pink/Magenta
                         nominalColorClass = 'text-pink-med';
                         iconColorClass = 'text-pink-med'; 
                     } else if (pin === 'V17') {
-                        // Power Factor -> Ungu
                         nominalColorClass = 'text-purple-med';
                         iconColorClass = 'text-purple-med';
                     } else if (pin === 'V19' || pin === 'V18') { 
-                        // Rupiah -> Hijau Cerah
                         nominalColorClass = 'text-green-400';
                         iconColorClass = 'text-green-400'; 
                     }
                     
                     // --- KASUS KHUSUS MERAH (PUNCAK/PERINGATAN) ---
-                    if (pin === 'V8') { // Baterai Low
+                    if (pin === 'V8') { 
                         nominalColorClass = 'text-warning-red';
                         iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V20' || pin === 'V6') { // Inverter Peak / PV Peak
+                    } else if (pin === 'V20' || pin === 'V6') { 
                          nominalColorClass = 'text-warning-red';
                          iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V0') { // BUS VOLTAGE -> PINK/MAGENTA (Karena ini berbeda dari V PV lainnya)
+                    } else if (pin === 'V0') { 
                         iconColorClass = 'text-pink-med';
                     }
                     
@@ -870,6 +1094,7 @@
                         }
                     }
 
+
                 } else {
                     allSuccessful = false;
                     element.textContent = 'N/A';
@@ -878,6 +1103,13 @@
                 }
             });
             
+            // Panggil Chart Realtime
+            if (!energyChartInstance) {
+                renderRealtimeChart();
+            }
+            updateRealtimeChartData(currentPvPower, currentAcLoad);
+
+
             if (allSuccessful) {
                 showMessage(`Data berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
             } else {
@@ -915,6 +1147,9 @@
                 fetchInterval = null;
             }
 
+            // Muat data historis sebelum mereset
+            loadHistoricalData();
+            
             // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
@@ -950,20 +1185,33 @@
                         clearInterval(fetchInterval);
                         fetchInterval = null;
                     }
+                    
+                    // 2. Hancurkan chart instance
+                    if (energyChartInstance) {
+                        energyChartInstance.destroy();
+                        energyChartInstance = null;
+                    }
+                    
+                    // 3. Hapus data historis (opsional, tapi disarankan saat logout total)
+                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
 
-                    // 2. Hapus data dari Local Storage
+
+                    // 4. Hapus data dari Local Storage
                     localStorage.removeItem(STORAGE_KEY_IP);
                     localStorage.removeItem(STORAGE_KEY_TOKEN);
                     
-                    // 3. Reset state global
+                    // 5. Reset state global
                     serverIp = '';
                     authToken = '';
+                    realtimeData.labels = [];
+                    realtimeData.pvPower = [];
+                    realtimeData.acLoad = [];
                     
-                    // 4. Reset input field
+                    // 6. Reset input field
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
                     document.getElementById('auth-token').value = '';
                     
-                    // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
+                    // 7. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
                     document.getElementById('config-panel').classList.remove('hidden');
                     document.getElementById('monitoring-dashboard').classList.add('hidden');
                     
@@ -1011,7 +1259,7 @@
 
             // Jika keduanya ada, langsung mulai monitoring
             if (serverIp && authToken) {
-                saveAndFetchData();
+                // Jangan panggil saveAndFetchData di init, panggil fungsi di dalam event listener onload
             } else {
                  showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
@@ -1021,7 +1269,14 @@
         }
 
         // Jalankan inisialisasi saat DOM siap
-        window.onload = init;
+        window.onload = function() {
+            init();
+            // Jika ada token tersimpan, muat data historis dan mulai fetching
+            if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
+                loadHistoricalData();
+                saveAndFetchData();
+            }
+        };
     </script>
 </body>
 </html>
