@@ -19,9 +19,10 @@
                         'solar-card': '#1E293B', // Biru gelap untuk kartu
                         'dc-color': '#FACC15', // Kuning untuk DC (Solar)
                         'ac-color': '#10B981', // Hijau untuk AC (Output)
-                        'status-ok': '#34D399', // Hijau muda untuk status OK
-                        'status-warning': '#FACC15', // Kuning untuk status warning
-                        'status-danger': '#F87171', // Merah untuk status bahaya
+                        'blue-bat': '#60A5FA', // Biru muda untuk Baterai
+                        'status-ok': '#34D399', 
+                        'status-warning': '#FACC15', 
+                        'status-danger': '#F87171', 
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -60,62 +61,71 @@
             justify-content: space-between;
             align-items: center;
         }
-        /* Memastikan nilai di Ringkasan tetap besar dan rapi */
+        /* Penyesuaian nilai di Ringkasan */
+        .summary-block {
+             /* Menggunakan flex dan items-baseline untuk menyamakan dasar teks */
+            display: flex;
+            align-items: baseline; 
+        }
         .summary-value {
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: 800; /* font-extrabold */
+            font-size: 2.25rem; 
+            font-weight: 800; 
+            line-height: 1; /* Pastikan tinggi baris seragam */
         }
         .summary-unit {
-            font-size: 1rem; /* text-base */
-            font-weight: 500; /* font-medium */
-            color: #9CA3AF; /* gray-400 */
-            margin-left: 0.25rem;
-            align-self: flex-end;
+            font-size: 1rem; 
+            font-weight: 500; 
+            margin-left: 0.35rem; /* Sedikit jarak dari angka */
+            line-height: 1;
+            /* Warna unit mengikuti warna angka di ringkasan */
         }
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8">
 
     <!-- Header & Status Jam -->
-    <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Monitoring PLTS
-            </h1>
-            <p class="text-gray-400 mt-1">Status dan Performa Sistem Pembangkit Listrik Tenaga Surya Anda.</p>
+    <header class="mb-6">
+        <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-start">
+             <!-- Konten Kiri (Judul) -->
+            <div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                    Monitoring PLTS
+                </h1>
+                <p class="text-gray-400 mt-1">Status dan Performa Sistem Pembangkit Listrik Tenaga Surya Anda.</p>
+            </div>
+             <!-- Konten Kanan (Jam) -->
+            <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
+                <div class="hidden md:block">
+                    <p id="current-date" class="text-sm text-gray-400"></p>
+                    <p id="current-time" class="text-3xl font-bold text-white"></p>
+                </div>
+                
+                <!-- Tombol Navigasi dan Logout di DESKTOP (HANYA terlihat di md: dan lebih besar) -->
+                <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
+                     <button id="bms-button-desktop" onclick="alert('Navigasi ke Detail Baterai')" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+                        <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
+                        Detail Baterai
+                    </button>
+                    <button id="logout-button" onclick="logoutAndClear()" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
+                        <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
+                        Hentikan
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
-            <div class="hidden md:block">
-                <p id="current-date" class="text-sm text-gray-400"></p>
-                <p id="current-time" class="text-3xl font-bold text-white"></p>
-            </div>
-            
-            <!-- Tombol Navigasi dan Logout di DESKTOP (HANYA terlihat di md: dan lebih besar) -->
-            <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
-                 <button id="bms-button-desktop" onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
-                    <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
-                    Detail Baterai
-                </button>
-                <button id="logout-button" onclick="logoutAndClear()" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
-                    <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
-                    Hentikan
-                </button>
-            </div>
+        
+        <!-- Tombol Navigasi MOBILE (HANYA terlihat di bawah md: breakpoint) -->
+        <div id="mobile-buttons" class="hidden md:hidden w-full flex justify-between space-x-3 mb-6 mt-4">
+            <button id="bms-button-mobile" onclick="alert('Navigasi ke Detail Baterai')" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
+                Detail Baterai
+            </button>
+            <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+                 <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
+                 Hentikan
+            </button>
         </div>
     </header>
-    
-    <!-- Tombol Navigasi MOBILE (HANYA terlihat di bawah md: breakpoint) -->
-    <!-- Elemen ini dipindahkan keluar dari header utama agar tidak mengganggu layout jam -->
-    <div id="mobile-buttons" class="hidden sm:flex md:hidden w-full space-x-3 mb-6">
-        <button id="bms-button-mobile" onclick="window.location.href='./bms_monitoring.html'" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
-            <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
-            Detail Baterai
-        </button>
-        <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
-             <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
-             Hentikan
-        </button>
-    </div>
 
     <!-- Area Input Konfigurasi -->
     <div id="config-panel" class="bg-gray-800 p-6 rounded-xl shadow-xl mb-8">
@@ -148,52 +158,52 @@
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA</h2>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
-            <!-- V14: DAYA AC (Daya Saat Ini) -->
+            <!-- V14: DAYA AC (Daya Saat Ini) - AC Output -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
                     <i data-lucide="zap" class="lucide w-6 h-6 text-ac-color"></i>
                 </div>
-                <div class="flex items-baseline">
+                <div class="summary-block">
                     <span id="v14-power" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v14-power-unit" class="summary-unit"></span>
+                    <span id="v14-power-unit" class="summary-unit text-white"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Daya yang sedang digunakan.</p>
             </div>
             
-            <!-- V21: kWh Today AC (Beban Hari Ini) -->
+            <!-- V21: kWh Today AC (Beban Hari Ini) - AC Output -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
                     <i data-lucide="power-square" class="lucide w-6 h-6 text-ac-color"></i>
                 </div>
-                <div class="flex items-baseline">
+                <div class="summary-block">
                     <span id="v21-kwh-today-ac" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v21-kwh-today-ac-unit" class="summary-unit"></span>
+                    <span id="v21-kwh-today-ac-unit" class="summary-unit text-white"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
             </div>
 
-             <!-- V10: Energi DC (PV) Hari Ini -->
+             <!-- V10: Energi DC (PV) Hari Ini - DC Production -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
                     <i data-lucide="sun" class="lucide w-6 h-6 text-dc-color"></i>
                 </div>
-                <div class="flex items-baseline">
-                    <span id="v10-kwh-today" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v10-kwh-today-unit" class="summary-unit"></span>
+                <div class="summary-block">
+                    <span id="v10-kwh-today" class="data-value summary-value text-dc-color loading-animation">...</span>
+                    <span id="v10-kwh-today-unit" class="summary-unit text-dc-color"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini (kWh).</p>
             </div>
 
-            <!-- V19: PENGHEMATAN HARI INI (Rupiah) -->
+            <!-- V19: PENGHEMATAN HARI INI (Rupiah) - Finance -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
                     <i data-lucide="wallet" class="lucide w-6 h-6 text-green-400"></i>
                 </div>
-                <div class="flex items-baseline">
+                <div class="summary-block">
                     <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
                     <span id="v19-rupiah-day" class="data-value summary-value text-green-400 loading-animation">...</span>
                 </div>
@@ -218,9 +228,9 @@
                              <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TEGANGAN PV
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v0-pzem-voltage" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v0-pzem-voltage-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v0-pzem-voltage" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v0-pzem-voltage-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V1: Current DC -->
@@ -229,9 +239,9 @@
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             ARUS PV
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v1-pzem-current" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v1-pzem-current-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v1-pzem-current" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v1-pzem-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V2: Power DC -->
@@ -240,9 +250,9 @@
                             <i data-lucide="zap" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             DAYA PV
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v2-pzem-power" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v2-pzem-power-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v2-pzem-power" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v2-pzem-power-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V6: PV Peak -->
@@ -251,9 +261,9 @@
                             <i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             PV PEAK
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v6-pv-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v6-pv-peak-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v6-pv-peak" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v6-pv-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V5: PV Persen -->
@@ -262,9 +272,9 @@
                             <i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             PERSEN DAYA PV
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v5-pv-persen" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v5-pv-persen-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v5-pv-persen" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v5-pv-persen-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                 </div>
@@ -280,67 +290,67 @@
                     <!-- V7: Baterai Peak -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="battery-full" class="lucide w-4 h-4 mr-3 text-blue-400"></i>
+                            <i data-lucide="battery-full" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI PEAK
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v7-batere-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v7-batere-peak-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-blue-bat">
+                            <span id="v7-batere-peak" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v7-batere-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V8: Baterai Low -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-blue-400"></i>
+                            <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI LOW
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v8-batere-low" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v8-batere-low-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-blue-bat">
+                            <span id="v8-batere-low" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v8-batere-low-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V9: Baterai AH -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-3 text-blue-400"></i>
+                            <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI AH
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v9-batere-ah" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v9-batere-ah-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-blue-bat">
+                            <span id="v9-batere-ah" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v9-batere-ah-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V4: SunHour -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-yellow-400"></i>
+                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             MATAHARI EFEKTIF
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v4-sunhour" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v4-sunhour-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v4-sunhour" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v4-sunhour-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V3: Total Energy DC -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="gauge" class="lucide w-4 h-4 mr-3 text-yellow-400"></i>
+                            <i data-lucide="gauge" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TOTAL ENERGY DC
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v3-pzem-energy" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v3-pzem-energy-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v3-pzem-energy" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v3-pzem-energy-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V11: Total PV (Total Lifetime Energy) -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-yellow-400"></i>
+                            <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             LIFETIME ENERGY PV
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v11-total-pv" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v11-total-pv-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-dc-color">
+                            <span id="v11-total-pv" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v11-total-pv-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                 </div>
@@ -359,9 +369,9 @@
                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TEGANGAN AC 
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v12-voltage" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v12-voltage-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v12-voltage" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v12-voltage-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V13: Current AC -->
@@ -370,9 +380,9 @@
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             ARUS AC
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v13-current" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v13-current-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v13-current" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v13-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V15: Energy AC -->
@@ -381,9 +391,9 @@
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TOTAL ENERGY AC
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v15-energy" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v15-energy-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v15-energy" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v15-energy-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V16: Frequency -->
@@ -392,31 +402,31 @@
                             <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             FREQUENSI
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v16-frequency" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v16-frequency-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v16-frequency" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v16-frequency-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V20: Inverter Peak -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-purple-400"></i>
+                            <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-white"></i>
                             INVERTER PEAK
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v20-inverter-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v20-inverter-peak-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v20-inverter-peak" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v20-inverter-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V17: Power Factor -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-purple-400"></i>
+                            <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-white"></i>
                             FAKTOR DAYA
                         </div>
-                        <div class="flex items-baseline">
-                            <span id="v17-pf" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span id="v17-pf-unit" class="text-base text-gray-500 ml-1"></span>
+                        <div class="flex items-baseline text-white">
+                            <span id="v17-pf" class="data-value text-xl font-bold loading-animation">...</span>
+                            <span id="v17-pf-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                     <!-- V18: Rupiah Total -->
@@ -587,7 +597,6 @@
             if (isNaN(numericValue)) return 'N/A';
 
             // Pin yang harus diformat sebagai Bilangan Bulat (tanpa desimal)
-            // Pin: V11, V6, V14, V12, V16, V15, V20 (Semua yang diminta tanpa koma)
             const integerPins = ['V11', 'V6', 'V14', 'V12', 'V16', 'V15', 'V20'];
 
             // Pin yang harus diformat sebagai Rupiah (Tanpa desimal)
@@ -642,8 +651,8 @@
                 const pin = pins[index];
                 const elementId = PIN_MAPPINGS[pin];
                 const element = document.getElementById(elementId);
-                const unitElement = document.getElementById(`${elementId}-unit`); // Elemen unit di HTML
-                const unit = getUnit(pin); // Unit dari JS
+                const unitElement = document.getElementById(`${elementId}-unit`); 
+                const unit = getUnit(pin); 
 
                 if (!element) return; 
 
@@ -656,7 +665,7 @@
                     if (pin === 'V18' || pin === 'V19') {
                         // Rupiah: Nilai di elemen utama, 'Rp' terpisah di HTML
                         element.textContent = formattedValue;
-                        if (unitElement) unitElement.textContent = ''; // Pastikan unit di footer rupiah kosong
+                        if (unitElement) unitElement.textContent = ''; 
                     } else {
                         // Non-Rupiah: Nilai di elemen utama, Unit di elemen Unit
                         element.textContent = formattedValue;
@@ -718,14 +727,13 @@
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
             
-            // Tampilkan tombol header yang sesuai dengan layar saat ini
-            desktopButtons.classList.add('hidden'); // Sembunyikan desktop buttons secara default
-            mobileButtons.classList.add('hidden');  // Sembunyikan mobile buttons secara default
-
-            if (window.innerWidth >= 768) { // Cek lebar layar (md: breakpoint)
+            // Tentukan tombol mana yang harus ditampilkan
+            if (window.innerWidth >= 768) { 
                 desktopButtons.classList.remove('hidden');
+                mobileButtons.classList.add('hidden');
             } else {
                 mobileButtons.classList.remove('hidden');
+                desktopButtons.classList.add('hidden');
             }
 
             // Mulai fetch pertama segera
@@ -810,7 +818,7 @@
                  showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
             
-            // Ensure icons are created for the newly visible elements (like the logout button)
+            // Re-render icons
             lucide.createIcons();
         }
 
