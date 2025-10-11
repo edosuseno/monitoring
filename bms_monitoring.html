@@ -21,6 +21,8 @@
       --solar-dark: #0F172A;
       --solar-card: #1E293B;
       --blue-bat: #60A5FA; /* Biru muda Baterai */
+      --red-cell: #F87171;
+      --green-cell: #34D399;
     }
      .led {
       display: inline-block;
@@ -132,44 +134,70 @@
         background-color: #581c87; /* Purple-900 */
         border-bottom: 5px solid #a855f7; /* Purple-500 */
     }
+
+    /* Gaya Card Detail Sesuai Screenshot */
+    .detail-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #334155; /* Abu-abu gelap */
+    }
+    .detail-metric:last-child {
+        border-bottom: none;
+    }
+    .detail-icon {
+        margin-right: 0.75rem;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    .cell-box-style {
+        border-left: 4px solid var(--warning); /* Default: Kuning */
+        background-color: #1E293B; /* Warna card */
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
 <!-- Header (Disesuaikan agar lebih simple dan fokus) -->
 <header id="mainHeader" class="text-white w-full p-4 sm:p-6 mb-4">
-  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center">
     
-    <!-- Tombol Kembali (Biru dan Elegan) -->
+    <!-- Tombol Kembali (Biru dan Elegan, Hanya Teks "KEMBALI") -->
     <button onclick="window.location.href='./blynk_solar_dashboard.html'" 
             class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center mb-4 md:mb-0 text-sm">
         <i data-lucide="arrow-left" class="lucide w-4 h-4 mr-2"></i>
-        Kembali ke Dasbor PLTS
+        KEMBALI
     </button>
 
-    <!-- Judul dan Deskripsi -->
-    <div class="flex items-center w-full justify-between md:w-auto mt-2 md:mt-0">
-      <div class="flex items-center">
-         <div class="p-2 rounded-lg mr-3">
-            <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
-         </div>
-         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-bat tracking-tight">
-                BMS MONITORING
-            </h1>
-            <p class="text-gray-400 mt-0.5 text-sm hidden sm:block">Detail Tegangan Sel dan Kesehatan Baterai.</p>
-         </div>
-      </div>
-      
-      <!-- Bagian Kanan: Jam & ID Logger (Desktop & Mobile) -->
-      <div class="flex flex-col items-end">
-        <div id="time-display">
-          <p id="current-date" class="text-sm text-gray-400"></p>
-          <p id="current-time" class="text-2xl font-bold text-white"></p>
+    <!-- Judul, Deskripsi, Jam/ID Container -->
+    <div class="flex flex-col w-full md:flex-row md:justify-end md:items-center mt-2 md:mt-0">
+        
+        <!-- Judul Kiri & Deskripsi -->
+        <div class="flex items-start md:items-center mr-4 w-full md:w-auto">
+            <div class="flex items-center">
+                <div class="p-2 rounded-lg mr-3">
+                    <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-bat tracking-tight">
+                        BMS MONITORING
+                    </h1>
+                    <!-- Deskripsi kini selalu terlihat di mobile -->
+                    <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
+                </div>
+            </div>
         </div>
-        <div class="mt-1 text-xs text-gray-400">
-          ID: <span class="font-bold text-white" id="bms-logger-id-header"></span>
+
+        <!-- Bagian Kanan: Jam & ID Logger -->
+        <div class="flex flex-col items-end mt-4 md:mt-0">
+            <div id="time-display">
+                <p id="current-date" class="text-sm text-gray-400"></p>
+                <p id="current-time" class="text-2xl font-bold text-white"></p>
+            </div>
+            <div class="mt-1 text-xs text-gray-400">
+                ID: <span class="font-bold text-white" id="bms-logger-id-header"></span>
+            </div>
         </div>
-      </div>
     </div>
   </div>
 </header>
@@ -178,7 +206,7 @@
   <main class="flex-1 p-4 sm:p-6 w-full">
     <div class="max-w-7xl mx-auto">
       
-      <!-- RINGKASAN SOH/SOC (Lebih Sederhana) -->
+      <!-- RINGKASAN SOH/SOC (Sederhana di Luar Modal) -->
       <h2 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           
@@ -298,59 +326,64 @@
           </div>
         </div>
         
-        <!-- 2 Kolom Detail -->
+        <!-- 2 Kolom Detail (Mengikuti gaya card yang di-upload) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <!-- Left: Voltage Metrics -->
-          <div class="space-y-4">
-            <div class="bg-gray-800 p-4 rounded-lg">
-              <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+          <div class="bg-gray-800 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-300 mb-3 flex items-center">
                 <i data-lucide="zap" class="lucide w-4 h-4 text-yellow-500 mr-2"></i> Metrik Tegangan
-              </h3>
-              <div class="space-y-3 text-sm">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Tegangan Pack</span>
-                  <span class="font-semibold text-white" id="modalVoltage">N/A</span>
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Pack</span>
+                    <span class="font-semibold text-white" id="modalVoltage">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Tegangan Bus</span>
-                  <span class="font-semibold text-white" id="modalBusVoltage">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Bus</span>
+                    <span class="font-semibold text-white" id="modalBusVoltage">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Tegangan Sel Min</span>
-                  <span class="font-semibold text-white" id="modalcellmin">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Sel Min</span>
+                    <span class="font-semibold text-white" id="modalcellmin">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Tegangan Sel Max</span>
-                  <span class="font-semibold text-white" id="modalcellmax">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Tegangan Sel Max</span>
+                    <span class="font-semibold text-white" id="modalcellmax">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Perbedaan Tegangan</span>
-                  <span class="font-semibold text-white" id="modalcelldif">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Perbedaan Tegangan</span>
+                    <span class="font-semibold text-white" id="modalcelldif">N/A</span>
                 </div>
-              </div>
             </div>
           </div>
 
           <!-- Right: Current & Power Metrics --> 
-          <div class="space-y-4">
-            <div class="bg-gray-800 p-4 rounded-lg">
-              <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+          <div class="bg-gray-800 p-4 rounded-lg">
+            <h3 class="font-medium text-gray-300 mb-3 flex items-center">
                 <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500 mr-2"></i> Metrik Arus & Daya
-              </h3>
-              <div class="space-y-3 text-sm">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Arus Pack</span>
-                  <span class="font-semibold text-white" id="modalCurrent">N/A</span>
+            </h3>
+            <div class="space-y-3 text-sm">
+                <div class="detail-metric">
+                    <span class="text-gray-400">Arus Pack</span>
+                    <span class="font-semibold text-white" id="modalCurrent">N/A</span>
                 </div>
-                 <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Daya (Power)</span>
-                  <span class="font-semibold text-white" id="modalPower">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Daya (Power)</span>
+                    <span class="font-semibold text-white" id="modalPower">N/A</span>
                 </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-400">Status Temp</span>
-                  <span class="font-semibold text-white" id="modalTemp">N/A</span>
+                <div class="detail-metric">
+                    <span class="text-gray-400">Status Temp</span>
+                    <span class="font-semibold text-white" id="modalTemp">N/A</span>
                 </div>
-              </div>
+                <!-- Tambahan agar sejajar -->
+                 <div class="detail-metric opacity-0">
+                    <span class="text-gray-400">_</span>
+                    <span class="font-semibold text-white">_</span>
+                </div>
+                 <div class="detail-metric opacity-0">
+                    <span class="text-gray-400">_</span>
+                    <span class="font-semibold text-white">_</span>
+                </div>
             </div>
           </div>
         </div>
@@ -719,12 +752,14 @@
       // 2. Update Metrik Tegangan
       safeUpdate("modalVoltage", batt.voltage !== 'N/A' ? `${batt.voltage} V` : 'N/A');
       safeUpdate("modalBusVoltage", batt.busVoltage !== 'N/A' ? `${batt.busVoltage} V` : 'N/A');
-      safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
+      // Max Cell - ID: modalcellmax
       safeUpdate("modalcellmax", batt.cell_vmax !== 'N/A' ? `${batt.cell_vmax} V` : 'N/A');
+      safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
       safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
       
       // 3. Update Metrik Arus & Daya
       safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
+      // Daya (Power) - ID: modalPower
       safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
       safeUpdate("modalTemp", batt.tempStatus); // Placeholder
       
