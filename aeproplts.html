@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Memuat Chart.js untuk membuat grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <!-- Memuat Plugin Chart.js untuk Pan and Zoom -->
+    <!-- Memuat Plugin Chart.js untuk Pan dan Zoom -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     
     <!-- Konfigurasi Tailwind -->
@@ -313,10 +313,13 @@
         
         
         <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA (HISTORIS & PAN/ZOOM)</h2>
         <div class="solar-card p-6">
             <!-- Tombol Full Layar & Reset Zoom -->
             <div class="flex justify-end space-x-3 mb-3">
+                <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
+                    Reset Zoom
+                </button>
                 <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1">
                     <i id="fullscreen-icon" data-lucide="maximize" class="lucide w-4 h-4"></i>
                     <span id="fullscreen-text">Full Layar</span>
@@ -570,6 +573,8 @@
 
     <!-- Script Fungsionalitas -->
     <script>
+        // ... (Fungsionalitas JavaScript)
+        
         // Mengubah semua ikon Lucide menjadi SVG
         lucide.createIcons();
 
@@ -614,7 +619,7 @@
         // Variabel Global untuk Chart
         let energyChartInstance = null;
         const MAX_DATA_POINTS = 90 * 24 * (3600 / 5); // Target 3 bulan (dibatasi di init agar tidak crash)
-        let realtimeData = {
+        window.realtimeData = { // FIX: Dideklarasikan di window
             labels: [],
             pvPower: [],
             acLoad: []
@@ -632,11 +637,11 @@
                     const limit = 10000; 
                     const startIndex = Math.max(0, parsedData.labels.length - limit);
                     
-                    realtimeData.labels = parsedData.labels.slice(startIndex);
-                    realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
-                    realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
+                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
+                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
+                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
 
-                    console.log(`[CHART] Memuat ${realtimeData.labels.length} titik data historis.`);
+                    console.log(`[CHART] Memuat ${window.realtimeData.labels.length} titik data historis.`);
                 } catch (e) {
                     console.error("Gagal memuat data chart historis:", e);
                     localStorage.removeItem(STORAGE_KEY_CHART_DATA);
@@ -648,7 +653,7 @@
          * Menyimpan data historis ke Local Storage setiap kali ada update.
          */
         function saveHistoricalData() {
-            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(realtimeData));
+            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
         }
 
 
@@ -733,11 +738,11 @@
             const ctx = document.getElementById('realtime-power-chart').getContext('2d');
             
             const dataConfig = {
-                labels: realtimeData.labels,
+                labels: window.realtimeData.labels,
                 datasets: [
                     {
                         label: 'PV Power (W)',
-                        data: realtimeData.pvPower,
+                        data: window.realtimeData.pvPower,
                         backgroundColor: 'rgba(191, 255, 0, 0.4)', // Background Fill (Soft)
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderWidth: 2,
@@ -749,7 +754,7 @@
                     },
                     {
                         label: 'AC Load (W)',
-                        data: realtimeData.acLoad,
+                        data: window.realtimeData.acLoad,
                         backgroundColor: 'rgba(255, 185, 0, 0.4)', // Background Fill (Soft)
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderWidth: 2,
@@ -901,9 +906,9 @@
             const timeLabel = now.toLocaleTimeString('id-ID');
 
             // Tambahkan data baru
-            realtimeData.labels.push(timeLabel);
-            realtimeData.pvPower.push(pvValue);
-            realtimeData.acLoad.push(acValue);
+            window.realtimeData.labels.push(timeLabel);
+            window.realtimeData.pvPower.push(pvValue);
+            window.realtimeData.acLoad.push(acValue); // FIX: menggunakan parameter acValue
 
             // Perbarui grafik jika instance sudah ada
             if (energyChartInstance) {
@@ -1250,9 +1255,9 @@
                     // 5. Reset state global
                     serverIp = '';
                     authToken = '';
-                    realtimeData.labels = [];
-                    realtimeData.pvPower = [];
-                    realtimeData.acLoad = [];
+                    window.realtimeData.labels = [];
+                    window.realtimeData.pvPower = [];
+                    window.realtimeData.acLoad = [];
                     
                     // 6. Reset input field
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
@@ -1327,4 +1332,3 @@
     </script>
 </body>
 </html>
-
