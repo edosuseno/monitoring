@@ -21,6 +21,7 @@
                         'ac-color': '#10B981', // Hijau untuk AC (Output)
                         'status-ok': '#34D399', // Hijau muda untuk status OK
                         'status-warning': '#FACC15', // Kuning untuk status warning
+                        'status-danger': '#F87171', // Merah untuk status bahaya
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -50,6 +51,14 @@
             border-radius: 12px;
             padding: 1.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .detail-item {
+            background-color: #0F172A; /* Kotak hitam di dalam kartu detail */
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
@@ -141,97 +150,139 @@
 
         <!-- DETAIL MONITORING (DC dan AC) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">DETAIL SISTEM</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Kolom Kiri: Monitoring DC (Panel Surya & Baterai) -->
-            <div>
-                <div class="bg-solar-card p-6 rounded-xl mb-4">
-                    <h3 class="text-xl font-semibold text-dc-color mb-4 flex items-center">
-                        <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2"></i>
-                        PANEL SURYA (DC)
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- V0: Voltage DC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="volt" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">TEGANGAN PV</p>
+            <!-- Kolom 1: Panel Surya (DC) -->
+            <div class="solar-card">
+                <h3 class="text-xl font-semibold text-dc-color mb-4 flex items-center border-b border-gray-700 pb-2">
+                    <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2"></i>
+                    PANEL SURYA (DC)
+                </h3>
+                <div class="space-y-3">
+                    <!-- V0: Voltage DC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="volt" class="lucide w-4 h-4 mr-1 text-dc-color"></i>
+                                TEGANGAN PV
+                            </p>
                             <span id="v0-pzem-voltage" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">V</span>
                         </div>
-                        <!-- V1: Current DC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="activity" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">ARUS PV</p>
+                    </div>
+                    <!-- V1: Current DC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="activity" class="lucide w-4 h-4 mr-1 text-dc-color"></i>
+                                ARUS PV
+                            </p>
                             <span id="v1-pzem-current" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">A</span>
                         </div>
-                        <!-- V2: Power DC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="zap" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">DAYA PV</p>
+                    </div>
+                    <!-- V2: Power DC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="zap" class="lucide w-4 h-4 mr-1 text-dc-color"></i>
+                                DAYA PV
+                            </p>
                             <span id="v2-pzem-power" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">W</span>
                         </div>
-                        <!-- V6: PV Peak -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="mountain" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">PV PEAK</p>
+                    </div>
+                    <!-- V6: PV Peak -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="mountain" class="lucide w-4 h-4 mr-1 text-dc-color"></i>
+                                PV PEAK
+                            </p>
                             <span id="v6-pv-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">W</span>
                         </div>
-                        <!-- V4: SunHour -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="clock" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">MATAHARI EFEKTIF</p>
-                            <span id="v4-sunhour" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span class="text-xs text-gray-500">jam</span>
-                        </div>
-                        <!-- V5: PV Persen -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="percent" class="lucide w-5 h-5 mb-1 text-dc-color"></i>
-                            <p class="text-xs font-medium text-gray-400">DAYA PV</p>
+                    </div>
+                    <!-- V5: PV Persen -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="percent" class="lucide w-4 h-4 mr-1 text-dc-color"></i>
+                                PERSEN DAYA PV
+                            </p>
                             <span id="v5-pv-persen" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">%</span>
                         </div>
                     </div>
                 </div>
-                
-                <!-- BATERAI & TOTAL ENERGI -->
-                <div class="bg-solar-card p-6 rounded-xl">
-                    <h3 class="text-xl font-semibold text-blue-400 mb-4 flex items-center">
-                        <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
-                        BATERAI & TOTAL ENERGI
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- V7: Baterai Peak -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="battery-full" class="lucide w-5 h-5 mb-1 text-blue-400"></i>
-                            <p class="text-xs font-medium text-gray-400">BATERAI PEAK</p>
+            </div>
+            
+            <!-- Kolom 2: Baterai & Total Energi -->
+            <div class="solar-card">
+                <h3 class="text-xl font-semibold text-blue-400 mb-4 flex items-center border-b border-gray-700 pb-2">
+                    <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
+                    BATERAI & ENERGY
+                </h3>
+                <div class="space-y-3">
+                    <!-- V7: Baterai Peak -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="battery-full" class="lucide w-4 h-4 mr-1 text-blue-400"></i>
+                                BATERAI PEAK
+                            </p>
                             <span id="v7-batere-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
                         </div>
-                        <!-- V8: Baterai Low -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="battery-low" class="lucide w-5 h-5 mb-1 text-blue-400"></i>
-                            <p class="text-xs font-medium text-gray-400">BATERAI LOW</p>
+                    </div>
+                    <!-- V8: Baterai Low -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="battery-low" class="lucide w-4 h-4 mr-1 text-blue-400"></i>
+                                BATERAI LOW
+                            </p>
                             <span id="v8-batere-low" class="data-value text-xl font-bold text-white loading-animation">...</span>
                         </div>
-                        <!-- V9: Baterai AH -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="battery-medium" class="lucide w-5 h-5 mb-1 text-blue-400"></i>
-                            <p class="text-xs font-medium text-gray-400">BATERAI AH</p>
+                    </div>
+                    <!-- V9: Baterai AH -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-1 text-blue-400"></i>
+                                BATERAI AH
+                            </p>
                             <span id="v9-batere-ah" class="data-value text-xl font-bold text-white loading-animation">...</span>
                         </div>
-                        <!-- V3: Total Energy DC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="gauge" class="lucide w-5 h-5 mb-1 text-yellow-400"></i>
-                            <p class="text-xs font-medium text-gray-400">TOTAL ENERGY DC</p>
+                    </div>
+                    <!-- V4: SunHour -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="clock" class="lucide w-4 h-4 mr-1 text-yellow-400"></i>
+                                MATAHARI EFEKTIF
+                            </p>
+                            <span id="v4-sunhour" class="data-value text-xl font-bold text-white loading-animation">...</span>
+                            <span class="text-xs text-gray-500">jam</span>
+                        </div>
+                    </div>
+                    <!-- V3: Total Energy DC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="gauge" class="lucide w-4 h-4 mr-1 text-yellow-400"></i>
+                                TOTAL ENERGY DC
+                            </p>
                             <span id="v3-pzem-energy" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">kWh</span>
                         </div>
-                        <!-- V11: Total PV (Total Lifetime Energy) -->
-                        <div class="bg-gray-800 p-3 rounded-lg col-span-2">
-                             <i data-lucide="layers-3" class="lucide w-5 h-5 mb-1 text-yellow-400"></i>
-                            <p class="text-xs font-medium text-gray-400">TOTAL LIFETIME ENERGY PV</p>
+                    </div>
+                    <!-- V11: Total PV (Total Lifetime Energy) -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="layers-3" class="lucide w-4 h-4 mr-1 text-yellow-400"></i>
+                                LIFETIME ENERGY PV
+                            </p>
                             <span id="v11-total-pv" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">kWh</span>
                         </div>
@@ -239,68 +290,73 @@
                 </div>
             </div>
 
-            <!-- Kolom Kanan: Monitoring AC (Beban & Penghematan) -->
-            <div>
-                <div class="bg-solar-card p-6 rounded-xl mb-4">
-                    <h3 class="text-xl font-semibold text-ac-color mb-4 flex items-center">
-                        <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2"></i>
-                        BEBAN & JARINGAN (AC)
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- V12: Voltage AC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="volt" class="lucide w-5 h-5 mb-1 text-ac-color"></i>
-                            <p class="text-xs font-medium text-gray-400">TEGANGAN AC </p>
+            <!-- Kolom 3: Beban & Biaya (AC) -->
+            <div class="solar-card">
+                <h3 class="text-xl font-semibold text-ac-color mb-4 flex items-center border-b border-gray-700 pb-2">
+                    <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2"></i>
+                    BEBAN & BIAYA (AC)
+                </h3>
+                <div class="space-y-3">
+                    <!-- V12: Voltage AC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="volt" class="lucide w-4 h-4 mr-1 text-ac-color"></i>
+                                TEGANGAN AC 
+                            </p>
                             <span id="v12-voltage" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">V</span>
                         </div>
-                        <!-- V13: Current AC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="activity" class="lucide w-5 h-5 mb-1 text-ac-color"></i>
-                            <p class="text-xs font-medium text-gray-400">ARUS AC</p>
+                    </div>
+                    <!-- V13: Current AC -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="activity" class="lucide w-4 h-4 mr-1 text-ac-color"></i>
+                                ARUS AC
+                            </p>
                             <span id="v13-current" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">A</span>
                         </div>
-                        <!-- V15: Energy AC -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="layers-3" class="lucide w-5 h-5 mb-1 text-ac-color"></i>
-                            <p class="text-xs font-medium text-gray-400">TOTAL ENERGY AC</p>
-                            <span id="v15-energy" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                            <span class="text-xs text-gray-500">kWh</span>
-                        </div>
-                        <!-- V16: Frequency -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="refresh-cw" class="lucide w-5 h-5 mb-1 text-ac-color"></i>
-                            <p class="text-xs font-medium text-gray-400">FREQUENSI</p>
+                    </div>
+                    <!-- V16: Frequency -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-1 text-ac-color"></i>
+                                FREQUENSI
+                            </p>
                             <span id="v16-frequency" class="data-value text-xl font-bold text-white loading-animation">...</span>
                             <span class="text-xs text-gray-500">Hz</span>
                         </div>
-                        <!-- V17: Power Factor -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="gauge-circle" class="lucide w-5 h-5 mb-1 text-purple-400"></i>
-                            <p class="text-xs font-medium text-gray-400">FAKTOR DAYA</p>
-                            <span id="v17-pf" class="data-value text-xl font-bold text-white loading-animation">...</span>
-                        </div>
-                        <!-- V20: Inverter Peak -->
-                        <div class="bg-gray-800 p-3 rounded-lg">
-                            <i data-lucide="maximize-2" class="lucide w-5 h-5 mb-1 text-purple-400"></i>
-                            <p class="text-xs font-medium text-gray-400">INVERTER PEAK</p>
+                    </div>
+                    <!-- V20: Inverter Peak -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-1 text-purple-400"></i>
+                                INVERTER PEAK
+                            </p>
                             <span id="v20-inverter-peak" class="data-value text-xl font-bold text-white loading-animation">...</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- PENGHEMATAN -->
-                <div class="bg-solar-card p-6 rounded-xl">
-                    <h3 class="text-xl font-semibold text-green-400 mb-4 flex items-center">
-                        <i data-lucide="banknote" class="lucide w-5 h-5 mr-2"></i>
-                        RINCIAN BIAYA
-                    </h3>
-                     <div class="grid grid-cols-2 gap-4">
-                        <!-- V18: Rupiah Total -->
-                        <div class="bg-gray-800 p-3 rounded-lg col-span-2">
-                            <i data-lucide="trending-up" class="lucide w-5 h-5 mb-1 text-green-400"></i>
-                            <p class="text-xs font-medium text-gray-400">TOTAL PENGHEMATAN (LIFETIME)</p>
+                    <!-- V17: Power Factor -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-1 text-purple-400"></i>
+                                FAKTOR DAYA
+                            </p>
+                            <span id="v17-pf" class="data-value text-xl font-bold text-white loading-animation">...</span>
+                        </div>
+                    </div>
+                    <!-- V18: Rupiah Total -->
+                    <div class="detail-item">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 flex items-center">
+                                <i data-lucide="trending-up" class="lucide w-4 h-4 mr-1 text-green-400"></i>
+                                TOTAL PENGHEMATAN
+                            </p>
                             <span class="text-sm text-gray-500 mr-1 font-bold">Rp</span>
                             <span id="v18-rupiah" class="data-value text-xl font-bold text-green-400 loading-animation">...</span>
                         </div>
