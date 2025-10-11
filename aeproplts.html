@@ -60,6 +60,17 @@
             justify-content: space-between;
             align-items: center;
         }
+        /* Penyesuaian untuk tampilan seluler pada tombol logout */
+        #logout-button.static-mobile {
+            position: static;
+            margin-top: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+        /* Memastikan elemen detail-item tetap responsif */
+        .detail-item > div {
+            flex-grow: 1;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8">
@@ -76,8 +87,8 @@
             <p id="current-date" class="text-sm text-gray-400"></p>
             <p id="current-time" class="text-3xl font-bold text-white"></p>
         </div>
-        <!-- Tombol Logout (Hanya terlihat saat monitoring aktif) -->
-        <button id="logout-button" onclick="logoutAndClear()" class="hidden absolute top-4 right-4 md:static bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
+        <!-- Tombol Logout (Diatur agar fleksibel di mobile) -->
+        <button id="logout-button" onclick="logoutAndClear()" class="hidden md:block absolute top-4 right-4 md:static bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
             <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
             Hentikan
         </button>
@@ -110,46 +121,63 @@
     <!-- Area Monitoring Utama -->
     <main id="monitoring-dashboard" class="hidden">
 
+        <!-- Tombol Logout Mobile (Muncul di Mobile, Sembunyi di Desktop) -->
+        <button id="logout-button-mobile" onclick="logoutAndClear()" class="md:hidden w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center mb-6">
+            <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i>
+            Hentikan Monitoring
+        </button>
+
         <!-- RINGKASAN UTAMA (4 Kartu Besar) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
             <!-- V14: DAYA AC (Daya Saat Ini) -->
             <div class="solar-card">
-                <i data-lucide="zap" class="lucide w-6 h-6 mb-2 text-ac-color"></i>
-                <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
-                <span id="v14-power" class="data-value text-4xl font-bold text-white loading-animation">...</span>
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
+                    <i data-lucide="zap" class="lucide w-6 h-6 text-ac-color"></i>
+                </div>
+                <span id="v14-power" class="data-value text-xl sm:text-4xl font-bold text-white loading-animation">...</span>
                 <p class="text-xs text-gray-500 mt-1">Daya yang sedang digunakan.</p>
             </div>
             
             <!-- V21: kWh Today AC (Beban Hari Ini) -->
             <div class="solar-card">
-                <i data-lucide="power-square" class="lucide w-6 h-6 mb-2 text-ac-color"></i>
-                <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
-                <span id="v21-kwh-today-ac" class="data-value text-4xl font-bold text-white loading-animation">...</span>
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
+                    <i data-lucide="power-square" class="lucide w-6 h-6 text-ac-color"></i>
+                </div>
+                <span id="v21-kwh-today-ac" class="data-value text-xl sm:text-4xl font-bold text-white loading-animation">...</span>
                 <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
             </div>
 
              <!-- V10: Energi DC (PV) Hari Ini -->
             <div class="solar-card">
-                <i data-lucide="sun" class="lucide w-6 h-6 mb-2 text-dc-color"></i>
-                <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
-                <span id="v10-kwh-today" class="data-value text-4xl font-bold text-white loading-animation">...</span>
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
+                    <i data-lucide="sun" class="lucide w-6 h-6 text-dc-color"></i>
+                </div>
+                <span id="v10-kwh-today" class="data-value text-xl sm:text-4xl font-bold text-white loading-animation">...</span>
                 <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini (kWh).</p>
             </div>
 
             <!-- V19: PENGHEMATAN HARI INI (Rupiah) -->
             <div class="solar-card">
-                <i data-lucide="wallet" class="lucide w-6 h-6 mb-2 text-green-400"></i>
-                <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
-                <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
-                <span id="v19-rupiah-day" class="data-value text-4xl font-bold text-green-400 loading-animation">...</span>
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
+                    <i data-lucide="wallet" class="lucide w-6 h-6 text-green-400"></i>
+                </div>
+                <div class="flex items-baseline">
+                    <span class="text-lg sm:text-2xl text-gray-400 mr-1 font-bold">Rp</span>
+                    <span id="v19-rupiah-day" class="data-value text-xl sm:text-4xl font-bold text-green-400 loading-animation">...</span>
+                </div>
                 <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat.</p>
             </div>
         </div>
 
         <!-- DETAIL MONITORING (DC dan AC) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">DETAIL SISTEM</h2>
+        <!-- Di mobile, grid ini akan menjadi 1 kolom. Di desktop 3 kolom. -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- Kolom 1: Panel Surya (DC) -->
@@ -599,6 +627,7 @@
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
             const logoutButton = document.getElementById('logout-button');
+            const logoutButtonMobile = document.getElementById('logout-button-mobile');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
@@ -624,7 +653,9 @@
             // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
-            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout
+            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout Desktop
+            logoutButtonMobile.classList.remove('hidden'); // Tampilkan tombol Logout Mobile
+
 
             // Mulai fetch pertama segera
             updateDashboard();
@@ -660,7 +691,8 @@
             // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
             document.getElementById('config-panel').classList.remove('hidden');
             document.getElementById('monitoring-dashboard').classList.add('hidden');
-            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout
+            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout Desktop
+            document.getElementById('logout-button-mobile').classList.add('hidden'); // Sembunyikan tombol Logout Mobile
 
             showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
         }
