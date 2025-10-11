@@ -16,10 +16,11 @@
     :root {
       --primary: #4B87FF; 
       --secondary: #10B981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
+      --danger: #F87171;
+      --warning: #FACC15;
       --solar-dark: #0F172A;
       --solar-card: #1E293B;
+      --blue-bat: #60A5FA;
     }
      .led {
       display: inline-block;
@@ -134,58 +135,44 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
-<!-- Header -->
-<header id="mainHeader" class="bg-gradient-to-r from-solar-card to-solar-dark text-white shadow-lg w-full relative">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-    <div class="flex items-center">
-      <!-- Tombol Kembali ke PLTS (Diperbarui ke aeproplts.html) -->
-      <button onclick="window.location.href='./aeproplts.html'" class="text-white hover:text-gray-300 mr-4 p-2 rounded-full bg-white/10 transition">
-        <i data-lucide="arrow-left" class="lucide w-6 h-6"></i>
+<!-- Header (Disesuaikan agar mirip Dashboard Utama) -->
+<header id="mainHeader" class="text-white w-full p-4 sm:p-6 mb-6">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center">
+    
+    <!-- Bagian Kiri: Tombol Kembali & Judul -->
+    <div class="flex flex-col mb-4 md:mb-0">
+      <!-- Tombol Kembali ke PLTS -->
+      <button onclick="window.location.href='./blynk_solar_dashboard.html'" class="text-blue-bat hover:text-white mb-3 p-2 rounded-lg bg-white/10 transition flex items-center w-max">
+        <i data-lucide="arrow-left" class="lucide w-5 h-5 mr-2"></i>
+        Kembali ke Dasbor PLTS
       </button>
 
-      <div class="bg-white/20 p-2 rounded-lg mr-3">
-        <i class="fas fa-car-battery text-2xl"></i>
+      <div class="flex items-center">
+         <div class="p-2 rounded-lg mr-3">
+            <i data-lucide="battery-full" class="lucide w-8 h-8 text-blue-bat"></i>
+         </div>
+         <div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-bat tracking-tight">
+                BMS MONITORING
+            </h1>
+            <p class="text-gray-400 mt-1">Detail Tegangan Sel, Suhu, dan Status Keamanan Baterai.</p>
+         </div>
       </div>
-      <h1 class="text-2xl font-bold">BMS MONITORING</h1>
     </div>
 
-    <div class="flex items-center space-x-4">
-      <div class="hidden md:flex items-center space-x-2 text-sm bg-white/10 px-3 py-1 rounded-full">
-        <i class="fas fa-satellite-dish"></i>
-        <span id="id_monitoring">-</span>
+    <!-- Bagian Kanan: Jam & ID Logger (Konsisten dengan Dasbor Utama) -->
+    <div class="text-right flex flex-col items-end">
+      <div id="time-display" class="md:block">
+        <p id="current-date" class="text-sm text-gray-400"></p>
+        <p id="current-time" class="text-3xl font-bold text-white"></p>
       </div>
-
-      <!-- Tombol Settings dengan Dropdown -->
-      <div class="relative">
-        <!-- Ikon Roda Gigi -->
-        <button id="settingsBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
-          <i class="fas fa-cog"></i>
-        </button>
-
-        <!-- Dropdown Menu -->
-        <div id="dropdownMenu"
-          class="absolute right-0 mt-2 w-44 bg-solar-card text-gray-200 rounded-lg shadow-lg hidden">
-            <a id="batteryConfigLink" href="#" target="_blank" class="block px-4 py-2 hover:bg-gray-700 flex items-center">⚙️ Device Config</a>
-            <a id="networkBtn" href="#" class="block px-4 py-2 hover:bg-gray-700 flex items-center">📡 Network</a>
-            <a id="timerLink" href="#" target="_blank" class="block px-4 py-2 hover:bg-gray-700 flex items-center">⏱ Timer</a>
-          <hr class="my-1 border-gray-700">
-          <a id="themeToggleLink" href="#" class="block px-4 py-2 hover:bg-gray-700 flex items-center">🌙 Dark Mode</a>
-        </div>
+      <div class="mt-2 text-sm text-gray-400">
+        ID Logger: <span class="font-bold text-white" id="bms-logger-id-header"></span>
       </div>
     </div>
   </div>
 </header>
-<!-- Modal Network -->
-<div id="networkModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
-  <div class="bg-solar-card rounded-lg shadow-lg w-96 p-6 relative">
-    <button id="closeNetwork" class="absolute top-2 right-2 text-gray-400 hover:text-white">
-      ✖
-    </button>
-    <h2 class="text-xl font-bold mb-4 text-white">Network Info</h2>
-    <p id="network_ip" class="mb-2 text-gray-300">IP Address: -</p>
-    <p id="network_signal" class="text-gray-300">Signal: -</p>
-  </div>
-</div>
+<!-- Modal Network dihapus karena tidak digunakan -->
 
   <!-- Main content -->
   <main class="flex-1 p-4 sm:p-6 w-full">
@@ -340,7 +327,21 @@
     let batteries = [];
     
     document.getElementById("bms-logger-id-footer").innerText = BMS_LOGGER_ID;
-    
+    document.getElementById("bms-logger-id-header").innerText = BMS_LOGGER_ID;
+
+    // Fungsi untuk menampilkan Jam dan Tanggal (diambil dari Dasbor PLTS)
+    function updateTime() {
+      const now = new Date();
+      const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+      const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+      
+      const dateEl = document.getElementById('current-date');
+      const timeEl = document.getElementById('current-time');
+      
+      if (dateEl) dateEl.textContent = now.toLocaleDateString('id-ID', dateOptions);
+      if (timeEl) timeEl.textContent = now.toLocaleTimeString('id-ID', timeOptions);
+    }
+
     function startMQTT(){
       client = mqtt.connect("wss://public.cloud.shiftr.io", {
         username: "public",
@@ -360,11 +361,8 @@
         if(topic == "sysMon/"+BMS_LOGGER_ID+"/info" ){
           let a = message.toString().split(",");
           
-          document.getElementById("network_ip").innerText = "IP Address: " + a[0];
-          document.getElementById("network_signal").innerText = "Signal: " + a[1];
-          document.getElementById("id_monitoring").innerText = " 🌐 " + a[0] + " 📶"+a[1];
-          
-          // update link Battery Config sesuai IP dari MQTT
+          // Network info removed from modal/header as per user request for simplification.
+          // Keeping the link update for external access
           let batteryLink = document.getElementById("batteryConfigLink");
           if (batteryLink) {
             batteryLink.href = "http://" + a[0] + "/";
@@ -411,7 +409,6 @@
     function getCurrentTimeHHMMSS() {
       const now = new Date();
       let hours = now.getHours().toString().padStart(2, '0');
-      // PERBAIKAN: now.getMinutes().getMinutes() diubah menjadi now.getMinutes()
       let minutes = now.getMinutes().toString().padStart(2, '0');
       let seconds = now.getSeconds().toString().padStart(2, '0');
       return `${hours}:${minutes}:${seconds}`;
@@ -434,8 +431,6 @@
         capacity: data.full_capacity.toFixed(2),
         remaining: data.rem_capacity.toFixed(2),
         cycles: data.cycle_count,
-        cycle_count: data.cycle_count,
-        cells,
         cell_vmax: cell_vmax.toFixed(3),
         cell_vmin: cell_vmin.toFixed(3),
         cell_vdif: cell_vdiff.toFixed(0),
@@ -695,44 +690,20 @@
     window.onload = function() {
       // Patenkan ID ditampilkan
       document.getElementById('bms-logger-id-footer').textContent = BMS_LOGGER_ID;
+      document.getElementById('bms-logger-id-header').textContent = BMS_LOGGER_ID;
 
       // Hapus logika prompt dan langsung mulai MQTT
       startMQTT();
+      
+      // Atur jam
+      updateTime();
+      setInterval(updateTime, 1000); // Perbarui jam setiap detik
+      
       // Gunakan Lucide icons
       lucide.createIcons(); 
 
-      // === Dropdown Toggle ===
-      const btn = document.getElementById("settingsBtn");
-      const menu = document.getElementById("dropdownMenu");
-
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        menu.classList.toggle("hidden");
-      });
-
-      window.addEventListener("click", () => {
-        menu.classList.add("hidden");
-      });
-
-      // === Network Modal Control ===
-      const networkBtn = document.getElementById("networkBtn");
-      const networkModal = document.getElementById("networkModal");
-      const closeNetwork = document.getElementById("closeNetwork");
-
-      networkBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        networkModal.classList.remove("hidden");
-      });
-
-      closeNetwork.addEventListener("click", () => {
-        networkModal.classList.add("hidden");
-      });
-
-      window.addEventListener("click", (e) => {
-        if (e.target === networkModal) {
-          networkModal.classList.add("hidden");
-        }
-      });
+      // === Dropdown Toggle dihapus karena tidak digunakan ===
+      // === Network Modal Control dihapus karena tidak digunakan ===
       
     };
   </script>
