@@ -89,25 +89,25 @@
                 <p id="current-date" class="text-sm text-gray-400"></p>
                 <p id="current-time" class="text-3xl font-bold text-white"></p>
             </div>
-            <!-- Tombol Navigasi dan Logout di Desktop -->
-            <div class="hidden md:flex space-x-3 items-center">
-                 <button onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+            <!-- Tombol Navigasi dan Logout di Desktop (Kini dikontrol oleh JS) -->
+            <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
+                 <button id="bms-button-desktop" onclick="window.location.href='./bms_monitoring.html'" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                     <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
                     Detail Baterai
                 </button>
-                <button id="logout-button" onclick="logoutAndClear()" class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
+                <button id="logout-button" onclick="logoutAndClear()" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
                     <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
                     Hentikan
                 </button>
             </div>
         </div>
-        <!-- Tombol Navigasi Mobile -->
-        <div class="md:hidden w-full flex space-x-3 mt-4">
-            <button onclick="window.location.href='./bms_monitoring.html'" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+        <!-- Tombol Navigasi Mobile (Kini dikontrol oleh JS) -->
+        <div id="mobile-buttons" class="hidden md:hidden w-full flex space-x-3 mt-4">
+            <button id="bms-button-mobile" onclick="window.location.href='./bms_monitoring.html'" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
                 <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
                 Detail Baterai
             </button>
-            <button id="logout-button-mobile" onclick="logoutAndClear()" class="hidden w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+            <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
                  <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
                  Hentikan
             </button>
@@ -212,7 +212,7 @@
                     <!-- V0: Voltage DC -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                             <i data-lucide="volt" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TEGANGAN PV
                         </div>
                         <div class="flex items-baseline">
@@ -353,7 +353,7 @@
                     <!-- V12: Voltage AC -->
                     <div class="detail-item">
                         <div class="flex items-center text-gray-300">
-                            <i data-lucide="volt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
+                            <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TEGANGAN AC 
                         </div>
                         <div class="flex items-baseline">
@@ -676,8 +676,8 @@
         function saveAndFetchData() {
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
-            const logoutButton = document.getElementById('logout-button');
-            const logoutButtonMobile = document.getElementById('logout-button-mobile');
+            const desktopButtons = document.getElementById('desktop-buttons');
+            const mobileButtons = document.getElementById('mobile-buttons');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
@@ -704,11 +704,9 @@
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
             
-            // Tampilkan tombol Logout Desktop dan Mobile
-            logoutButton.classList.remove('hidden'); 
-            const mobileLogout = document.getElementById('logout-button-mobile');
-            if (mobileLogout) mobileLogout.classList.remove('hidden');
-
+            // Tampilkan semua tombol header (Desktop & Mobile)
+            desktopButtons.classList.remove('hidden');
+            mobileButtons.classList.remove('hidden');
 
             // Mulai fetch pertama segera
             updateDashboard();
@@ -744,10 +742,10 @@
             // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
             document.getElementById('config-panel').classList.remove('hidden');
             document.getElementById('monitoring-dashboard').classList.add('hidden');
-            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout Desktop
             
-            const mobileLogout = document.getElementById('logout-button-mobile');
-            if (mobileLogout) mobileLogout.classList.add('hidden');
+            // Sembunyikan semua tombol header (Desktop & Mobile)
+            document.getElementById('desktop-buttons').classList.add('hidden');
+            document.getElementById('mobile-buttons').classList.add('hidden');
 
 
             showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
@@ -757,6 +755,17 @@
          * Fungsi inisialisasi saat memuat halaman
          */
         function init() {
+            const desktopButtons = document.getElementById('desktop-buttons');
+            const mobileButtons = document.getElementById('mobile-buttons');
+            
+            // Sembunyikan semua tombol header secara default
+            // Kita sudah menambahkan class 'hidden' di HTML untuk mobile dan desktop
+            // Namun, untuk memastikan konsistensi, kita biarkan saja penambahan class di JS ini
+            
+            desktopButtons.classList.add('hidden');
+            mobileButtons.classList.add('hidden');
+
+
             // Muat dari Local Storage
             const savedIp = localStorage.getItem(STORAGE_KEY_IP);
             const savedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
