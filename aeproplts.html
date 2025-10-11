@@ -48,11 +48,18 @@
 <body class="min-h-screen p-4 sm:p-8">
 
     <!-- Header & Pengaturan -->
-    <header class="mb-8">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Dasbor PLTS
-        </h1>
-        <p class="text-gray-400 mt-1">Integrasi Data Real-time dari Blynk Server.</p>
+    <header class="mb-8 flex justify-between items-start">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Dasbor PLTS
+            </h1>
+            <p class="text-gray-400 mt-1">Integrasi Data Real-time dari Blynk Server.</p>
+        </div>
+        <!-- Tombol Logout (Hanya terlihat saat monitoring aktif) -->
+        <button id="logout-button" onclick="logoutAndClear()" class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center">
+            <i data-lucide="log-out" class="lucide w-5 h-5 mr-1"></i>
+            Hentikan & Keluar
+        </button>
     </header>
 
     <!-- Area Input Konfigurasi -->
@@ -436,6 +443,7 @@
         function saveAndFetchData() {
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
+            const logoutButton = document.getElementById('logout-button');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
@@ -458,9 +466,10 @@
                 fetchInterval = null;
             }
 
-            // Tampilkan dashboard dan sembunyikan panel config
+            // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
+            logoutButton.classList.remove('hidden'); // Tampilkan tombol Logout
 
             // Mulai fetch pertama segera
             updateDashboard();
@@ -469,6 +478,36 @@
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
 
             showMessage(`Monitoring dimulai ke ${serverIp}. Memuat data...`, 'success');
+        }
+        
+        /**
+         * Menghapus token dari Local Storage dan mengembalikan ke layar konfigurasi.
+         */
+        function logoutAndClear() {
+            // 1. Hentikan interval refresh
+            if (fetchInterval) {
+                clearInterval(fetchInterval);
+                fetchInterval = null;
+            }
+
+            // 2. Hapus data dari Local Storage
+            localStorage.removeItem(STORAGE_KEY_IP);
+            localStorage.removeItem(STORAGE_KEY_TOKEN);
+            
+            // 3. Reset state global
+            serverIp = '';
+            authToken = '';
+            
+            // 4. Reset input field
+            document.getElementById('server-ip').value = '';
+            document.getElementById('auth-token').value = '';
+            
+            // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
+            document.getElementById('config-panel').classList.remove('hidden');
+            document.getElementById('monitoring-dashboard').classList.add('hidden');
+            document.getElementById('logout-button').classList.add('hidden'); // Sembunyikan tombol Logout
+
+            showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
         }
 
         /**
@@ -494,6 +533,9 @@
             } else {
                  showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
+            
+            // Ensure icons are created for the newly visible elements (like the logout button)
+            lucide.createIcons();
         }
 
         // Jalankan inisialisasi saat DOM siap
