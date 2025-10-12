@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DASHBOARD AEPRO PLTS</title>
+    <title>Dashboard AEPRO PLTS</title>
     <!-- Memuat Tailwind CSS CDN untuk styling yang cepat dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat ikon Lucide untuk visualisasi data -->
@@ -170,7 +170,7 @@
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                     AEPRO PLTS ONLINE
                 </h1>
-                <p class="text-gray-400 mt-1">Monitoring Kinerja & Performa Sistem PLTS.</p>
+                <p class="text-gray-400 mt-1"> Monitoring Kinerja & Performa Sistem PLTS.</p>
             </div>
               <!-- Konten Kanan (Jam) -->
             <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
@@ -195,12 +195,19 @@
         
         <!-- Tombol Navigasi MOBILE -->
         <div id="mobile-buttons" class="hidden md:hidden w-full flex justify-between space-x-3 mb-6 mt-4">
-            <button id="bms-button-mobile" onclick="handleBMSNavigation()" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
-                <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
-                Detail Baterai
+            <button id="bms-button-mobile" onclick="handleBMSNavigation()" class="w-1/3 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center text-sm">
+                <i data-lucide="battery-full" class="lucide w-4 h-4 mr-1"></i>
+                Baterai
             </button>
-            <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
-                <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
+            
+            <!-- TOMBOL FULLSCREEN BARU (Hanya untuk Mobile) -->
+            <button id="fullscreen-button-mobile" onclick="requestFullscreen()" class="w-1/3 bg-gray-700 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-gray-600 transition duration-300 flex items-center justify-center text-sm">
+                <i data-lucide="maximize" class="lucide w-4 h-4 mr-1"></i>
+                Full Layar
+            </button>
+
+            <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/3 bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center text-sm">
+                <i data-lucide="log-out" class="lucide w-4 h-4 mr-1"></i> 
                 Hentikan
             </button>
         </div>
@@ -639,6 +646,25 @@
         function handleBMSNavigation() {
             window.location.href = './bms_monitoring.html';
         }
+        
+        // --- FUNGSI FULLSCREEN DIPINDAHKAN KE SINI ---
+        /**
+         * Meminta browser untuk masuk ke mode layar penuh.
+         * Ini diikat ke interaksi pengguna langsung.
+         */
+        function requestFullscreen() {
+            const element = document.documentElement; // Ambil elemen root (<html>)
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { /* Firefox */
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { /* IE/Edge */
+                element.msRequestFullscreen();
+            }
+        }
+
 
         /**
          * Mengambil nilai dari satu V-Pin dari server Blynk dengan Retry (Exponential Backoff)
@@ -910,6 +936,7 @@
                 desktopButtons.classList.remove('hidden');
                 mobileButtons.classList.add('hidden');
             } else {
+                // Di mobile, tampilkan tombol navigasi
                 mobileButtons.classList.remove('hidden');
                 desktopButtons.classList.add('hidden');
             }
@@ -963,27 +990,6 @@
             );
         }
 
-        // --- FUNGSI BARU: AUTO FULLSCREEN ---
-        /**
-         * Meminta browser untuk masuk ke mode layar penuh.
-         * Hanya diaktifkan jika lebar kurang dari 768px (Mobile).
-         */
-        function requestFullscreen() {
-            if (window.innerWidth < 768) { // Cek apakah di perangkat mobile
-                const element = document.documentElement; // Ambil elemen root (<html>)
-                if (element.requestFullscreen) {
-                    element.requestFullscreen();
-                } else if (element.mozRequestFullScreen) { /* Firefox */
-                    element.mozRequestFullScreen();
-                } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-                    element.webkitRequestFullscreen();
-                } else if (element.msRequestFullscreen) { /* IE/Edge */
-                    element.msRequestFullscreen();
-                }
-            }
-        }
-
-
         /**
          * Fungsi inisialisasi saat memuat halaman
          */
@@ -991,7 +997,7 @@
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
             
-            // Sembunyikan semua tombol header secara default (Ini penting agar tidak ada flicker sebelum JS berjalan)
+            // Sembunyikan semua tombol header secara default
             desktopButtons.classList.add('hidden');
             mobileButtons.classList.add('hidden');
 
@@ -1017,9 +1023,7 @@
             setInterval(updateTime, 1000); // Perbarui jam setiap detik
 
             // Tampilkan pesan awal
-            if (serverIp && authToken) {
-                // Jika sudah ada token tersimpan, akan langsung di-load di window.onload
-            } else {
+            if (!(serverIp && authToken)) {
                  showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
             
@@ -1031,15 +1035,12 @@
         window.onload = function() {
             init();
             
-            // Panggil Auto Fullscreen saat halaman dimuat (untuk mobile)
-            requestFullscreen(); 
-
-            // Jika ada token tersimpan, muat data historis dan mulai fetching
+            // Cek apakah data sudah ada, jika ya, tampilkan dashboard dan tombol mobile
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
-                saveAndFetchData();
+                // Panggil saveAndFetchData untuk memulai monitoring dan menampilkan tombol
+                saveAndFetchData(); 
             }
         };
     </script>
 </body>
 </html>
-
