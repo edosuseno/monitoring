@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DASHBOARD PLTS</title>
+    <title>Monitoring AEPRO PLTS</title>
     <!-- Memuat Tailwind CSS CDN untuk styling yang cepat dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat ikon Lucide untuk visualisasi data -->
@@ -168,9 +168,9 @@
               <!-- Konten Kiri (Judul) -->
             <div>
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                    AEPRO PLTS ONLINE
+                    DASHBOARD AEPRO PLTS
                 </h1>
-                <p class="text-gray-400 mt-1">Monitoring Kinerja & Performa Sistem PLTS.</p>
+                <p class="text-gray-400 mt-1">Performa Sistem Pembangkit Listrik Tenaga Surya.</p>
             </div>
               <!-- Konten Kanan (Jam) -->
             <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
@@ -963,6 +963,27 @@
             );
         }
 
+        // --- FUNGSI BARU: AUTO FULLSCREEN ---
+        /**
+         * Meminta browser untuk masuk ke mode layar penuh.
+         * Hanya diaktifkan jika lebar kurang dari 768px (Mobile).
+         */
+        function requestFullscreen() {
+            if (window.innerWidth < 768) { // Cek apakah di perangkat mobile
+                const element = document.documentElement; // Ambil elemen root (<html>)
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.mozRequestFullScreen) { /* Firefox */
+                    element.mozRequestFullScreen();
+                } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                    element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) { /* IE/Edge */
+                    element.msRequestFullscreen();
+                }
+            }
+        }
+
+
         /**
          * Fungsi inisialisasi saat memuat halaman
          */
@@ -1009,6 +1030,10 @@
         // Jalankan inisialisasi saat DOM siap
         window.onload = function() {
             init();
+            
+            // Panggil Auto Fullscreen saat halaman dimuat (untuk mobile)
+            requestFullscreen(); 
+
             // Jika ada token tersimpan, muat data historis dan mulai fetching
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
                 saveAndFetchData();
@@ -1017,4 +1042,3 @@
     </script>
 </body>
 </html>
-
