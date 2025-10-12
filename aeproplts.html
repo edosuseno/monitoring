@@ -8,10 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat ikon Lucide untuk visualisasi data -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Memuat Chart.js untuk membuat grafik -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <!-- Memuat Plugin Chart.js untuk Pan dan Zoom -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     
     <!-- Konfigurasi Tailwind -->
     <script>
@@ -34,10 +30,6 @@
                         'purple-med': '#8E44AD', 
                         'orange-red': '#E74C3C', 
                         'warning-red': '#EF4444', // Merah Peringatan Terang
-                        
-                        // Warna Chart.js
-                        'chart-pv': '#BFFF00',
-                        'chart-load': '#FFB900',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -147,25 +139,6 @@
         .text-white-nominal {
             color: #FFFFFF;
         }
-
-        /* Gaya Canvas */
-        #realtime-chart-container {
-            max-height: 400px; /* Membatasi tinggi grafik */
-            padding-bottom: 20px;
-        }
-        
-        /* Gaya Fullscreen */
-        .fullscreen-chart {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-            background-color: #03030D;
-            z-index: 9999;
-            padding: 20px;
-        }
-
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8">
@@ -186,14 +159,14 @@
     <!-- Header & Status Jam -->
     <header class="mb-6">
         <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-start">
-             <!-- Konten Kiri (Judul) -->
+              <!-- Konten Kiri (Judul) -->
             <div>
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                     DASHBOARD AEPRO PLTS
                 </h1>
                 <p class="text-gray-400 mt-1">Performa Sistem Pembangkit Listrik Tenaga Surya.</p>
             </div>
-             <!-- Konten Kanan (Jam) -->
+              <!-- Konten Kanan (Jam) -->
             <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
                 <div class="hidden md:block">
                     <p id="current-date" class="text-sm text-gray-400"></p>
@@ -202,7 +175,7 @@
                 
                 <!-- Tombol Navigasi dan Logout di DESKTOP (HANYA terlihat di md: dan lebih besar) -->
                 <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
-                     <button id="bms-button-desktop" onclick="handleBMSNavigation()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+                    <button id="bms-button-desktop" onclick="handleBMSNavigation()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                         <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
                         Detail Baterai
                     </button>
@@ -221,8 +194,8 @@
                 Detail Baterai
             </button>
             <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
-                 <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
-                 Hentikan
+                <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
+                Hentikan
             </button>
         </div>
     </header>
@@ -284,7 +257,7 @@
                 <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
             </div>
 
-             <!-- V10: Energi DC (PV) Hari Ini - DC Production -->
+              <!-- V10: Energi DC (PV) Hari Ini - DC Production -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
@@ -312,26 +285,6 @@
         </div>
         
         
-        <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
-        <div class="solar-card p-6">
-            <!-- Tombol Full Layar & Reset Zoom -->
-            <div class="flex justify-end space-x-3 mb-3">
-                <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
-                    Reset Zoom
-                </button>
-                <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1">
-                    <i id="fullscreen-icon" data-lucide="maximize" class="lucide w-4 h-4"></i>
-                    <span id="fullscreen-text">Full Layar</span>
-                </button>
-            </div>
-
-            <div id="realtime-chart-container" class="w-full">
-                <canvas id="realtime-power-chart"></canvas>
-            </div>
-        </div>
-
-
         <!-- DETAIL MONITORING (DC dan AC) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">DETAIL SISTEM</h2>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -346,7 +299,7 @@
                     <!-- V0: Voltage DC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title">
-                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
+                            <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
                             BUS VOLTAGE
                         </div>
                         <div class="flex items-baseline text-pink-med nominal-color">
@@ -573,8 +526,6 @@
 
     <!-- Script Fungsionalitas -->
     <script>
-        // ... (Fungsionalitas JavaScript)
-        
         // Mengubah semua ikon Lucide menjadi SVG
         lucide.createIcons();
 
@@ -609,54 +560,12 @@
 
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
         const STORAGE_KEY_IP = 'blynk_server_ip';
-        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; // Kunci untuk menyimpan data chart
         const UPDATE_INTERVAL = 5000; // 5 detik
 
         let fetchInterval = null; // Untuk menyimpan ID interval
         let serverIp = '';
         let authToken = '';
         
-        // Variabel Global untuk Chart
-        let energyChartInstance = null;
-        const MAX_DATA_POINTS = 90 * 24 * (3600 / 5); // Target 3 bulan (dibatasi di init agar tidak crash)
-        window.realtimeData = { // FIX: Dideklarasikan di window
-            labels: [],
-            pvPower: [],
-            acLoad: []
-        };
-        
-        /**
-         * Memuat data historis dari Local Storage saat inisialisasi.
-         */
-        function loadHistoricalData() {
-            const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    // Ambil maksimal 10000 poin data terakhir (agar browser tidak crash)
-                    const limit = 10000; 
-                    const startIndex = Math.max(0, parsedData.labels.length - limit);
-                    
-                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
-                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
-                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
-
-                    console.log(`[CHART] Memuat ${window.realtimeData.labels.length} titik data historis.`);
-                } catch (e) {
-                    console.error("Gagal memuat data chart historis:", e);
-                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
-                }
-            }
-        }
-        
-        /**
-         * Menyimpan data historis ke Local Storage setiap kali ada update.
-         */
-        function saveHistoricalData() {
-            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
-        }
-
-
         /**
          * Utility untuk membuat jeda (delay)
          * @param {number} ms Milidetik untuk menunggu
@@ -720,204 +629,14 @@
             document.getElementById('custom-modal').classList.remove('flex');
         }
 
-        // Fungsi untuk menangani navigasi BMS (DIUBAH: Navigasi Langsung tanpa Modal)
+        // Fungsi untuk menangani navigasi BMS
         function handleBMSNavigation() {
-            saveHistoricalData(); // Simpan data chart sebelum pindah
+            // Karena chart dihapus, tidak perlu menyimpan data historis
             window.location.href = './bms_monitoring.html';
         }
 
         /**
-         * Merender grafik energi real-time dengan Pan & Zoom
-         */
-        function renderRealtimeChart() {
-            const ctx = document.getElementById('realtime-power-chart').getContext('2d');
-            
-            const dataConfig = {
-                labels: window.realtimeData.labels,
-                datasets: [
-                    {
-                        label: 'PV Power (W)',
-                        data: window.realtimeData.pvPower,
-                        backgroundColor: 'rgba(191, 255, 0, 0.4)', // Background Fill (Soft)
-                        borderColor: tailwind.config.theme.extend.colors['chart-pv'],
-                        borderWidth: 2,
-                        type: 'line',
-                        fill: 'origin', // Isi area di bawah garis
-                        tension: 0.2, // Kurva halus
-                        pointRadius: 0, // Sembunyikan titik
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'AC Load (W)',
-                        data: window.realtimeData.acLoad,
-                        backgroundColor: 'rgba(255, 185, 0, 0.4)', // Background Fill (Soft)
-                        borderColor: tailwind.config.theme.extend.colors['chart-load'],
-                        borderWidth: 2,
-                        type: 'line',
-                        fill: 'origin', // Isi area di bawah garis
-                        tension: 0.2, // Kurva halus
-                        pointRadius: 0, // Sembunyikan titik
-                        yAxisID: 'y'
-                    }
-                ]
-            };
-
-            // Hancurkan instance lama jika ada
-            if (energyChartInstance) {
-                energyChartInstance.destroy();
-            }
-
-            energyChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: dataConfig,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false, 
-                    spanGaps: true, // Untuk mengatasi data yang hilang
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: '#FFFFFF',
-                                usePointStyle: true,
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Perbandingan Daya PV vs Beban AC (Data Historis)',
-                            color: '#FFFFFF'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(tooltipItem) {
-                                    return tooltipItem[0].label; // Tampilkan Label Waktu
-                                }
-                            }
-                        },
-                        zoom: {
-                            pan: {
-                                enabled: true,
-                                mode: 'x', // Hanya bisa geser secara horizontal
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: true, // Aktifkan zoom dengan scroll/mouse wheel
-                                },
-                                pinch: {
-                                    enabled: true // Aktifkan zoom dengan cubit (touch screen)
-                                },
-                                mode: 'x', // Hanya zoom horizontal
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'category', // Tetap sebagai kategori untuk data time string
-                            title: {
-                                display: true,
-                                text: 'Waktu',
-                                color: '#AAAAAA'
-                            },
-                            ticks: { 
-                                color: '#AAAAAA',
-                                autoSkip: true,
-                                maxRotation: 0
-                            },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        },
-                        y: {
-                            // PENGATURAN SKALA Y BARU (Max 5000W, Kelipatan 500W)
-                            min: 0,
-                            max: 5000, 
-                            ticks: {
-                                stepSize: 500, // Kelipatan 500W
-                                color: '#FFFFFF',
-                                callback: function(value) {
-                                    return value + ' W';
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Daya (Watt)',
-                                color: '#FFFFFF'
-                            },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                        }
-                    }
-                }
-            });
-        }
-        
-        /**
-         * Mereset pan dan zoom pada grafik
-         */
-        function resetChartZoom() {
-            if (energyChartInstance) {
-                energyChartInstance.resetZoom();
-            }
-        }
-        
-        /**
-         * Mengaktifkan atau menonaktifkan mode layar penuh
-         */
-        function toggleFullscreen() {
-            const chartContainer = document.getElementById('realtime-chart-container').parentElement; // Mengambil solar-card container
-            const chartIcon = document.getElementById('fullscreen-icon');
-            const chartText = document.getElementById('fullscreen-text');
-
-            if (chartContainer.classList.contains('fullscreen-chart')) {
-                // Keluar dari mode fullscreen
-                chartContainer.classList.remove('fullscreen-chart');
-                chartIcon.setAttribute('data-lucide', 'maximize');
-                chartText.textContent = 'Full Layar';
-                lucide.createIcons();
-                // Opsional: reset chart zoom setelah keluar fullscreen
-                // energyChartInstance.resetZoom(); 
-            } else {
-                // Masuk ke mode fullscreen
-                chartContainer.classList.add('fullscreen-chart');
-                chartIcon.setAttribute('data-lucide', 'minimize');
-                chartText.textContent = 'Keluar';
-                lucide.createIcons();
-            }
-            // Memastikan chart di-resize setelah perubahan ukuran kontainer
-            if (energyChartInstance) {
-                setTimeout(() => {
-                     energyChartInstance.resize();
-                }, 10);
-            }
-        }
-
-
-        /**
-         * Memperbarui data chart historis (dan menyimpan ke Local Storage)
-         */
-        function updateRealtimeChartData(pvValue, acValue) {
-            const now = new Date();
-            const timeLabel = now.toLocaleTimeString('id-ID');
-
-            // Tambahkan data baru
-            window.realtimeData.labels.push(timeLabel);
-            window.realtimeData.pvPower.push(pvValue);
-            window.realtimeData.acLoad.push(acValue); // FIX: menggunakan parameter acValue
-
-            // Perbarui grafik jika instance sudah ada
-            if (energyChartInstance) {
-                energyChartInstance.update();
-            }
-            
-            // Simpan data ke Local Storage (dilakukan setiap update)
-            saveHistoricalData();
-        }
-
-
-        /**
          * Mengambil nilai dari satu V-Pin dari server Blynk dengan Retry (Exponential Backoff)
-         * ... (FUNGSI FETCH TIDAK BERUBAH) ...
          */
         async function fetchPinValue(pin) {
             let host = serverIp;
@@ -1027,10 +746,6 @@
             let allSuccessful = true;
             const results = await Promise.allSettled(fetchPromises);
             
-            let currentPvPower = 0; 
-            let currentAcLoad = 0; 
-
-
             results.forEach((result, index) => {
                 const pin = pins[index];
                 const elementId = PIN_MAPPINGS[pin];
@@ -1046,12 +761,6 @@
                     const rawValue = result.value || '0';
                     const formattedValue = formatValue(pin, rawValue);
                     
-                    // --- Ambil data daya untuk Realtime Chart ---
-                    if (pin === 'V2') { 
-                        currentPvPower = parseFloat(rawValue) || 0;
-                    } else if (pin === 'V14') { 
-                        currentAcLoad = parseFloat(rawValue) || 0;
-                    }
                     
                     // 1. Tentukan konten teks
                     if (pin === 'V18' || pin === 'V19') {
@@ -1150,12 +859,8 @@
                 }
             });
             
-            // Panggil Chart Realtime
-            if (!energyChartInstance) {
-                renderRealtimeChart();
-            }
-            updateRealtimeChartData(currentPvPower, currentAcLoad);
-
+            // Logika chart telah dihapus di sini
+            
 
             if (allSuccessful) {
                 showMessage(`Data berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
@@ -1193,9 +898,6 @@
                 clearInterval(fetchInterval);
                 fetchInterval = null;
             }
-
-            // Muat data historis sebelum mereset
-            loadHistoricalData();
             
             // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
@@ -1233,32 +935,19 @@
                         fetchInterval = null;
                     }
                     
-                    // 2. Hancurkan chart instance
-                    if (energyChartInstance) {
-                        energyChartInstance.destroy();
-                        energyChartInstance = null;
-                    }
-                    
-                    // 3. Hapus data historis (opsional, tapi disarankan saat logout total)
-                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
-
-
-                    // 4. Hapus data dari Local Storage
+                    // 2. Hapus data dari Local Storage
                     localStorage.removeItem(STORAGE_KEY_IP);
                     localStorage.removeItem(STORAGE_KEY_TOKEN);
                     
-                    // 5. Reset state global
+                    // 3. Reset state global
                     serverIp = '';
                     authToken = '';
-                    window.realtimeData.labels = [];
-                    window.realtimeData.pvPower = [];
-                    window.realtimeData.acLoad = [];
                     
-                    // 6. Reset input field
+                    // 4. Reset input field
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
                     document.getElementById('auth-token').value = '';
                     
-                    // 7. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
+                    // 5. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
                     document.getElementById('config-panel').classList.remove('hidden');
                     document.getElementById('monitoring-dashboard').classList.add('hidden');
                     
@@ -1296,7 +985,7 @@
                 document.getElementById('auth-token').value = savedToken;
                 authToken = savedToken;
             } else {
-                 // Set default value if no saved token
+                // Set default value if no saved token
                 document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             }
 
@@ -1304,9 +993,9 @@
             updateTime();
             setInterval(updateTime, 1000); // Perbarui jam setiap detik
 
-            // Jika keduanya ada, langsung mulai monitoring
+            // Tampilkan pesan awal
             if (serverIp && authToken) {
-                // Jangan panggil saveAndFetchData di init, panggil fungsi di dalam event listener onload
+                // Jika sudah ada token tersimpan, akan langsung di-load di window.onload
             } else {
                  showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
@@ -1320,11 +1009,9 @@
             init();
             // Jika ada token tersimpan, muat data historis dan mulai fetching
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
-                loadHistoricalData();
                 saveAndFetchData();
             }
         };
     </script>
 </body>
 </html>
-
