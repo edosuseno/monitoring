@@ -759,18 +759,14 @@
             document.getElementById('custom-modal').classList.remove('flex');
         }
 
-        // Fungsi untuk menangani navigasi BMS
+        /**
+         * Fungsi untuk menangani navigasi BMS (Diubah agar langsung redirect)
+         */
         function handleBMSNavigation() {
-            saveHistoricalData(); // Simpan data chart sebelum pindah
-            // Gunakan showModal untuk memberikan peringatan navigasi.
-            showModal(
-                'Anda akan diarahkan ke halaman Detail Baterai (BMS). Lanjutkan?',
-                () => {window.location.href = 'bms_monitoring.html';
-                    // Karena ini adalah lingkungan simulasi, kita tidak bisa navigasi. 
-                    // Tampilkan pesan sukses dan biarkan user mengedit/membuat file baru.
-                    showMessage('Simulasi navigasi ke BMS berhasil, tetapi tidak dapat dialihkan di lingkungan ini.', 'success');
-                }
-            );
+            // 1. Simpan data chart ke Local Storage sebelum pindah
+            saveHistoricalData(); 
+            // 2. Langsung alihkan ke halaman BMS
+            window.location.href = './bms_monitoring.html';
         }
         
         /**
@@ -911,7 +907,7 @@
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenchange);
 
 
         /**
@@ -1506,3 +1502,4 @@
     </script>
 </body>
 </html>
+
