@@ -391,17 +391,6 @@
                     PANEL SURYA (DC)
                 </h3 >
                 <div>
-                    <!-- V0: Voltage DC -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
-                             BUS VOLTAGE
-                        </div>
-                        <div class="flex items-baseline text-pink-med nominal-color">
-                            <span id="v0-pzem-voltage" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v0-pzem-voltage-unit" class="text-base ml-1"></span>
-                        </div>
-                    </div>
                     <!-- V1: Current DC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -413,9 +402,6 @@
                             <span id="v1-pzem-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V2: Power DC (Dihapus dari sini karena sudah ada di Power Chart)
-                    <div class="detail-item">...</div>
-                    -->
                     <!-- V6: PV Peak -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -427,11 +413,33 @@
                             <span id="v6-pv-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
+                    <!-- V4: SunHour (PINDAH DARI BATERAI) -->
+                    <div class="detail-item">
+                        <div class="flex items-center metric-title text-white">
+                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                            MATAHARI EFEKTIF
+                        </div>
+                        <div class="flex items-baseline text-dc-color nominal-color">
+                            <span id="v4-sunhour" class="text-xl font-bold loading-animation">...</span>
+                            <span id="v4-sunhour-unit" class="text-base ml-1"></span>
+                        </div>
+                    </div>
+<!-- V11: Total PV (Total Lifetime Energy) (PINDAH DARI BATERAI) -->
+                    <div class="detail-item">
+                        <div class="flex items-center metric-title text-white">
+                            <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                            MAX ENERGY PV
+                        </div>
+                        <div class="flex items-baseline text-dc-color nominal-color">
+                            <span id="v11-total-pv" class="text-xl font-bold loading-animation">...</span>
+                            <span id="v11-total-pv-unit" class="text-base ml-1"></span>
+                        </div>
+                    </div>
                     <!-- V5: PV Persen -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            Efisiensi PV
+                            EFISIENSI PV
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v5-pv-persen" class="text-xl font-bold loading-animation">...</span>
@@ -448,6 +456,17 @@
                     BATERAI & ENERGY
                 </h3 >
                 <div>
+                    <!-- V0: BUS VOLTAGE (PINDAH DARI PANEL SURYA) -->
+                    <div class="detail-item">
+                        <div class="flex items-center metric-title text-white">
+                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
+                             BUS VOLTAGE
+                        </div>
+                        <div class="flex items-baseline text-pink-med nominal-color">
+                            <span id="v0-pzem-voltage" class="text-xl font-bold loading-animation">...</span>
+                            <span id="v0-pzem-voltage-unit" class="text-base ml-1"></span>
+                        </div>
+                    </div>
                     <!-- V7: Baterai Peak -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -481,17 +500,6 @@
                             <span id="v9-batere-ah-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V4: SunHour -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            MATAHARI EFEKTIF
-                        </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
-                            <span id="v4-sunhour" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v4-sunhour-unit" class="text-base ml-1"></span>
-                        </div>
-                    </div>
                     <!-- V3: Total Energy DC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -501,17 +509,6 @@
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v3-pzem-energy" class="text-xl font-bold loading-animation">...</span>
                             <span id="v3-pzem-energy-unit" class="text-base ml-1"></span>
-                        </div>
-                    </div>
-                    <!-- V11: Total PV (Total Lifetime Energy) -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            TOTAL ENERGY PV
-                        </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
-                            <span id="v11-total-pv" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v11-total-pv-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
                 </div>
@@ -546,9 +543,6 @@
                             <span id="v13-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V14: Power AC (Dihapus dari sini karena sudah ada di Power Chart)
-                    <div class="detail-item">...</div>
-                    -->
                     <!-- V15: Energy AC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -582,20 +576,8 @@
                             <span id="v20-inverter-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V17: Power Factor -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-purple-med"></i>
-                            FAKTOR DAYA
-                        </div>
-                        <div class="flex items-baseline text-purple-med nominal-color">
-                            <span id="v17-pf" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v17-pf-unit" class="text-base ml-1"></span>
-                        </div>
+                   
                     </div>
-                    <!-- V18: Rupiah Total (Dihapus dari sini karena sudah ada di Ringkasan Utama)
-                    <div class="detail-item">...</div>
-                    -->
                 </div>
             </div>
         </div>
