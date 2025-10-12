@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DASHBOARD AEPRO PLTS</title>
+    <title>Dashboard AEPRO PLTS</title>
     <!-- Memuat Tailwind CSS CDN untuk styling yang cepat dan responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Memuat ikon Lucide untuk visualisasi data -->
@@ -16,14 +16,14 @@
                 extend: {
                     colors: {
                         'blynk-primary': '#4B87FF', // Biru Blynk
-                        'bg-main': '#0F172A', // Latar Belakang Utama (Slate-900)
-                        'card-bg': '#1E293B', // Latar Belakang Kartu (Slate-800)
+                        'bg-main': '#05050D', // Hitam Paling Gelap
+                        'card-bg-transparent': 'rgba(20, 20, 48, 0.4)', // Base Transparansi Hitam untuk Kartu
                         
                         // SKEMA WARNA PROFESIONAL (FUNGSI)
                         'dc-color': '#BFFF00', // Hijau Lime Lembut (PV/DC)
                         'ac-color': '#FFB900', // Kuning Emas Hangat (AC-Beban)
                         'blue-bat': '#00FFFF', // Cyan Cerah (Baterai)
-                        'green-400': '#00C853', // Hijau Cerah (Rupiah)
+                        'green-400': '#00C853', // Hijau Cerah (Rupiah/SOH)
                         
                         // WARNA SEKUNDER (HIGH PRIORITY)
                         'pink-med': '#FF69B4', 
@@ -40,9 +40,9 @@
     </script>
     <style>
         body {
-            background-color: #0F172A; /* Slate-900 Baru */
+            background-color: #05050D; /* Hitam Paling Gelap */
             font-family: 'Inter', sans-serif;
-            color: #E2E8F0; /* Sedikit lebih terang dari #F8FAFC */
+            color: #F8FAFC;
         }
         .lucide { stroke-width: 1.75; }
         .data-value {
@@ -56,44 +56,38 @@
             50% { opacity: 0.5; }
         }
         
-        /* Kartu Utama: Efek Modern Dark (Slate-800) */
+        /* Kartu Utama: Hitam Transparan, Tanpa Gradasi */
         .solar-card {
-            background-color: #1E293B; 
-            border-radius: 16px; /* Lebih bulat */
+            background-color: rgba(20, 20, 48, 0.4); /* Menggunakan warna yang sangat gelap dengan transparansi */
+            border-radius: 16px; 
             padding: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15); /* Shadow standar modern */
-            border: 1px solid rgba(71, 85, 105, 0.5); /* Border tipis untuk definisi */
+            /* Bayangan Ramping (dibuat lebih tipis) */
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); 
+            border: 1px solid rgba(71, 85, 105, 0.2); /* Border lebih transparan */
             transition: all 0.3s ease;
         }
         .solar-card:hover {
-            box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.5), 0 6px 10px -3px rgba(0, 0, 0, 0.25);
-            transform: translateY(-2px); /* Efek lift ringan */
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+            transform: translateY(-2px); /* Efek Angkat Ringan */
+            background-color: rgba(20, 20, 48, 0.6); /* Sedikit lebih solid saat hover */
         }
         
-        /* GAYA AERO GLASS UNTUK DETAIL ITEM (Diperhalus) */
+        /* GAYA AERO GLASS UNTUK DETAIL ITEM (Dipertahankan minimalis) */
         .detail-item {
-            background-color: rgba(255, 255, 255, 0.05); /* Sedikit lebih transparan */
-            border: 1px solid rgba(255, 255, 255, 0.1); /* Border lebih tipis/soft */
-            backdrop-filter: blur(10px); /* Blur lebih kuat */
-            border-radius: 12px; /* Lebih bulat dari card utama */
+            background-color: rgba(255, 255, 255, 0.03); /* Transparansi sangat rendah */
+            border: 1px solid rgba(255, 255, 255, 0.08); /* Border sangat tipis */
+            backdrop-filter: blur(2px); 
+            
+            border-radius: 12px; 
             margin-bottom: 0.75rem;
             padding: 0.75rem 1rem; 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background-color 0.3s, transform 0.1s;
-            cursor: default;
-        }
-        .detail-item:active { /* Efek tekan (app-like feedback) */
-            transform: scale(0.98);
+            transition: background-color 0.3s;
         }
         .detail-item:hover {
             background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Hapus margin bawah item terakhir di setiap kolom detail */
-        .solar-card > div > .detail-item:last-of-type {
-            margin-bottom: 0;
         }
         
         /* Gaya Khusus untuk Angka dan Satuan agar Sejajar (Ringkasan) */
@@ -103,74 +97,59 @@
             justify-content: flex-start;
         }
         .summary-value {
-            font-size: 3rem; /* Sedikit lebih besar dan menonjol */
+            font-size: 3rem; 
             font-weight: 900; 
             line-height: 1; 
-            letter-spacing: -0.05em; /* Kerapatan huruf seperti di aplikasi modern */
+            letter-spacing: -0.05em; 
         }
         .summary-unit {
-            font-size: 1.2rem; /* Lebih besar */
-            font-weight: 600; 
+            font-size: 1.25rem; 
+            font-weight: 500; 
             margin-left: 0.5rem; 
             line-height: 1;
         }
 
-        /* Modal Styles */
-        #custom-modal {
-            background-color: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-        }
-        #modal-content {
-            background-color: #1E293B;
-            border-radius: 16px;
-        }
-        
-        /* Gaya Nominal di Detail Item (Efek Soft Glow) */
-        .detail-item .nominal-color {
-            font-weight: 700; 
-            font-size: 1.15rem; 
-        }
-        
-        /* Efek Shadow Teks Berdasarkan Warna (Soft Glow) */
-        .text-dc-color, .text-ac-color, .text-blue-bat, .text-green-400, .text-pink-med, .text-purple-med, .text-orange-red, .text-warning-red, .text-white-nominal {
-            text-shadow: 0 0 4px rgba(255, 255, 255, 0.25); 
+        /* Gaya Khusus untuk Header (memastikan kontras) */
+        #main-header-content {
+             background-color: #05050D;
         }
 
-        /* Penyesuaian Detail Item Title Color: DIBUAT GRAY */
-        .detail-item .metric-title {
-            color: #A0AEC0; /* Abu-abu lembut (slate-400) */
-            font-weight: 500;
+        /* Gaya Minimal UI (untuk mobile fullscreen imitasi) */
+        .header-hidden, .footer-hidden {
+            opacity: 0;
+            height: 0;
+            padding: 0 !important;
+            margin: 0 !important;
+            transition: opacity 0.3s ease, height 0.3s ease;
+            overflow: hidden;
         }
-        /* Definisikan warna nominal putih khusus */
-        .text-white-nominal {
-            color: #FFFFFF;
-        }
+
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8">
+<body class="min-h-screen p-4 sm:p-8 bg-bg-main">
     
     <!-- Modal Kustom untuk Konfirmasi Navigasi -->
-    <div id="custom-modal" class="fixed inset-0 hidden items-center justify-center p-4">
-        <div id="modal-content" class="rounded-xl p-6 shadow-2xl max-w-sm w-full">
+    <div id="custom-modal" class="fixed inset-0 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.85); z-index: 1000;">
+        <div id="modal-content" class="rounded-xl p-6 shadow-2xl max-w-sm w-full bg-slate-800">
             <h3 class="text-xl font-bold text-white mb-3">Konfirmasi Navigasi</h3>
             <p id="modal-text" class="text-gray-300 mb-6"></p>
             <div class="flex justify-end space-x-3">
-                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold rounded-xl text-gray-400 hover:bg-gray-700 transition">Batal</button>
-                <button id="modal-confirm-button" onclick="" class="px-4 py-2 text-sm font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">Lanjutkan</button>
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-semibold rounded-lg text-gray-400 hover:bg-gray-700 transition">Batal</button>
+                <button id="modal-confirm-button" onclick="" class="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">Lanjutkan</button>
             </div>
         </div>
     </div>
 
 
     <!-- Header & Status Jam -->
-    <header class="mb-8">
+    <header id="app-header" class="mb-6">
         <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-start">
               <!-- Konten Kiri (Judul) -->
             <div>
                 <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                    AEPRO PLTS ONLINE
+                    DASHBOARD AEPRO PLTS
                 </h1>
-                <p class="text-gray-400 mt-1">Monitoring Kinerja & Performa Sistem PLTS.</p>
+                <p class="text-gray-400 mt-1">Performa Sistem Pembangkit Listrik Tenaga Surya.</p>
             </div>
               <!-- Konten Kanan (Jam) -->
             <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
@@ -179,9 +158,9 @@
                     <p id="current-time" class="text-3xl font-bold text-white"></p>
                 </div>
                 
-                <!-- Tombol Navigasi dan Logout di DESKTOP -->
+                <!-- Tombol Navigasi dan Logout di DESKTOP (HANYA terlihat di md: dan lebih besar) -->
                 <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
-                    <button id="bms-button-desktop" onclick="handleBMSNavigation()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
+                     <button id="bms-button-desktop" onclick="handleBMSNavigation()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center">
                         <i data-lucide="battery-full" class="lucide w-5 h-5 mr-1"></i>
                         Detail Baterai
                     </button>
@@ -193,21 +172,25 @@
             </div>
         </div>
         
-        <!-- Tombol Navigasi MOBILE -->
-        <div id="mobile-buttons" class="hidden md:hidden w-full flex justify-between space-x-3 mb-6 mt-4">
-            <button id="bms-button-mobile" onclick="handleBMSNavigation()" class="w-1/2 bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+        <!-- Tombol Navigasi MOBILE (HANYA terlihat di bawah md: breakpoint) -->
+        <div id="mobile-buttons" class="hidden md:hidden w-full grid grid-cols-3 gap-3 mb-6 mt-4">
+             <button id="bms-button-mobile" onclick="handleBMSNavigation()" class="bg-blue-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center">
                 <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2"></i>
-                Detail Baterai
+                BMS
             </button>
-            <button id="logout-button-mobile" onclick="logoutAndClear()" class="w-1/2 bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
-                <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
-                Hentikan
+            <button id="fullscreen-button-mobile" onclick="toggleMinimalUI()" class="bg-gray-700 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-gray-600 transition duration-300 flex items-center justify-center">
+                <i id="fullscreen-icon" data-lucide="minimize-2" class="lucide w-5 h-5 mr-2"></i>
+                <span id="fullscreen-text">Full Layar</span>
+            </button>
+            <button id="logout-button-mobile" onclick="logoutAndClear()" class="bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+                 <i data-lucide="log-out" class="lucide w-5 h-5 mr-2"></i> 
+                 Hentikan
             </button>
         </div>
     </header>
 
     <!-- Area Input Konfigurasi -->
-    <div id="config-panel" class="bg-gray-800 p-6 rounded-xl shadow-xl mb-10">
+    <div id="config-panel" class="solar-card p-6 rounded-xl shadow-xl mb-8">
         <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
             <i data-lucide="settings" class="lucide w-5 h-5 mr-2 text-blynk-primary"></i>
             Konfigurasi API
@@ -215,11 +198,11 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain </label>
-                <input type="text" id="server-ip" placeholder="contoh: iot.serangkota.go.id:9443 atau 192.168.1.100:8080" class="w-full p-2.5 rounded-xl bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
+                <input type="text" id="server-ip" placeholder="contoh: iot.server.com:9443" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
             </div>
             <div>
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
-                <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-xl bg-gray-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
+                <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
             </div>
             <div class="flex items-end">
                 <button onclick="saveAndFetchData()" class="w-full bg-blynk-primary text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-600 transition duration-300">
@@ -234,18 +217,18 @@
     <main id="monitoring-dashboard" class="hidden">
 
         <!-- RINGKASAN UTAMA (4 Kartu Besar) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-6">RINGKASAN KINERJA HARI INI</h2>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
             <!-- V14: DAYA AC (Daya Saat Ini) - AC Output -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
-                    <i data-lucide="zap" class="lucide w-6 h-6 text-ac-color"></i>
+                    <i data-lucide="zap" class="lucide w-7 h-7 text-ac-color"></i>
                 </div>
                 <div class="summary-block">
-                    <span id="v14-power" class="data-value summary-value text-white-nominal loading-animation">...</span>
-                    <span id="v14-power-unit" class="summary-unit text-white-nominal"></span>
+                    <span id="v14-power" class="data-value summary-value text-white loading-animation">...</span>
+                    <span id="v14-power-unit" class="summary-unit text-white"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Daya yang sedang digunakan.</p>
             </div>
@@ -254,7 +237,7 @@
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
-                    <i data-lucide="power-square" class="lucide w-6 h-6 text-ac-color"></i>
+                    <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
                 </div>
                 <div class="summary-block">
                     <span id="v21-kwh-today-ac" class="data-value summary-value text-ac-color loading-animation">...</span>
@@ -267,7 +250,7 @@
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
-                    <i data-lucide="sun" class="lucide w-6 h-6 text-dc-color"></i>
+                    <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                 </div>
                 <div class="summary-block">
                     <span id="v10-kwh-today" class="data-value summary-value text-dc-color loading-animation">...</span>
@@ -280,11 +263,11 @@
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
-                    <i data-lucide="wallet" class="lucide w-6 h-6 text-green-400"></i>
+                    <i data-lucide="wallet" class="lucide w-7 h-7 text-green-400"></i>
                 </div>
                 <div class="summary-block">
                     <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
-                    <span id="v19-rupiah-day" class="data-value summary-value text-green-400 loading-animation">...</span>
+                    <span id="v19-rupiah-day" class="data-value summary-value !text-3xl text-green-400 loading-animation !tracking-normal">...</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat.</p>
             </div>
@@ -292,7 +275,7 @@
         
         
         <!-- DETAIL MONITORING (DC dan AC) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-6">DETAIL SISTEM</h2>
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">DETAIL SISTEM</h2>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- Kolom 1: Panel Surya (DC) -->
@@ -304,9 +287,9 @@
                 <div>
                     <!-- V0: Voltage DC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
-                            <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
-                            BUS VOLTAGE
+                        <div class="flex items-center metric-title text-white">
+                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
+                             BUS VOLTAGE
                         </div>
                         <div class="flex items-baseline text-pink-med nominal-color">
                             <span id="v0-pzem-voltage" class="text-xl font-bold loading-animation">...</span>
@@ -315,7 +298,7 @@
                     </div>
                     <!-- V1: Current DC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             ARUS PV
                         </div>
@@ -326,7 +309,7 @@
                     </div>
                     <!-- V2: Power DC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="zap" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             DAYA PV
                         </div>
@@ -337,7 +320,7 @@
                     </div>
                     <!-- V6: PV Peak -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-orange-red"></i>
                             PV PEAK
                         </div>
@@ -348,7 +331,7 @@
                     </div>
                     <!-- V5: PV Persen -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             Efisiensi PV
                         </div>
@@ -369,7 +352,7 @@
                 <div>
                     <!-- V7: Baterai Peak -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-full" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI MAX
                         </div>
@@ -380,7 +363,7 @@
                     </div>
                     <!-- V8: Baterai Low (KRITIS: MERAH) -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
                             BATERAI LOW
                         </div>
@@ -391,7 +374,7 @@
                     </div>
                     <!-- V9: Baterai AH -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
                             BATERAI AH
                         </div>
@@ -402,7 +385,7 @@
                     </div>
                     <!-- V4: SunHour -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             MATAHARI EFEKTIF
                         </div>
@@ -413,7 +396,7 @@
                     </div>
                     <!-- V3: Total Energy DC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="gauge" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TOTAL ENERGY DC
                         </div>
@@ -424,7 +407,7 @@
                     </div>
                     <!-- V11: Total PV (Total Lifetime Energy) -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
                             TOTAL ENERGY PV
                         </div>
@@ -445,7 +428,7 @@
                 <div>
                     <!-- V12: Voltage AC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TEGANGAN AC 
                         </div>
@@ -456,7 +439,7 @@
                     </div>
                     <!-- V13: Current AC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             ARUS AC
                         </div>
@@ -467,7 +450,7 @@
                     </div>
                     <!-- V15: Energy AC -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
                             TOTAL ENERGY AC
                         </div>
@@ -478,7 +461,7 @@
                     </div>
                     <!-- V16: Frequency -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
                             FREQUENSI
                         </div>
@@ -489,7 +472,7 @@
                     </div>
                     <!-- V20: Inverter Peak (PUNCAK: MERAH) -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
                             INVERTER PEAK
                         </div>
@@ -500,7 +483,7 @@
                     </div>
                     <!-- V17: Power Factor -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="gauge-circle" class="lucide w-4 h-4 mr-3 text-purple-med"></i>
                             FAKTOR DAYA
                         </div>
@@ -511,7 +494,7 @@
                     </div>
                     <!-- V18: Rupiah Total -->
                     <div class="detail-item">
-                        <div class="flex items-center metric-title">
+                        <div class="flex items-center metric-title text-white">
                             <i data-lucide="trending-up" class="lucide w-4 h-4 mr-3 text-green-400"></i>
                             TOTAL PENGHEMATAN
                         </div>
@@ -526,12 +509,14 @@
     </main>
 
     <!-- Footer -->
-    <footer class="mt-12 text-center text-gray-500 text-sm">
+    <footer id="app-footer" class="mt-8 text-center text-gray-500 text-sm py-4">
         <p>Dibuat oleh AEPRO PLTS.</p>
     </footer>
 
     <!-- Script Fungsionalitas -->
     <script>
+        // ... (Fungsionalitas JavaScript)
+        
         // Mengubah semua ikon Lucide menjadi SVG
         lucide.createIcons();
 
@@ -572,6 +557,8 @@
         let serverIp = '';
         let authToken = '';
         
+        let isMinimalUI = false;
+
         /**
          * Utility untuk membuat jeda (delay)
          * @param {number} ms Milidetik untuk menunggu
@@ -592,13 +579,13 @@
 
         /**
          * Menampilkan pesan notifikasi di bawah panel konfigurasi
-         * @param {string} message Pesan yang akan ditampilkan
-         * @param {string} type Tipe pesan ('success', 'error', 'warning')
          */
         function showMessage(message, type = 'warning') {
             const msgBox = document.getElementById('message-box');
             msgBox.textContent = message;
-            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block'; // Updated to rounded-xl
+            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-lg block'; 
+            msgBox.classList.remove('bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); // Reset classes
+
             if (type === 'error') {
                 msgBox.classList.add('bg-red-900', 'text-red-300');
             } else if (type === 'success') {
@@ -610,8 +597,6 @@
         
         /**
          * Menampilkan Modal Kustom
-         * @param {string} text Pesan di modal
-         * @param {function} confirmAction Fungsi yang dijalankan jika tombol "Lanjutkan" ditekan
          */
         function showModal(text, confirmAction) {
             const modal = document.getElementById('custom-modal');
@@ -637,7 +622,33 @@
 
         // Fungsi untuk menangani navigasi BMS
         function handleBMSNavigation() {
+            // Langsung navigasi tanpa perlu konfirmasi modal (seperti di BMS)
             window.location.href = './bms_monitoring.html';
+        }
+        
+        /**
+         * Mengaktifkan/menonaktifkan mode minimal UI (untuk mobile fullscreen imitasi)
+         */
+        function toggleMinimalUI() {
+            const header = document.getElementById('app-header');
+            const footer = document.getElementById('app-footer');
+            const icon = document.getElementById('fullscreen-icon');
+            const text = document.getElementById('fullscreen-text');
+
+            isMinimalUI = !isMinimalUI;
+
+            if (isMinimalUI) {
+                header.classList.add('header-hidden');
+                footer.classList.add('footer-hidden');
+                icon.setAttribute('data-lucide', 'maximize-2');
+                text.textContent = 'Normal UI';
+            } else {
+                header.classList.remove('header-hidden');
+                footer.classList.remove('footer-hidden');
+                icon.setAttribute('data-lucide', 'minimize-2');
+                text.textContent = 'Full Layar';
+            }
+            lucide.createIcons();
         }
 
         /**
@@ -646,29 +657,23 @@
         async function fetchPinValue(pin) {
             let host = serverIp;
 
-            // 1. Tentukan Host dan Protokol
-            let protocol = 'https'; // Default ke HTTPS untuk kompatibilitas lingkungan sandbox
+            let protocol = 'https'; 
             const defaultPort = '8080';
             
-            // Periksa apakah host sudah mengandung port
             if (!host.includes(':')) {
-                // Tambahkan port default untuk server lokal/custom jika belum ada, meskipun kita akan coba HTTPS
                 host = `${host}:${defaultPort}`;
             }
 
-            // Blynk Cloud menggunakan HTTPS di port standar (443) atau 8080/8443
             if (serverIp.includes('blynk.cloud')) {
                 protocol = 'https';
             } else if (!serverIp.includes(':')) {
-                // Jika IP lokal tanpa port, coba port 8080
                 host = `${serverIp}:8080`;
-                protocol = 'http'; // Untuk IP lokal, coba HTTP, meskipun mungkin diblokir CORS
+                protocol = 'http'; 
             }
             
-            // Prioritaskan HTTPS untuk mengatasi masalah CORS/mixed content, meskipun ini akan gagal jika server lokal Anda tidak memiliki SSL
             if (protocol === 'http' && window.location.protocol === 'https:') {
-                 console.warn(`[WARNING PIN ${pin}] Mencoba HTTP (${host}) dari konteks HTTPS. Ini kemungkinan akan diblokir oleh Mixed Content/CORS. Beralih ke HTTPS.`);
-                 protocol = 'https'; 
+                // Mencoba HTTPS jika berada di konteks HTTPS
+                protocol = 'https'; 
             }
             
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
@@ -681,15 +686,14 @@
                         throw new Error(`Status: ${response.status} (${response.statusText})`);
                     }
                     const data = await response.json();
-                    return data[0]; // Data dari Blynk API adalah array, ambil elemen pertama
+                    return data[0]; 
                 } catch (error) {
                     if (i < maxRetries - 1) {
                         const delayTime = Math.pow(2, i) * 1000; // 1s, 2s, 4s
-                        // console.log(`[RETRY PIN ${pin}] Gagal (Percobaan ${i + 1}/${maxRetries}). Menunggu ${delayTime / 1000}s...`);
                         await delay(delayTime);
                     } else {
                         console.error(`[ERROR PIN ${pin}] Gagal setelah ${maxRetries} percobaan. URL: ${url}`, error);
-                        throw new Error("Failed to fetch (Check IP/Token/CORS)"); // Kirim error akhir
+                        throw new Error("Failed to fetch (Check IP/Token/CORS)");
                     }
                 }
             }
@@ -709,12 +713,10 @@
             const rupiahPins = ['V18', 'V19'];
 
             if (integerPins.includes(pin)) {
-                // Pin yang diminta tanpa desimal 
-                return numericValue.toFixed(0); 
+                return numericValue.toFixed(0);  
             }
 
             if (rupiahPins.includes(pin)) {
-                // Pin Rupiah, diformat sebagai bilangan bulat (nol desimal) dengan pemisah ribuan
                 return numericValue.toLocaleString('id-ID', {
                     minimumFractionDigits: 0, 
                     maximumFractionDigits: 0
@@ -736,8 +738,8 @@
             if (pin === 'V4') return ' jam';
             if (pin === 'V5') return ' %';
             if (pin === 'V16') return ' Hz';
-            if (pin === 'V17') return ' '; // Power Factor tidak ada satuan
-            if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; // Baterai Peak/Low/AH tidak ada satuan eksplisit di sini
+            if (pin === 'V17') return ' '; 
+            if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; 
             return '';
         }
 
@@ -766,7 +768,6 @@
                     const rawValue = result.value || '0';
                     const formattedValue = formatValue(pin, rawValue);
                     
-                    
                     // 1. Tentukan konten teks
                     if (pin === 'V18' || pin === 'V19') {
                         element.textContent = formattedValue;
@@ -782,13 +783,13 @@
                         element.style.transform = 'scale(1)';
                     }, 100);
                     
-                    // 3. Logic Warna Nominal di Detail System
+                    // 3. Logic Warna Nominal
                     let nominalColorClass = '';
                     let iconColorClass = '';
 
                     // Tentukan kelas warna
-                    if (['V14'].includes(pin)) {
-                        nominalColorClass = 'text-white-nominal';
+                    if (pin === 'V14') {
+                        nominalColorClass = 'text-white'; // Summary AC Power selalu putih
                         iconColorClass = 'text-ac-color'; 
                     } else if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V10', 'V11'].includes(pin)) {
                         nominalColorClass = 'text-dc-color'; 
@@ -811,13 +812,10 @@
                     }
                     
                     // --- KASUS KHUSUS MERAH (PUNCAK/PERINGATAN) ---
-                    if (pin === 'V8') { 
+                    if (pin === 'V8' || pin === 'V20' || pin === 'V6') { 
                         nominalColorClass = 'text-warning-red';
                         iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V20' || pin === 'V6') { 
-                         nominalColorClass = 'text-warning-red';
-                         iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V0') { 
+                    } else if (pin === 'V0') { // Bus Voltage menggunakan pink
                         iconColorClass = 'text-pink-med';
                     }
                     
@@ -957,32 +955,18 @@
                     document.getElementById('desktop-buttons').classList.add('hidden');
                     document.getElementById('mobile-buttons').classList.add('hidden');
 
+                    // Reset Minimal UI
+                    const header = document.getElementById('app-header');
+                    const footer = document.getElementById('app-footer');
+                    header.classList.remove('header-hidden');
+                    footer.classList.remove('footer-hidden');
+                    isMinimalUI = false;
+
 
                     showMessage('Anda telah keluar. Data konfigurasi telah dihapus dari browser ini.', 'success');
                 }
             );
         }
-
-        // --- FUNGSI BARU: AUTO FULLSCREEN ---
-        /**
-         * Meminta browser untuk masuk ke mode layar penuh.
-         * Hanya diaktifkan jika lebar kurang dari 768px (Mobile).
-         */
-        function requestFullscreen() {
-            if (window.innerWidth < 768) { // Cek apakah di perangkat mobile
-                const element = document.documentElement; // Ambil elemen root (<html>)
-                if (element.requestFullscreen) {
-                    element.requestFullscreen();
-                } else if (element.mozRequestFullScreen) { /* Firefox */
-                    element.mozRequestFullScreen();
-                } else if (element.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-                    element.webkitRequestFullscreen();
-                } else if (element.msRequestFullscreen) { /* IE/Edge */
-                    element.msRequestFullscreen();
-                }
-            }
-        }
-
 
         /**
          * Fungsi inisialisasi saat memuat halaman
@@ -991,7 +975,7 @@
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
             
-            // Sembunyikan semua tombol header secara default (Ini penting agar tidak ada flicker sebelum JS berjalan)
+            // Sembunyikan semua tombol header secara default
             desktopButtons.classList.add('hidden');
             mobileButtons.classList.add('hidden');
 
@@ -1008,7 +992,7 @@
                 document.getElementById('auth-token').value = savedToken;
                 authToken = savedToken;
             } else {
-                // Set default value if no saved token
+                 // Set default value if no saved token
                 document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             }
 
@@ -1016,13 +1000,6 @@
             updateTime();
             setInterval(updateTime, 1000); // Perbarui jam setiap detik
 
-            // Tampilkan pesan awal
-            if (serverIp && authToken) {
-                // Jika sudah ada token tersimpan, akan langsung di-load di window.onload
-            } else {
-                 showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
-            }
-            
             // Re-render icons
             lucide.createIcons();
         }
@@ -1030,16 +1007,13 @@
         // Jalankan inisialisasi saat DOM siap
         window.onload = function() {
             init();
-            
-            // Panggil Auto Fullscreen saat halaman dimuat (untuk mobile)
-            requestFullscreen(); 
-
-            // Jika ada token tersimpan, muat data historis dan mulai fetching
+            // Jika ada token tersimpan, mulai fetching
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
                 saveAndFetchData();
+            } else {
+                showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
             }
         };
     </script>
 </body>
 </html>
-
