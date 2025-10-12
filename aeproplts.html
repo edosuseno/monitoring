@@ -300,16 +300,17 @@
                 <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat hari ini.</p>
             </div>
 
-            <!-- V18: TOTAL PENGHEMATAN (Rupiah Akumulasi) - PIN BARU DI POSISI INI -->
+            <!-- V18: TOTAL PENGHEMATAN (Rupiah Akumulasi) - GANTI WARNA PINK -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">TOTAL PENGHEMATAN</p>
-                    <i data-lucide="trending-up" class="lucide w-7 h-7 text-green-400"></i>
+                    <i data-lucide="trending-up" class="lucide w-7 h-7 text-pink-med"></i>
                 </div>
                 <div class="summary-block">
                      <!-- Nilai di Screenshot: Rp 246.198 -->
                     <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
-                    <span id="v18-rupiah-total" class="data-value summary-value !text-3xl text-green-400 loading-animation !tracking-normal">...</span>
+                    <!-- PERUBAHAN WARNA DISINI (text-pink-med) -->
+                    <span id="v18-rupiah-total" class="data-value summary-value !text-3xl text-pink-med loading-animation !tracking-normal">...</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Akumulasi biaya yang dihemat.</p>
             </div>
@@ -1256,9 +1257,14 @@
                     } else if (['V12', 'V13', 'V14', 'V15', 'V21'].includes(pin) || pin.includes('ac')) {
                         nominalColorClass = 'text-ac-color';
                         iconColorClass = 'text-ac-color'; 
-                    } else if (['V18', 'V19'].includes(pin) || pin.includes('rupiah')) { 
+                    } else if (pin === 'V19' || pin.includes('rupiah')) { 
+                        // V19 (Penghematan Harian) tetap hijau
                         nominalColorClass = 'text-green-400';
                         iconColorClass = 'text-green-400'; 
+                    } else if (pin === 'V18') { 
+                        // V18 (Total Penghematan) GANTI KE PINK
+                        nominalColorClass = 'text-pink-med';
+                        iconColorClass = 'text-pink-med'; 
                     } else if (pin === 'V22') { // Self-Consumption
                         nominalColorClass = 'text-chart-self-consumption'; 
                         iconColorClass = 'text-chart-self-consumption';
