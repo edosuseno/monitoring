@@ -649,21 +649,23 @@
         if (iconSocEl) iconSocEl.classList.remove(...colorClasses);
         if (socProgress) socProgress.classList.remove(...colorClasses);
         
-        // Apply new color logic (Green if > 70, Red if < 30)
-        let socTextColor = 'text-blue-bat';
-        let socProgressColor = 'bg-blue-500';
+        // Terapkan logika warna baru (Hijau jika >70, Kuning jika antara 30–70, Merah jika <30)
+let socTextColor = 'text-blue-bat';     // warna teks default (kalau tidak masuk kondisi)
+let socProgressColor = 'bg-blue-500';   // warna batang default
 
-        if (socValue > 70) {
-            socTextColor = 'text-green-400';
-            socProgressColor = 'bg-green-500';
-        } else if (socValue < 30) {
-            socTextColor = 'text-warning-red';
-            socProgressColor = 'bg-red-500';
-        } else {
-             // Warna default/normal (Biru Cyan)
-            socTextColor = 'text-blue-bat';
-            socProgressColor = 'bg-blue-500';
-        }
+if (socValue > 70) {
+    // Jika nilai SoC di atas 70%, tampilkan warna hijau
+    socTextColor = 'text-green-400';
+    socProgressColor = 'bg-green-500';
+} else if (socValue >= 30 && socValue <= 70) {
+    // Jika nilai SoC antara 30% dan 70%, tampilkan warna kuning
+    socTextColor = 'text-yellow-400';
+    socProgressColor = 'bg-yellow-500';
+} else {
+    // Jika nilai SoC di bawah 30%, tampilkan warna merah
+    socTextColor = 'text-warning-red';
+    socProgressColor = 'bg-red-500';
+}
 
         // --- Update elemen summary menggunakan safeUpdate ---
         const socContent = datane.soc !== 'N/A' ? `${datane.soc}%` : 'N/A';
@@ -737,7 +739,7 @@
                   <span class="font-bold text-gray-400">/ ${batt.soh}%</span>
                 </div>
                 <div class="progress-bar mt-1">
-                    <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill bg-yellow-500" style="width: ${batt.soc}%"></div>
+                    <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill bg-gray-400" style="width: ${batt.soc}%"></div>
                 </div>
               </div>
 
