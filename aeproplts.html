@@ -720,15 +720,10 @@
             document.getElementById('custom-modal').classList.remove('flex');
         }
 
-        // Fungsi untuk menangani navigasi BMS (Diubah untuk menggunakan Modal)
+        // Fungsi untuk menangani navigasi BMS (DIUBAH: Navigasi Langsung tanpa Modal)
         function handleBMSNavigation() {
-            showModal(
-                'Anda akan diarahkan ke halaman "BMS Monitoring". Data real-time di halaman ini akan berhenti di latar belakang. Lanjutkan?', 
-                () => {
-                    saveHistoricalData(); // Simpan data chart sebelum pindah
-                    window.location.href = './bms_monitoring.html';
-                }
-            );
+            saveHistoricalData(); // Simpan data chart sebelum pindah
+            window.location.href = './bms_monitoring.html';
         }
 
         /**
