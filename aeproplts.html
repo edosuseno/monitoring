@@ -760,18 +760,10 @@
         }
 
         // Fungsi untuk menangani navigasi BMS
-        function handleBMSNavigation() {
-            saveHistoricalData(); // Simpan data chart sebelum pindah
-            // Gunakan showModal untuk memberikan peringatan navigasi.
-            showModal(
-                'Anda akan diarahkan ke halaman Detail Baterai (BMS). Lanjutkan?',
-                () => {
-                    // Karena ini adalah lingkungan simulasi, kita tidak bisa navigasi. 
-                    // Tampilkan pesan sukses dan biarkan user mengedit/membuat file baru.
-                    showMessage('Simulasi navigasi ke BMS berhasil, tetapi tidak dapat dialihkan di lingkungan ini.', 'success');
-                }
-            );
-        }
+function handleBMSNavigation() {
+    saveHistoricalData(); // Simpan data chart sebelum pindah
+    window.location.href = 'bms_monitoring.html'; // langsung pindah ke halaman
+}
         
         /**
          * Mengaktifkan/menonaktifkan mode minimal UI (untuk mobile fullscreen imitasi)
