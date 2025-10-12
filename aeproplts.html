@@ -37,6 +37,8 @@
                          // Warna Chart.js
                         'chart-pv': '#BFFF00', // Sesuai dc-color
                         'chart-load': '#FFB900', // Sesuai ac-color
+                        'chart-self-consumption': '#00FFFF', // Cyan
+                        'chart-surplus': '#8E44AD', // Purple
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -151,6 +153,15 @@
             z-index: 9999;
             padding: 20px;
         }
+        
+        /* Gaya Kartu Daya Kecil */
+        .power-summary-card {
+            background-color: rgba(40, 40, 70, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 sm:p-8 bg-bg-main">
@@ -243,69 +254,119 @@
     <!-- Area Monitoring Utama -->
     <main id="monitoring-dashboard" class="hidden">
 
-        <!-- RINGKASAN UTAMA (4 Kartu Besar) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA</h2>
+        <!-- RINGKASAN UTAMA (4 Kartu Besar Sesuai Screenshot) -->
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA HARI INI</h2>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
-            <!-- V14: DAYA AC (Daya Saat Ini) - AC Output -->
-            <div class="solar-card">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">DAYA AC (W)</p>
-                    <i data-lucide="zap" class="lucide w-7 h-7 text-ac-color"></i>
-                </div>
-                <div class="summary-block">
-                    <span id="v14-power" class="data-value summary-value text-white loading-animation">...</span>
-                    <span id="v14-power-unit" class="summary-unit text-white"></span>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Daya yang sedang digunakan.</p>
-            </div>
-            
-            <!-- V21: kWh Today AC (Beban Hari Ini) - AC Output -->
-            <div class="solar-card">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
-                    <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
-                </div>
-                <div class="summary-block">
-                    <span id="v21-kwh-today-ac" class="data-value summary-value text-ac-color loading-animation">...</span>
-                    <span id="v21-kwh-today-ac-unit" class="summary-unit text-ac-color"></span>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
-            </div>
-
-              <!-- V10: Energi DC (PV) Hari Ini - DC Production -->
+            <!-- V10: ENERGI PV HARI INI (Produksi DC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
                     <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                 </div>
                 <div class="summary-block">
+                    <!-- Nilai di Screenshot: 15.4 kWh -->
                     <span id="v10-kwh-today" class="data-value summary-value text-dc-color loading-animation">...</span>
                     <span id="v10-kwh-today-unit" class="summary-unit text-dc-color"></span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini (kWh).</p>
             </div>
+            
+            <!-- V21: BEBAN HARI INI (Konsumsi AC) -->
+            <div class="solar-card">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">(BEBAN) HARI INI</p>
+                    <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
+                </div>
+                <div class="summary-block">
+                    <!-- Nilai di Screenshot: 14.2 kWh -->
+                    <span id="v21-kwh-today-ac" class="data-value summary-value text-ac-color loading-animation">...</span>
+                    <span id="v21-kwh-today-ac-unit" class="summary-unit text-ac-color"></span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
+            </div>
 
-            <!-- V19: PENGHEMATAN HARI INI (Rupiah) - Finance -->
+            <!-- V19: PENGHEMATAN HARI INI (Rupiah) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
                     <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
-                    <i data-lucide="wallet" class="lucide w-7 h-7 text-green-400"></i>
+                    <i data-lucide="file-text" class="lucide w-7 h-7 text-green-400"></i>
                 </div>
                 <div class="summary-block">
+                    <!-- Nilai di Screenshot: Rp 20.500 -->
                     <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
                     <span id="v19-rupiah-day" class="data-value summary-value !text-3xl text-green-400 loading-animation !tracking-normal">...</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat.</p>
+                <p class="text-xs text-gray-500 mt-1">Perkiraan biaya yang dihemat hari ini.</p>
+            </div>
+
+            <!-- V18: TOTAL PENGHEMATAN (Rupiah Akumulasi) - PIN BARU DI POSISI INI -->
+            <div class="solar-card">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm font-semibold text-gray-400 uppercase">TOTAL PENGHEMATAN</p>
+                    <i data-lucide="trending-up" class="lucide w-7 h-7 text-green-400"></i>
+                </div>
+                <div class="summary-block">
+                     <!-- Nilai di Screenshot: Rp 246.198 -->
+                    <span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span>
+                    <span id="v18-rupiah-total" class="data-value summary-value !text-3xl text-green-400 loading-animation !tracking-normal">...</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Akumulasi biaya yang dihemat.</p>
+            </div>
+        </div>
+
+        <!-- GRAFIK DAYA & KARTU KECIL (4 Kartu Di Bawah Header Grafik) -->
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
+        
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <!-- V2: PV Power (Input) -->
+            <div class="power-summary-card">
+                <p class="text-sm text-gray-400">Daya PV (Input)</p>
+                <div class="flex items-baseline mt-1">
+                    <!-- Nilai di Screenshot: 0 W -->
+                    <span id="v2-pzem-power-chart" class="text-2xl font-bold text-dc-color loading-animation">...</span>
+                    <span id="v2-pzem-power-chart-unit" class="text-base text-dc-color ml-1"></span>
+                </div>
+                 <p class="text-xs text-gray-500 mt-1">Status 23:33:12</p>
+            </div>
+            <!-- V14: Beban AC (Output) -->
+            <div class="power-summary-card">
+                <p class="text-sm text-gray-400">Beban AC (Output)</p>
+                <div class="flex items-baseline mt-1">
+                    <!-- Nilai di Screenshot: 0 W -->
+                    <span id="v14-power-chart" class="text-2xl font-bold text-ac-color loading-animation">...</span>
+                    <span id="v14-power-chart-unit" class="text-base text-ac-color ml-1"></span>
+                </div>
+                 <p class="text-xs text-gray-500 mt-1">Status 23:33:12</p>
+            </div>
+             <!-- V22: Self-Consumption (%) - PIN BARU DIASUMSIKAN -->
+            <div class="power-summary-card">
+                <p class="text-sm text-gray-400">Self-Consumption</p>
+                <div class="flex items-baseline mt-1">
+                    <!-- Nilai di Screenshot: 0% -->
+                    <span id="v22-self-consumption" class="text-2xl font-bold text-chart-self-consumption loading-animation">...</span>
+                    <span id="v22-self-consumption-unit" class="text-base text-chart-self-consumption ml-1"></span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Daya PV yang digunakan beban.</p>
+            </div>
+            <!-- V23: Potensi Surplus (W) - PIN BARU DIASUMSIKAN -->
+            <div class="power-summary-card">
+                <p class="text-sm text-gray-400">Potensi Surplus</p>
+                <div class="flex items-baseline mt-1">
+                    <!-- Nilai di Screenshot: 0 W -->
+                    <span id="v23-potensi-surplus" class="text-2xl font-bold text-chart-surplus loading-animation">...</span>
+                    <span id="v23-potensi-surplus-unit" class="text-base text-chart-surplus ml-1"></span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Daya PV yang berlebih.</p>
             </div>
         </div>
 
         <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
         <div class="solar-card p-4 sm:p-6"> <!-- Padding kartu grafik dikurangi di sini -->
             <!-- Tombol Full Layar & Reset Zoom -->
             <div class="flex justify-end space-x-3 mb-2"> <!-- Margin di bawah tombol dikurangi -->
-                <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
+                <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center">
+                    <i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>
                     Reset Zoom
                 </button>
                 <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1">
@@ -352,17 +413,9 @@
                             <span id="v1-pzem-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V2: Power DC -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="zap" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            DAYA PV
-                        </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
-                            <span id="v2-pzem-power" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v2-pzem-power-unit" class="text-base ml-1"></span>
-                        </div>
-                    </div>
+                    <!-- V2: Power DC (Dihapus dari sini karena sudah ada di Power Chart)
+                    <div class="detail-item">...</div>
+                    -->
                     <!-- V6: PV Peak -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -493,6 +546,9 @@
                             <span id="v13-current-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
+                    <!-- V14: Power AC (Dihapus dari sini karena sudah ada di Power Chart)
+                    <div class="detail-item">...</div>
+                    -->
                     <!-- V15: Energy AC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
@@ -537,17 +593,9 @@
                             <span id="v17-pf-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V18: Rupiah Total -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="trending-up" class="lucide w-4 h-4 mr-3 text-green-400"></i>
-                            TOTAL PENGHEMATAN
-                        </div>
-                        <div class="flex items-baseline">
-                            <span class="text-sm text-gray-500 mr-1 font-bold">Rp</span>
-                            <span id="v18-rupiah" class="data-value text-xl font-bold text-green-400 loading-animation">...</span>
-                        </div>
-                    </div>
+                    <!-- V18: Rupiah Total (Dihapus dari sini karena sudah ada di Ringkasan Utama)
+                    <div class="detail-item">...</div>
+                    -->
                 </div>
             </div>
         </div>
@@ -566,30 +614,45 @@
         // Daftar V-Pin dan ID elemen HTML yang sesuai
         const PIN_MAPPINGS = {
             // Mapping Pin ke ID (Format: PIN: ID_dasar)
+            
+            // --- RINGKASAN UTAMA ---
+            'V10': 'v10-kwh-today',    // Energi PV Hari Ini
+            'V21': 'v21-kwh-today-ac', // Beban Hari Ini
+            'V19': 'v19-rupiah-day',   // Penghematan Hari Ini
+            'V18': 'v18-rupiah-total', // TOTAL PENGHEMATAN (Diambil dari V18 yang sebelumnya ada di Detail)
+
+            // --- GRAFIK DAYA (4 Kartu Kecil) ---
+            'V2': 'v2-pzem-power-chart',    // Daya PV (Input)
+            'V14': 'v14-power-chart',       // Beban AC (Output)
+            'V22': 'v22-self-consumption',  // Self-Consumption (ASUMSI PIN BARU)
+            'V23': 'v23-potensi-surplus',   // Potensi Surplus (ASUMSI PIN BARU)
+            
+            // --- DETAIL DC ---
             'V0': 'v0-pzem-voltage',
             'V1': 'v1-pzem-current',
-            'V2': 'v2-pzem-power',
-            'V3': 'v3-pzem-energy',
-            'V4': 'v4-sunhour',
-            'V5': 'v5-pv-persen',
+            // V2 sudah di chart
             'V6': 'v6-pv-peak',
+            'V5': 'v5-pv-persen',
+            
+            // --- DETAIL BATERAI & ENERGY ---
             'V7': 'v7-batere-peak',
             'V8': 'v8-batere-low',
             'V9': 'v9-batere-ah',
-            'V10': 'v10-kwh-today', // Ringkasan
-            'V11': 'v11-total-pv', // Total Lifetime
+            'V4': 'v4-sunhour',
+            'V3': 'v3-pzem-energy',
+            'V11': 'v11-total-pv',
 
-            // Monitoring AC
+            // --- DETAIL AC & BIAYA ---
             'V12': 'v12-voltage',
             'V13': 'v13-current',
-            'V14': 'v14-power', // Ringkasan
+            // V14 sudah di chart
             'V15': 'v15-energy',
             'V16': 'v16-frequency',
-            'V17': 'v17-pf',
-            'V18': 'v18-rupiah', // Rupiah Total
-            'V19': 'v19-rupiah-day', // Ringkasan (Rupiah Harian)
             'V20': 'v20-inverter-peak',
-            'V21': 'v21-kwh-today-ac', // Ringkasan (kWh Harian AC)
+            'V17': 'v17-pf',
+            // V18 sudah di ringkasan
+            // V19 sudah di ringkasan
+            // V21 sudah di ringkasan
         };
 
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
@@ -661,6 +724,13 @@
             
             document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', dateOptions);
             document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', timeOptions);
+            
+            // Perbarui waktu di kartu Daya (mockup status waktu di screenshot)
+            const timeOnly = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const statusElements = document.querySelectorAll('.power-summary-card p.text-xs');
+            statusElements.forEach(el => {
+                el.textContent = `Status ${timeOnly}`;
+            });
         }
 
         /**
@@ -709,7 +779,15 @@
         // Fungsi untuk menangani navigasi BMS
         function handleBMSNavigation() {
             saveHistoricalData(); // Simpan data chart sebelum pindah
-            window.location.href = './bms_monitoring.html';
+            // Gunakan showModal untuk memberikan peringatan navigasi.
+            showModal(
+                'Anda akan diarahkan ke halaman Detail Baterai (BMS). Lanjutkan?',
+                () => {
+                    // Karena ini adalah lingkungan simulasi, kita tidak bisa navigasi. 
+                    // Tampilkan pesan sukses dan biarkan user mengedit/membuat file baru.
+                    showMessage('Simulasi navigasi ke BMS berhasil, tetapi tidak dapat dialihkan di lingkungan ini.', 'success');
+                }
+            );
         }
         
         /**
@@ -1043,6 +1121,11 @@
                 protocol = 'https'; 
             }
             
+            // V-PIN baru (V22, V23) tidak ada di sistem, berikan nilai 0/N/A
+            if (pin === 'V22' || pin === 'V23') {
+                 return '0.0'; 
+            }
+            
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
             
             const maxRetries = 3;
@@ -1074,20 +1157,36 @@
             if (isNaN(numericValue)) return 'N/A';
 
             // Pin yang harus diformat sebagai Bilangan Bulat (tanpa desimal)
-            const integerPins = ['V11', 'V6', 'V14', 'V12', 'V16', 'V15', 'V20'];
+            const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20'];
 
             // Pin yang harus diformat sebagai Rupiah (Tanpa desimal)
             const rupiahPins = ['V18', 'V19'];
+            
+            // Pin yang harus diformat sebagai daya/energi di ringkasan (1 desimal)
+            const summaryEnergyPins = ['V10', 'V21'];
+            
+            // Pin Daya Chart (V2, V14) -> Integer
+            const chartPowerPins = ['V2', 'V14'];
 
-            if (integerPins.includes(pin)) {
-                return numericValue.toFixed(0);  
-            }
 
             if (rupiahPins.includes(pin)) {
                 return numericValue.toLocaleString('id-ID', {
                     minimumFractionDigits: 0, 
                     maximumFractionDigits: 0
                 });
+            }
+            
+            // Self Consumption V22 -> Integer/1 desimal tergantung kebutuhan. Pakai 0 desimal karena biasanya % itu integer
+            if (pin === 'V22') {
+                 return numericValue.toFixed(0); 
+            }
+
+            if (integerPins.includes(pin) || chartPowerPins.includes(pin) || pin === 'V23') {
+                return numericValue.toFixed(0);  
+            }
+            
+            if (summaryEnergyPins.includes(pin)) {
+                return numericValue.toFixed(1);
             }
 
             // Default: 1 angka di belakang koma untuk pin lainnya 
@@ -1100,10 +1199,10 @@
         function getUnit(pin) {
             if (pin === 'V0' || pin === 'V12') return ' V';
             if (pin === 'V1' || pin === 'V13') return ' A';
-            if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20') return ' W';
+            if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20' || pin === 'V23') return ' W';
             if (pin === 'V3' || pin === 'V10' || pin === 'V11' || pin === 'V15' || pin === 'V21') return ' kWh';
             if (pin === 'V4') return ' jam';
-            if (pin === 'V5') return ' %';
+            if (pin === 'V5' || pin === 'V22') return ' %';
             if (pin === 'V16') return ' Hz';
             if (pin === 'V17') return ' '; 
             if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; 
@@ -1165,48 +1264,53 @@
                     let nominalColorClass = '';
                     let iconColorClass = '';
 
-                    // Tentukan kelas warna
-                    if (pin === 'V14') {
-                        nominalColorClass = 'text-white'; // Summary AC Power selalu putih
-                        iconColorClass = 'text-ac-color'; 
-                    } else if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V10', 'V11'].includes(pin)) {
+                    // Tentukan kelas warna default
+                    if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V10', 'V11'].includes(pin) || pin.includes('pzem')) {
                         nominalColorClass = 'text-dc-color'; 
                         iconColorClass = 'text-dc-color'; 
                     } else if (['V7', 'V9'].includes(pin)) {
                          nominalColorClass = 'text-blue-bat';
                          iconColorClass = 'text-blue-bat';
-                    } else if (['V12', 'V13', 'V15', 'V21'].includes(pin)) {
+                    } else if (['V12', 'V13', 'V14', 'V15', 'V21'].includes(pin) || pin.includes('ac')) {
                         nominalColorClass = 'text-ac-color';
                         iconColorClass = 'text-ac-color'; 
-                    } else if (pin === 'V16') {
-                        nominalColorClass = 'text-pink-med';
-                        iconColorClass = 'text-pink-med'; 
-                    } else if (pin === 'V17') {
-                        nominalColorClass = 'text-purple-med';
-                        iconColorClass = 'text-purple-med';
-                    } else if (pin === 'V19' || pin === 'V18') { 
+                    } else if (['V18', 'V19'].includes(pin) || pin.includes('rupiah')) { 
                         nominalColorClass = 'text-green-400';
                         iconColorClass = 'text-green-400'; 
+                    } else if (pin === 'V22') { // Self-Consumption
+                        nominalColorClass = 'text-chart-self-consumption'; 
+                        iconColorClass = 'text-chart-self-consumption';
+                    } else if (pin === 'V23') { // Potensi Surplus
+                        nominalColorClass = 'text-chart-surplus'; 
+                        iconColorClass = 'text-chart-surplus';
                     }
                     
-                    // --- KASUS KHUSUS MERAH (PUNCAK/PERINGATAN) ---
-                    if (pin === 'V8' || pin === 'V20' || pin === 'V6') { 
+                    // --- KASUS KHUSUS MERAH/PINK (PUNCAK/PERINGATAN/VOLTAGE BUS) ---
+                    if (pin === 'V8' || pin === 'V20') { 
                         nominalColorClass = 'text-warning-red';
                         iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V0') { // Bus Voltage menggunakan pink
+                    } else if (pin === 'V6') { // PV Peak - Merah Oranye
+                        nominalColorClass = 'text-orange-red';
+                        iconColorClass = 'text-orange-red';
+                    } else if (pin === 'V0' || pin === 'V16') { // Bus Voltage/Frequency - Pink
+                        nominalColorClass = 'text-pink-med';
                         iconColorClass = 'text-pink-med';
+                    } else if (pin === 'V17') { // Power Factor - Ungu
+                        nominalColorClass = 'text-purple-med';
+                        iconColorClass = 'text-purple-med';
                     }
                     
-                    // --- APPLY COLOR ---
-                    const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal'];
                     
-                    // A. Kasus Khusus: Kartu Ringkasan (Summary Card)
-                    if (['V14', 'V21', 'V10', 'V19'].includes(pin)) { 
+                    // --- APPLY COLOR ---
+                    const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal', 'text-chart-self-consumption', 'text-chart-surplus'];
+                    
+                    // A. Kasus Kartu Ringkasan (Summary Card) & Kartu Daya Kecil
+                    if (element.closest('.solar-card') || element.closest('.power-summary-card')) { 
                         // Angka & Unit
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
                         if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add(nominalColorClass); }
-                        // Ikon di Summary Card
+                        // Ikon di Summary Card (hanya untuk 4 kartu besar)
                         let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
                         if (summaryIcon) {
                              summaryIcon.classList.remove(...colorsToRemove);
