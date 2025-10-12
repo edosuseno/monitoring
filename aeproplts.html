@@ -137,7 +137,7 @@
             min-height: 350px; /* Tentukan tinggi minimum untuk mobile dan desktop */
             height: 350px;     /* Tentukan tinggi tetap */
             width: 100%;
-            padding-bottom: 20px;
+            padding-bottom: 5px; /* PADDING DI BAWAH CHART DIKURANGI */
         }
         
         /* Gaya Fullscreen */
@@ -147,7 +147,7 @@
             left: 0;
             width: 100% !important;
             height: 100% !important;
-            background-color: #05050D;
+            background-color: #05050D !important; /* Dibuat OPAQUE agar tidak transparan di HP */
             z-index: 9999;
             padding: 20px;
         }
@@ -302,9 +302,9 @@
 
         <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
         <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
-        <div class="solar-card p-6">
+        <div class="solar-card p-4 sm:p-6"> <!-- Padding kartu grafik dikurangi di sini -->
             <!-- Tombol Full Layar & Reset Zoom -->
-            <div class="flex justify-end space-x-3 mb-3">
+            <div class="flex justify-end space-x-3 mb-2"> <!-- Margin di bawah tombol dikurangi -->
                 <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">
                     Reset Zoom
                 </button>
@@ -393,7 +393,7 @@
                 <h3 class="text-xl font-semibold text-blue-bat mb-4 flex items-center border-b border-gray-700 pb-2">
                     <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2 text-blue-bat"></i>
                     BATERAI & ENERGY
-                </h3>
+                </h3 >
                 <div>
                     <!-- V7: Baterai Peak -->
                     <div class="detail-item">
@@ -1364,37 +1364,6 @@
                 }
             );
         }
-
-        /**
-         * Memuat data historis dari Local Storage saat inisialisasi.
-         */
-        function loadHistoricalData() {
-            const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    // Ambil maksimal MAX_DATA_POINTS terakhir
-                    const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
-                    
-                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
-                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
-                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
-
-                    console.log(`[CHART] Memuat ${window.realtimeData.labels.length} titik data historis.`);
-                } catch (e) {
-                    console.error("Gagal memuat data chart historis:", e);
-                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
-                }
-            }
-        }
-        
-        /**
-         * Menyimpan data historis ke Local Storage setiap kali ada update.
-         */
-        function saveHistoricalData() {
-            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
-        }
-
 
         /**
          * Fungsi inisialisasi saat memuat halaman
