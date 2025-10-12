@@ -133,7 +133,7 @@
 
         /* Gaya Canvas */
         #realtime-chart-container {
-            /* TINGGI MINIMAL BARU AGAR BOX TERLIHAT BESAR */
+            /* TINGGI MINIMAL AGAR BOX TERLIHAT BESAR */
             min-height: 350px; /* Tentukan tinggi minimum untuk mobile dan desktop */
             height: 350px;     /* Tentukan tinggi tetap */
             width: 100%;
@@ -737,6 +737,119 @@
             lucide.createIcons();
         }
 
+        // --- Native Fullscreen & Orientation Handlers ---
+        
+        // Polyfill untuk meminta mode Fullscreen
+        function requestFullscreen(element) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { /* Firefox */
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { /* IE/Edge */
+                element.msRequestFullscreen();
+            }
+        }
+
+        // Polyfill untuk keluar mode Fullscreen
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { /* Firefox */
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE/Edge */
+                document.msExitFullscreen();
+            }
+        }
+
+        /**
+         * Mengaktifkan atau menonaktifkan mode layar penuh (NATIVE)
+         */
+        function toggleFullscreen() {
+            const chartCard = document.getElementById('realtime-chart-container').parentElement;
+            
+            // Cek apakah sedang dalam mode fullscreen
+            const isFullscreen = document.fullscreenElement || 
+                                 document.mozFullScreenElement || 
+                                 document.webkitFullscreenElement || 
+                                 document.msFullscreenElement;
+
+            if (!isFullscreen) {
+                // MASUK FULLSCREEN
+                
+                // 1. Minta mode Fullscreen native pada kartu chart
+                requestFullscreen(chartCard);
+                
+                // 2. Minta kunci orientasi ke Landscape (Hanya bekerja di beberapa browser/PWA)
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(e => {
+                        console.warn("Screen orientation lock failed (normal in desktop/some mobile browsers):", e);
+                    });
+                }
+                // CSS class will be added by the listener (handleFullscreenChange)
+
+            } else {
+                // KELUAR FULLSCREEN
+                
+                // 1. Keluar mode Fullscreen native
+                exitFullscreen();
+                
+                // 2. Hapus kunci orientasi (jika terkunci)
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+                // CSS class will be removed by the listener
+            }
+            // All UI updates and chart resizing handled by the listener below
+        }
+
+        /**
+         * Sinkronisasi UI dan Chart Resize saat status fullscreen berubah (native browser event)
+         */
+        function handleFullscreenChange() {
+            const chartCard = document.getElementById('realtime-chart-container').parentElement;
+            const chartIcon = document.getElementById('fullscreen-chart-icon');
+            const chartText = document.getElementById('fullscreen-chart-text');
+            
+            // Cek apakah ada elemen yang sedang fullscreen
+            const isFullscreen = document.fullscreenElement || 
+                                 document.mozFullScreenElement || 
+                                 document.webkitFullscreenElement || 
+                                 document.msFullscreenElement;
+
+            // Pastikan elemen yang fullscreen adalah kartu chart kita
+            if (isFullscreen && isFullscreen === chartCard) {
+                // Masuk mode fullscreen
+                chartCard.classList.add('fullscreen-chart');
+                chartIcon.setAttribute('data-lucide', 'minimize');
+                chartText.textContent = 'Keluar';
+            } else {
+                // Keluar mode fullscreen
+                chartCard.classList.remove('fullscreen-chart');
+                chartIcon.setAttribute('data-lucide', 'maximize');
+                chartText.textContent = 'Full Layar';
+            }
+            
+            // Perbarui ikon dan resize chart
+            lucide.createIcons();
+            if (energyChartInstance) {
+                setTimeout(() => {
+                    energyChartInstance.resize();
+                    energyChartInstance.resetZoom(); // Reset zoom agar chart terlihat penuh di layar baru
+                }, 50); 
+            }
+        }
+        
+        // Tambahkan listener untuk event fullscreenchange di berbagai browser
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+
         /**
          * Merender grafik energi real-time dengan Pan & Zoom
          */
@@ -871,33 +984,13 @@
             }
         }
         
-        /**
-         * Mengaktifkan atau menonaktifkan mode layar penuh
-         */
-        function toggleFullscreen() {
-            const chartContainer = document.getElementById('realtime-chart-container').parentElement; // Mengambil solar-card container
-            const chartIcon = document.getElementById('fullscreen-chart-icon');
-            const chartText = document.getElementById('fullscreen-chart-text');
+        // ... (Fungsi updateRealtimeChartData, fetchPinValue, formatValue, getUnit, updateDashboard, dll. tetap sama)
 
-            if (chartContainer.classList.contains('fullscreen-chart')) {
-                // Keluar dari mode fullscreen
-                chartContainer.classList.remove('fullscreen-chart');
-                chartIcon.setAttribute('data-lucide', 'maximize');
-                chartText.textContent = 'Full Layar';
-            } else {
-                // Masuk ke mode fullscreen
-                chartContainer.classList.add('fullscreen-chart');
-                chartIcon.setAttribute('data-lucide', 'minimize');
-                chartText.textContent = 'Keluar';
-            }
-            lucide.createIcons();
-            // Memastikan chart di-resize setelah perubahan ukuran kontainer
-            if (energyChartInstance) {
-                setTimeout(() => {
-                     energyChartInstance.resize();
-                }, 10);
-            }
-        }
+        // Di sini fungsi-fungsi JavaScript lainnya yang sudah kita bahas sebelumnya
+        // seperti updateRealtimeChartData, fetchPinValue, formatValue, getUnit, 
+        // updateDashboard, saveAndFetchData, logoutAndClear, dan init
+        // tetap dipertahankan seperti versi terakhir.
+        
 
         /**
          * Memperbarui data chart historis (dan menyimpan ke Local Storage)
@@ -1274,6 +1367,37 @@
                 }
             );
         }
+
+        /**
+         * Memuat data historis dari Local Storage saat inisialisasi.
+         */
+        function loadHistoricalData() {
+            const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    // Ambil maksimal MAX_DATA_POINTS terakhir
+                    const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
+                    
+                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
+                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
+                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
+
+                    console.log(`[CHART] Memuat ${window.realtimeData.labels.length} titik data historis.`);
+                } catch (e) {
+                    console.error("Gagal memuat data chart historis:", e);
+                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
+                }
+            }
+        }
+        
+        /**
+         * Menyimpan data historis ke Local Storage setiap kali ada update.
+         */
+        function saveHistoricalData() {
+            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
+        }
+
 
         /**
          * Fungsi inisialisasi saat memuat halaman
