@@ -17,7 +17,7 @@
       --primary: #4B87FF; 
       --secondary: #10B981;
       --danger: #F87171;
-      --warning: #FACC15;
+      --warning: #FACC15; /* Kuning */
       --solar-dark: #05050D; /* Hitam Paling Gelap */
       --solar-card-bg: rgba(20, 20, 48, 0.4); /* Hitam Transparan */
       --blue-bat: #00FFFF; /* Cyan Cerah (Baterai) */
@@ -77,6 +77,16 @@
       border-radius: 4px;
       transition: width 0.5s ease;
     }
+    
+    /* Kelas warna khusus untuk progres bar SOC */
+    .bg-soc-red { background-color: var(--warning-red); }
+    .bg-soc-yellow { background-color: var(--warning); }
+    .bg-soc-green { background-color: var(--green-400); }
+
+    /* Kelas warna khusus untuk teks SOC */
+    .text-soc-red { color: var(--warning-red); }
+    .text-soc-yellow { color: var(--warning); }
+    .text-soc-green { color: var(--green-400); }
     
     .cell-voltage {
       position: relative;
@@ -287,11 +297,15 @@
         <!-- SOC (State of Charge) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
+                <!-- ID: icon-soc-summary (Untuk pewarnaan dinamis) -->
                 <i data-lucide="battery-charging" class="lucide w-7 h-7 text-blue-bat" id="icon-soc-summary"></i>
+                <!-- ID: summary-soc (Untuk pewarnaan dinamis) -->
                 <span class="text-3xl font-extrabold text-blue-bat" id="summary-soc">N/A</span>
             </div>
+            <!-- Ganti teks dari SOC/SOH menjadi hanya SOC -->
             <p class="text-sm font-medium text-gray-400">SOC</p>
             <div class="progress-bar mt-2">
+                <!-- ID: soc-progress-summary (Untuk pewarnaan dinamis) -->
                 <div id="soc-progress-summary" class="progress-fill bg-blue-500" style="width: 0%"></div>
             </div>
         </div>
@@ -636,47 +650,54 @@
 
     function renderCards(datane) {
         
-        // --- LOGIC PEWARNAAN SOC SUMMARY (Diambil dari root CSS) ---
+        // --- LOGIC PEWARNAAN SOC SUMMARY & PROGRESS BAR ---
         const summarySocEl = document.getElementById('summary-soc');
         const iconSocEl = document.getElementById('icon-soc-summary');
         const socProgress = document.getElementById("soc-progress-summary");
         
         const socValue = parseInt(datane.soc);
 
-        // Reset classes
-        const colorClasses = ['text-blue-bat', 'text-green-400', 'text-warning-red', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
-        if (summarySocEl) summarySocEl.classList.remove(...colorClasses);
-        if (iconSocEl) iconSocEl.classList.remove(...colorClasses);
-        if (socProgress) socProgress.classList.remove(...colorClasses);
-        
-        // Apply new color logic (Green if > 70, Red if < 30)
-        let socTextColor = 'text-yellow-400';
-        let socProgressColor = 'bg-yellow-500';
+        // Fungsi untuk menentukan kelas warna SOC
+        function getSocColorClasses(soc) {
+            let textColor = 'text-soc-yellow'; // Default Kuning
+            let progressColor = 'bg-soc-yellow'; 
 
-        if (socValue > 70) {
-            socTextColor = 'text-green-400';
-            socProgressColor = 'bg-green-500';
-        } else if (socValue < 30) {
-            socTextColor = 'text-warning-red';
-            socProgressColor = 'bg-red-500';
-        } else {
-             // Warna default/normal (Biru Cyan)
-            socTextColor = 'text-yellow-400';
-            socProgressColor = 'bg-yellow-500';
+            if (soc > 70) {
+                textColor = 'text-soc-green';
+                progressColor = 'bg-soc-green';
+            } else if (soc < 30) {
+                textColor = 'text-soc-red';
+                progressColor = 'bg-soc-red';
+            }
+            // Return array of classes to remove old ones safely
+            const textClassesToRemove = ['text-soc-red', 'text-soc-yellow', 'text-soc-green', 'text-blue-bat', 'text-green-400', 'text-warning-red'];
+            const bgClassesToRemove = ['bg-soc-red', 'bg-soc-yellow', 'bg-soc-green', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
+
+            return { textColor, progressColor, textClassesToRemove, bgClassesToRemove };
         }
 
+        const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
+        
         // --- Update elemen summary menggunakan safeUpdate ---
         const socContent = datane.soc !== 'N/A' ? `${datane.soc}%` : 'N/A';
         safeUpdate('summary-soc', socContent);
         
-        if (summarySocEl) summarySocEl.classList.add(socTextColor);
-        if (iconSocEl) iconSocEl.classList.add(socTextColor);
+        if (summarySocEl) { 
+            summarySocEl.classList.remove(...textClassesToRemove);
+            summarySocEl.classList.add(summaryTextColor);
+        }
+        if (iconSocEl) {
+            iconSocEl.classList.remove(...textClassesToRemove);
+            iconSocEl.classList.add(summaryTextColor);
+        }
         
         if (datane.soc !== 'N/A' && socProgress) {
             socProgress.style.width = `${socValue}%`;
-            socProgress.classList.add(socProgressColor);
+            socProgress.classList.remove(...bgClassesToRemove);
+            socProgress.classList.add(summaryProgressColor);
         }
-
+        
+        // --- SOH LOGIC (TIDAK BERUBAH) ---
         const sohContent = datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A';
         safeUpdate('summary-soh', sohContent);
         
@@ -712,6 +733,8 @@
         batteries.forEach(batt => {
           let cardId = `card-${batt.typeBattery}-${batt.addr}`;
           let card = document.getElementById(cardId);
+          
+          const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(parseInt(batt.soc));
 
           if (!card) {
             card = document.createElement("div");
@@ -729,15 +752,15 @@
                 <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
               </div>
               
-              <!-- SOC / SOH BAR -->
+              <!-- SOC BAR (Diperbarui) -->
               <div class="mb-3">
                 <div class="flex justify-between items-center mb-1 text-sm">
-                  <span class="text-gray-400">SOC / SOH</span>
-                  <span class="font-bold text-blue-bat" id="soc-text-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span> 
+                  <span class="text-gray-400">SOC</span> <!-- TEKS DIGANTI -->
+                  <span class="font-bold ${cardTextColor}" id="soc-text-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span> 
                   <span class="font-bold text-gray-400">/ ${batt.soh}%</span>
                 </div>
                 <div class="progress-bar mt-1">
-                    <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill bg-gray-400" style="width: ${batt.soc}%"></div>
+                    <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill ${cardProgressColor}" style="width: ${batt.soc}%"></div>
                 </div>
               </div>
 
@@ -817,9 +840,9 @@
             if (datane.typeBattery === batt.typeBattery && datane.addr === batt.addr) {
               // Update ringkasan SOH/SOC di kartu utama
               safeUpdate('summary-soc', batt.soc !== 'N/A' ? `${batt.soc}%` : 'N/A');
-              if (summarySocEl) { summarySocEl.className = `text-3xl font-extrabold ${socTextColor}`; }
-              if (iconSocEl) { iconSocEl.className = `lucide w-7 h-7 ${socTextColor}`; }
-              if (socProgress) { socProgress.style.width = `${batt.soc}%`; }
+              if (summarySocEl) { summarySocEl.classList.remove(...textClassesToRemove); summarySocEl.classList.add(summaryTextColor); }
+              if (iconSocEl) { iconSocEl.classList.remove(...textClassesToRemove); iconSocEl.classList.add(summaryTextColor); }
+              if (socProgress) { socProgress.style.width = `${batt.soc}%`; socProgress.classList.remove(...bgClassesToRemove); socProgress.classList.add(summaryProgressColor); }
 
               safeUpdate('summary-soh', batt.soh !== 'N/A' ? `${batt.soh}%` : 'N/A');
               safeUpdate('summary-current', datane.current);
@@ -836,19 +859,13 @@
 
               if (socBar && socTextEl) {
                 socBar.style.width = `${batt.soc}%`;
-                // Logic pewarnaan di kartu individu
-                let cardSocTextColor = 'text-blue-bat';
-                let cardSocProgressColor = 'bg-blue-500';
-                 if (socValue > 70) {
-                    cardSocTextColor = 'text-green-400';
-                    cardSocProgressColor = 'bg-green-500';
-                } else if (socValue < 30) {
-                    cardSocTextColor = 'text-warning-red';
-                    cardSocProgressColor = 'bg-red-500';
-                }
-                socTextEl.classList.remove(...colorClasses);
-                socTextEl.classList.add(cardSocTextColor);
-                socBar.className = `progress-fill ${cardSocProgressColor}`;
+                
+                // Hapus dan tambahkan kelas warna yang baru
+                socTextEl.classList.remove(...textClassesToRemove);
+                socTextEl.classList.add(cardTextColor);
+                
+                socBar.classList.remove(...bgClassesToRemove);
+                socBar.classList.add(cardProgressColor);
               }
               
               // 🔹 Pembaruan Metrik Detail (Harus sinkron dengan HTML di atas)
@@ -980,7 +997,7 @@
     if (closeModalEl) {
         closeModalEl.onclick = () => {
             if (modal) modal.classList.add("hidden");
-            document.body.style.overflow = 'auto';
+            document.body.style.overflow = 'hidden';
             currentAddr = null;
         };
     }
@@ -1027,3 +1044,4 @@
   </script>
 </body>
 </html>
+
