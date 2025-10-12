@@ -328,7 +328,7 @@
                 <h3 class="text-xl font-semibold text-dc-color mb-4 flex items-center border-b border-gray-700 pb-2">
                     <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2 text-dc-color"></i>
                     PANEL SURYA (DC)
-                </h3>
+                </h3 >
                 <div>
                     <!-- V0: Voltage DC -->
                     <div class="detail-item">
@@ -766,69 +766,72 @@
         }
 
         /**
-         * Mengaktifkan atau menonaktifkan mode layar penuh (NATIVE)
+         * Mengaktifkan atau menonaktifkan mode layar penuh (NATIVE/CSS)
          */
         function toggleFullscreen() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             
-            // Cek apakah sedang dalam mode fullscreen
-            const isFullscreen = document.fullscreenElement || 
+            // Cek apakah sedang dalam mode fullscreen (Native API check)
+            const isFullscreenNative = document.fullscreenElement || 
                                  document.mozFullScreenElement || 
                                  document.webkitFullscreenElement || 
                                  document.msFullscreenElement;
 
-            if (!isFullscreen) {
-                // MASUK FULLSCREEN
-                
-                // 1. Minta mode Fullscreen native pada kartu chart
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                // --- Mobile: Gunakan CSS Overlay (Solusi andal untuk iOS/Chrome HP) ---
+                if (chartCard.classList.contains('fullscreen-chart')) {
+                    chartCard.classList.remove('fullscreen-chart');
+                     if (screen.orientation && screen.orientation.unlock) {
+                        screen.orientation.unlock(); // Coba buka kunci orientasi
+                    }
+                } else {
+                    chartCard.classList.add('fullscreen-chart');
+                     if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(e => {
+                           // console.warn("Screen orientation lock failed on mobile CSS overlay.");
+                        });
+                    }
+                }
+                // Panggil handleFullscreenChange untuk update UI/resize chart
+                handleFullscreenChange();
+                return;
+            } 
+            
+            // --- Desktop: Gunakan Native Fullscreen API ---
+            if (!isFullscreenNative) {
                 requestFullscreen(chartCard);
-                
-                // 2. Minta kunci orientasi ke Landscape (Hanya bekerja di beberapa browser/PWA)
                 if (screen.orientation && screen.orientation.lock) {
                     screen.orientation.lock('landscape').catch(e => {
-                        console.warn("Screen orientation lock failed (normal in desktop/some mobile browsers):", e);
+                        // console.warn("Screen orientation lock failed on desktop.");
                     });
                 }
-                // CSS class will be added by the listener (handleFullscreenChange)
-
             } else {
-                // KELUAR FULLSCREEN
-                
-                // 1. Keluar mode Fullscreen native
                 exitFullscreen();
-                
-                // 2. Hapus kunci orientasi (jika terkunci)
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
                 }
-                // CSS class will be removed by the listener
             }
-            // All UI updates and chart resizing handled by the listener below
+            // Listener handleFullscreenChange akan menangani UI/resize
         }
 
+
         /**
-         * Sinkronisasi UI dan Chart Resize saat status fullscreen berubah (native browser event)
+         * Sinkronisasi UI dan Chart Resize saat status fullscreen berubah (native browser event atau manual trigger)
          */
         function handleFullscreenChange() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
             
-            // Cek apakah ada elemen yang sedang fullscreen
-            const isFullscreen = document.fullscreenElement || 
-                                 document.mozFullScreenElement || 
-                                 document.webkitFullscreenElement || 
-                                 document.msFullscreenElement;
+            // Cek status saat ini (gunakan CSS class untuk mobile/fallback)
+            const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
 
-            // Pastikan elemen yang fullscreen adalah kartu chart kita
-            if (isFullscreen && isFullscreen === chartCard) {
-                // Masuk mode fullscreen
-                chartCard.classList.add('fullscreen-chart');
+            if (isFullscreen) {
                 chartIcon.setAttribute('data-lucide', 'minimize');
                 chartText.textContent = 'Keluar';
             } else {
-                // Keluar mode fullscreen
-                chartCard.classList.remove('fullscreen-chart');
                 chartIcon.setAttribute('data-lucide', 'maximize');
                 chartText.textContent = 'Full Layar';
             }
@@ -838,7 +841,7 @@
             if (energyChartInstance) {
                 setTimeout(() => {
                     energyChartInstance.resize();
-                    energyChartInstance.resetZoom(); // Reset zoom agar chart terlihat penuh di layar baru
+                    energyChartInstance.resetZoom(); 
                 }, 50); 
             }
         }
@@ -985,12 +988,6 @@
         }
         
         // ... (Fungsi updateRealtimeChartData, fetchPinValue, formatValue, getUnit, updateDashboard, dll. tetap sama)
-
-        // Di sini fungsi-fungsi JavaScript lainnya yang sudah kita bahas sebelumnya
-        // seperti updateRealtimeChartData, fetchPinValue, formatValue, getUnit, 
-        // updateDashboard, saveAndFetchData, logoutAndClear, dan init
-        // tetap dipertahankan seperti versi terakhir.
-        
 
         /**
          * Memperbarui data chart historis (dan menyimpan ke Local Storage)
