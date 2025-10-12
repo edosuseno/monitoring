@@ -765,7 +765,7 @@
             // Gunakan showModal untuk memberikan peringatan navigasi.
             showModal(
                 'Anda akan diarahkan ke halaman Detail Baterai (BMS). Lanjutkan?',
-                () => {
+                () => {window.location.href = 'bms_monitoring.html';
                     // Karena ini adalah lingkungan simulasi, kita tidak bisa navigasi. 
                     // Tampilkan pesan sukses dan biarkan user mengedit/membuat file baru.
                     showMessage('Simulasi navigasi ke BMS berhasil, tetapi tidak dapat dialihkan di lingkungan ini.', 'success');
