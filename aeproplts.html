@@ -328,7 +328,7 @@
                     <span id="v2-pzem-power-chart" class="text-2xl font-bold text-dc-color loading-animation">...</span>
                     <span id="v2-pzem-power-chart-unit" class="text-base text-dc-color ml-1"></span>
                 </div>
-                 <p class="text-xs text-gray-500 mt-1">Status 23:33:12</p>
+                 <p class="text-xs text-gray-500 mt-1" id="v2-status-time">Status 00:00:00</p>
             </div>
             <!-- V14: Beban AC (Output) -->
             <div class="power-summary-card">
@@ -338,25 +338,25 @@
                     <span id="v14-power-chart" class="text-2xl font-bold text-ac-color loading-animation">...</span>
                     <span id="v14-power-chart-unit" class="text-base text-ac-color ml-1"></span>
                 </div>
-                 <p class="text-xs text-gray-500 mt-1">Status 23:33:12</p>
+                 <p class="text-xs text-gray-500 mt-1" id="v14-status-time">Status 00:00:00</p>
             </div>
-             <!-- V22: Self-Consumption (%) - PIN BARU DIASUMSIKAN -->
+             <!-- V22: Self-Consumption (%) - PIN DIHAPUS, DIHITUNG LOKAL -->
             <div class="power-summary-card">
                 <p class="text-sm text-gray-400">Self-Consumption</p>
                 <div class="flex items-baseline mt-1">
                     <!-- Nilai di Screenshot: 0% -->
-                    <span id="v22-self-consumption" class="text-2xl font-bold text-chart-self-consumption loading-animation">...</span>
-                    <span id="v22-self-consumption-unit" class="text-base text-chart-self-consumption ml-1"></span>
+                    <span id="self-consumption-calc" class="text-2xl font-bold text-chart-self-consumption loading-animation">...</span>
+                    <span id="self-consumption-calc-unit" class="text-base text-chart-self-consumption ml-1">%</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Daya PV yang digunakan beban.</p>
             </div>
-            <!-- V23: Potensi Surplus (W) - PIN BARU DIASUMSIKAN -->
+            <!-- V23: Potensi Surplus (W) - PIN DIHAPUS, DIHITUNG LOKAL -->
             <div class="power-summary-card">
                 <p class="text-sm text-gray-400">Potensi Surplus</p>
                 <div class="flex items-baseline mt-1">
                     <!-- Nilai di Screenshot: 0 W -->
-                    <span id="v23-potensi-surplus" class="text-2xl font-bold text-chart-surplus loading-animation">...</span>
-                    <span id="v23-potensi-surplus-unit" class="text-base text-chart-surplus ml-1"></span>
+                    <span id="potensi-surplus-calc" class="text-2xl font-bold text-chart-surplus loading-animation">...</span>
+                    <span id="potensi-surplus-calc-unit" class="text-base text-chart-surplus ml-1">W</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Daya PV yang berlebih.</p>
             </div>
@@ -602,13 +602,12 @@
             'V10': 'v10-kwh-today',    // Energi PV Hari Ini
             'V21': 'v21-kwh-today-ac', // Beban Hari Ini
             'V19': 'v19-rupiah-day',   // Penghematan Hari Ini
-            'V18': 'v18-rupiah-total', // TOTAL PENGHEMATAN (Diambil dari V18 yang sebelumnya ada di Detail)
+            'V18': 'v18-rupiah-total', // TOTAL PENGHEMATAN
 
             // --- GRAFIK DAYA (4 Kartu Kecil) ---
             'V2': 'v2-pzem-power-chart',    // Daya PV (Input)
             'V14': 'v14-power-chart',       // Beban AC (Output)
-            'V22': 'v22-self-consumption',  // Self-Consumption (ASUMSI PIN BARU)
-            'V23': 'v23-potensi-surplus',   // Potensi Surplus (ASUMSI PIN BARU)
+            // V22 & V23 DIHAPUS DARI PIN MAPPINGS KARENA DIHITUNG LOKAL
             
             // --- DETAIL DC ---
             'V0': 'v0-pzem-voltage',
@@ -633,9 +632,6 @@
             'V16': 'v16-frequency',
             'V20': 'v20-inverter-peak',
             'V17': 'v17-pf',
-            // V18 sudah di ringkasan
-            // V19 sudah di ringkasan
-            // V21 sudah di ringkasan
         };
 
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
@@ -710,10 +706,11 @@
             
             // Perbarui waktu di kartu Daya (mockup status waktu di screenshot)
             const timeOnly = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            const statusElements = document.querySelectorAll('.power-summary-card p.text-xs');
-            statusElements.forEach(el => {
-                el.textContent = `Status ${timeOnly}`;
-            });
+            
+            // Menggunakan ID spesifik untuk kartu PV dan Beban AC
+            document.getElementById('v2-status-time').textContent = `Status ${timeOnly}`;
+            document.getElementById('v14-status-time').textContent = `Status ${timeOnly}`;
+
         }
 
         /**
@@ -760,10 +757,10 @@
         }
 
         // Fungsi untuk menangani navigasi BMS
-function handleBMSNavigation() {
-    saveHistoricalData(); // Simpan data chart sebelum pindah
-    window.location.href = 'bms_monitoring.html'; // langsung pindah ke halaman
-}
+        function handleBMSNavigation() {
+            saveHistoricalData(); // Simpan data chart sebelum pindah
+            window.location.href = 'bms_monitoring.html'; // langsung pindah ke halaman
+        }
         
         /**
          * Mengaktifkan/menonaktifkan mode minimal UI (untuk mobile fullscreen imitasi)
@@ -1040,8 +1037,6 @@ function handleBMSNavigation() {
             }
         }
         
-        // ... (Fungsi updateRealtimeChartData, fetchPinValue, formatValue, getUnit, updateDashboard, dll. tetap sama)
-
         /**
          * Memperbarui data chart historis (dan menyimpan ke Local Storage)
          */
@@ -1096,10 +1091,7 @@ function handleBMSNavigation() {
                 protocol = 'https'; 
             }
             
-            // V-PIN baru (V22, V23) tidak ada di sistem, berikan nilai 0/N/A
-            if (pin === 'V22' || pin === 'V23') {
-                 return '0.0'; 
-            }
+            // Pin V22 & V23 dihapus dari PIN_MAPPINGS, jadi tidak akan dipanggil di sini.
             
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
             
@@ -1152,11 +1144,11 @@ function handleBMSNavigation() {
             }
             
             // Self Consumption V22 -> Integer/1 desimal tergantung kebutuhan. Pakai 0 desimal karena biasanya % itu integer
-            if (pin === 'V22') {
-                 return numericValue.toFixed(0); 
-            }
+            // if (pin === 'V22') {
+            //      return numericValue.toFixed(0); 
+            // }
 
-            if (integerPins.includes(pin) || chartPowerPins.includes(pin) || pin === 'V23') {
+            if (integerPins.includes(pin) || chartPowerPins.includes(pin)) {
                 return numericValue.toFixed(0);  
             }
             
@@ -1174,10 +1166,10 @@ function handleBMSNavigation() {
         function getUnit(pin) {
             if (pin === 'V0' || pin === 'V12') return ' V';
             if (pin === 'V1' || pin === 'V13') return ' A';
-            if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20' || pin === 'V23') return ' W';
+            if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20') return ' W';
             if (pin === 'V3' || pin === 'V10' || pin === 'V11' || pin === 'V15' || pin === 'V21') return ' kWh';
             if (pin === 'V4') return ' jam';
-            if (pin === 'V5' || pin === 'V22') return ' %';
+            if (pin === 'V5') return ' %';
             if (pin === 'V16') return ' Hz';
             if (pin === 'V17') return ' '; 
             if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; 
@@ -1213,7 +1205,7 @@ function handleBMSNavigation() {
                     const numericValue = parseFloat(rawValue);
                     const formattedValue = formatValue(pin, rawValue);
                     
-                    // --- Ambil data daya untuk Realtime Chart ---
+                    // --- Ambil data daya untuk Penghitungan Lokal dan Realtime Chart ---
                     if (pin === 'V2') {
                          currentPvPower = numericValue || 0;
                     } else if (pin === 'V14') {
@@ -1257,13 +1249,7 @@ function handleBMSNavigation() {
                         // V18 (Total Penghematan) GANTI KE PINK
                         nominalColorClass = 'text-pink-med';
                         iconColorClass = 'text-pink-med'; 
-                    } else if (pin === 'V22') { // Self-Consumption
-                        nominalColorClass = 'text-chart-self-consumption'; 
-                        iconColorClass = 'text-chart-self-consumption';
-                    } else if (pin === 'V23') { // Potensi Surplus
-                        nominalColorClass = 'text-chart-surplus'; 
-                        iconColorClass = 'text-chart-surplus';
-                    }
+                    } 
                     
                     // --- KASUS KHUSUS MERAH/PINK (PUNCAK/PERINGATAN/VOLTAGE BUS) ---
                     if (pin === 'V8' || pin === 'V20') { 
@@ -1323,6 +1309,34 @@ function handleBMSNavigation() {
                     if (unitElement) unitElement.textContent = '';
                 }
             });
+
+            // ==========================================================
+            // LOGIC PENGHITUNGAN LOKAL UNTUK SELF-CONSUMPTION & SURPLUS
+            // ==========================================================
+            const selfConsumptionEl = document.getElementById('self-consumption-calc');
+            const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
+
+            // --- 1. Hitung Self-Consumption (%) ---
+            let scValue = 0;
+            if (currentPvPower > 0) {
+                // Min(PV Power, AC Load) / PV Power * 100
+                scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100;
+            }
+            const formattedSC = scValue.toFixed(0); 
+            selfConsumptionEl.textContent = formattedSC;
+            selfConsumptionEl.classList.remove('loading-animation');
+            
+            // --- 2. Hitung Potensi Surplus (W) ---
+            // Max(0, PV Power - AC Load)
+            let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
+            const formattedSurplus = surplusValue.toFixed(0);
+            potensiSurplusEl.textContent = formattedSurplus;
+            potensiSurplusEl.classList.remove('loading-animation');
+            
+            // ==========================================================
+            // END LOGIC PENGHITUNGAN LOKAL
+            // ==========================================================
+
 
             // Panggil Chart Realtime (Wajib)
             if (!energyChartInstance) {
