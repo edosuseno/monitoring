@@ -696,6 +696,7 @@
         // --- LOGIC PEWARNAAN ARUS BATERAI (SUMMARY CARD) ---
         const currentVal = parseFloat(datane.current);
         const currentSummaryEl = document.getElementById('summary-current');
+        const currentUnitEl = document.getElementById('summary-current-unit'); // <--- ELEMEN BARU
         const currentIconEl = document.getElementById('icon-current-summary');
         const currentStatusTextEl = document.getElementById('current-status-text');
         
@@ -721,9 +722,15 @@
         }
 
         // Apply Current Color to Summary Card
+        // 1. Nilai Angka
         removeCurrentColorClasses(currentSummaryEl);
         currentSummaryEl.classList.add(currentColorClass);
         
+        // 2. Satuan Unit (Perbaikan)
+        removeCurrentColorClasses(currentUnitEl);
+        currentUnitEl.classList.add(currentColorClass);
+
+        // 3. Ikon
         removeCurrentColorClasses(currentIconEl);
         currentIconEl.classList.add(currentColorClass);
         
@@ -913,6 +920,10 @@
               // Update arus di kartu ringkasan utama
               removeCurrentColorClasses(currentSummaryEl);
               currentSummaryEl.classList.add(currentColorClass);
+              // Perbaikan: Update Unit Satuan A
+              removeCurrentColorClasses(currentUnitEl);
+              currentUnitEl.classList.add(currentColorClass);
+              
               removeCurrentColorClasses(currentIconEl);
               currentIconEl.classList.add(currentColorClass);
               safeUpdate('current-status-text', currentStatusText);
