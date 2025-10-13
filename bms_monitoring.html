@@ -676,16 +676,76 @@
 
     function renderCards(datane) {
         
-        // --- LOGIC PEWARNAAN SOC SUMMARY & PROGRESS BAR ---
+        // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS) ---
+        let totalCurrent = 0;
+        let validBatteryCount = 0;
+
+        batteries.forEach(b => {
+            const current = parseFloat(b.current);
+            if (!isNaN(current)) {
+                totalCurrent += current;
+                validBatteryCount++;
+            }
+        });
+        
+        const currentVal = totalCurrent.toFixed(2);
+        
+        const currentSummaryEl = document.getElementById('summary-current');
+        const currentUnitEl = document.getElementById('summary-current-unit');
+        const currentIconEl = document.getElementById('icon-current-summary');
+        const currentStatusTextEl = document.getElementById('current-status-text');
+        
+        let currentStatusText = 'Standby';
+        let currentColorClass = 'text-standby';
+        const currentThreshold = 0.1;
+
+        if (validBatteryCount > 0) {
+            if (totalCurrent > currentThreshold) {
+                currentColorClass = 'text-charging';
+                currentStatusText = 'Charging';
+            } else if (totalCurrent < -currentThreshold) {
+                currentColorClass = 'text-discharging';
+                currentStatusText = 'Discharging';
+            } else {
+                currentColorClass = 'text-standby';
+                currentStatusText = 'Standby';
+            }
+        } else {
+            currentStatusText = 'N/A';
+        }
+
+        // Apply Current Color to Summary Card
+        safeUpdate('summary-current', isNaN(totalCurrent) ? 'N/A' : currentVal);
+        removeCurrentColorClasses(currentSummaryEl);
+        currentSummaryEl.classList.add(currentColorClass);
+        
+        removeCurrentColorClasses(currentUnitEl);
+        currentUnitEl.classList.add(currentColorClass);
+
+        removeCurrentColorClasses(currentIconEl);
+        currentIconEl.classList.add(currentColorClass);
+        
+        safeUpdate('current-status-text', currentStatusText);
+        // --- END LOGIC RINGKASAN UTAMA ---
+
+
+        // --- 2. LOGIC PEWARNAAN SOC SUMMARY & PROGRESS BAR (Tetap sama) ---
         const summarySocEl = document.getElementById('summary-soc');
         const iconSocEl = document.getElementById('icon-soc-summary');
         const socProgress = document.getElementById("soc-progress-summary");
         
-        const socValue = parseInt(datane.soc);
+        // Nilai SOC Ringkasan dihitung sebagai rata-rata
+        let avgSOC = 0;
+        if(validBatteryCount > 0) {
+            const sumSOC = batteries.reduce((sum, b) => sum + (parseFloat(b.soc) || 0), 0);
+            avgSOC = (sumSOC / validBatteryCount).toFixed(0);
+        }
+        const socValue = parseInt(avgSOC);
+
 
         // Fungsi untuk menentukan kelas warna SOC
         function getSocColorClasses(soc) {
-            let textColor = 'text-soc-yellow'; // Default Kuning
+            let textColor = 'text-soc-yellow'; 
             let progressColor = 'bg-soc-yellow'; 
 
             if (soc > 70) {
@@ -695,7 +755,6 @@
                 textColor = 'text-soc-red';
                 progressColor = 'bg-soc-red';
             }
-            // Return array of classes to remove old ones safely
             const textClassesToRemove = ['text-soc-red', 'text-soc-yellow', 'text-soc-green', 'text-blue-bat', 'text-green-400', 'text-warning-red'];
             const bgClassesToRemove = ['bg-soc-red', 'bg-soc-yellow', 'bg-soc-green', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
 
@@ -704,52 +763,9 @@
 
         const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
         
-        // --- LOGIC PEWARNAAN ARUS BATERAI (SUMMARY CARD) ---
-        const currentVal = parseFloat(datane.current);
-        const currentSummaryEl = document.getElementById('summary-current');
-        const currentUnitEl = document.getElementById('summary-current-unit'); // <--- ELEMEN BARU
-        const currentIconEl = document.getElementById('icon-current-summary');
-        const currentStatusTextEl = document.getElementById('current-status-text');
-        
-        let currentStatusText = 'Standby';
-        let currentColorClass = 'text-standby';
-        const currentThreshold = 0.1; // Threshold 0.1A untuk dianggap Standby
-
-        if (!isNaN(currentVal)) {
-            if (currentVal > currentThreshold) {
-                currentColorClass = 'text-charging';
-                currentStatusText = 'Charging';
-            } else if (currentVal < -currentThreshold) {
-                currentColorClass = 'text-discharging';
-                currentStatusText = 'Discharging';
-            } else {
-                currentColorClass = 'text-standby';
-                currentStatusText = 'Standby';
-            }
-        } else {
-            // Jika N/A
-            currentColorClass = 'text-standby';
-            currentStatusText = 'N/A';
-        }
-
-        // Apply Current Color to Summary Card
-        // 1. Nilai Angka
-        removeCurrentColorClasses(currentSummaryEl);
-        currentSummaryEl.classList.add(currentColorClass);
-        
-        // 2. Satuan Unit (Perbaikan)
-        removeCurrentColorClasses(currentUnitEl);
-        currentUnitEl.classList.add(currentColorClass);
-
-        // 3. Ikon
-        removeCurrentColorClasses(currentIconEl);
-        currentIconEl.classList.add(currentColorClass);
-        
-        // Update status text
-        safeUpdate('current-status-text', currentStatusText);
         
         // --- Update elemen summary SOC/SOH/Voltage/Current ---
-        const socContent = datane.soc !== 'N/A' ? `${datane.soc}%` : 'N/A';
+        const socContent = avgSOC !== 'N/A' ? `${avgSOC}%` : 'N/A';
         safeUpdate('summary-soc', socContent);
         
         if (summarySocEl) { 
@@ -761,28 +777,28 @@
             iconSocEl.classList.add(summaryTextColor);
         }
         
-        if (datane.soc !== 'N/A' && socProgress) {
+        if (!isNaN(socValue) && socProgress) {
             socProgress.style.width = `${socValue}%`;
             socProgress.classList.remove(...bgClassesToRemove);
             socProgress.classList.add(summaryProgressColor);
         }
         
-        // SOH
+        // SOH (Diambil dari baterai pertama, idealnya rata-rata, tapi kita biarkan dulu sesuai data yang masuk terakhir untuk efisiensi)
         const sohContent = datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A';
         safeUpdate('summary-soh', sohContent);
         
         if (datane.soh !== 'N/A' && datane.soh !== 0) {
-            const sohValue = parseInt(datane.soh);
+            const sohVal = parseInt(datane.soh);
             const sohProgress = document.getElementById("soh-progress-summary");
             if(sohProgress){
-                sohProgress.style.width = `${sohValue}%`;
-                if (sohValue > 80) sohProgress.className = "progress-fill bg-green-500";
-                else if (sohValue > 60) sohProgress.className = "progress-fill bg-yellow-500";
+                sohProgress.style.width = `${sohVal}%`;
+                if (sohVal > 80) sohProgress.className = "progress-fill bg-green-500";
+                else if (sohVal > 60) sohProgress.className = "progress-fill bg-yellow-500";
                 else sohProgress.className = "progress-fill bg-red-500";
             }
         }
 
-        safeUpdate('summary-current', datane.current);
+        // Tegangan Pack (Ambil dari baterai pertama/terakhir atau rata-rata) - Kita biarkan dulu dari data yang masuk terakhir
         safeUpdate('summary-voltage', datane.voltage);
         // --- END Update elemen summary ---
 
@@ -800,7 +816,7 @@
         
         
         // -------------------------------------------------------------
-        // PERBAIKAN: Hanya render ulang DOM grid jika urutan berubah
+        // LOGIC RENDER KARTU INDIVIDUAL (Dipertahankan logikanya untuk menghindari kedipan serentak)
         // -------------------------------------------------------------
         const currentAddresses = batteries.map(b => b.addr).join(',');
 
