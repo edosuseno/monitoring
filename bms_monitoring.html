@@ -676,20 +676,30 @@
 
     function renderCards(datane) {
         
-        // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS) ---
+        // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS & RATA-RATA VOLTAGE) ---
         let totalCurrent = 0;
+        let totalVoltage = 0;
         let validBatteryCount = 0;
 
         batteries.forEach(b => {
             const current = parseFloat(b.current);
+            const voltage = parseFloat(b.voltage);
+
             if (!isNaN(current)) {
                 totalCurrent += current;
+            }
+            if (!isNaN(voltage)) {
+                totalVoltage += voltage;
                 validBatteryCount++;
             }
         });
         
+        // Final calculations
         const currentVal = totalCurrent.toFixed(2);
+        const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
         
+        
+        // --- ARUS (Total Penjumlahan) ---
         const currentSummaryEl = document.getElementById('summary-current');
         const currentUnitEl = document.getElementById('summary-current-unit');
         const currentIconEl = document.getElementById('icon-current-summary');
@@ -726,6 +736,20 @@
         currentIconEl.classList.add(currentColorClass);
         
         safeUpdate('current-status-text', currentStatusText);
+        
+        // --- TEGANGAN PACK (Rata-Rata) ---
+        const voltageSummaryEl = document.getElementById('summary-voltage');
+        const voltageUnitEl = voltageSummaryEl.nextElementSibling; // Span satuan V
+
+        safeUpdate('summary-voltage', avgVoltage);
+        if (avgVoltage === 'N/A') {
+            voltageSummaryEl.classList.add('text-red-500');
+            if (voltageUnitEl) voltageUnitEl.classList.add('text-red-500');
+        } else {
+            voltageSummaryEl.classList.remove('text-red-500');
+            if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500');
+        }
+        
         // --- END LOGIC RINGKASAN UTAMA ---
 
 
@@ -798,8 +822,6 @@
             }
         }
 
-        // Tegangan Pack (Ambil dari baterai pertama/terakhir atau rata-rata) - Kita biarkan dulu dari data yang masuk terakhir
-        safeUpdate('summary-voltage', datane.voltage);
         // --- END Update elemen summary ---
 
 
