@@ -1009,7 +1009,7 @@
                         },
                         y: {
                             min: 0, // Pastikan dimulai dari nol
-                            // Max dihapus untuk mengaktifkan auto-scaling dinamis
+                            max: 7500, // <--- PERUBAHAN KRITIS DISINI: Dibatasi 7500W
                             ticks: {
                                 color: '#FFFFFF',
                                 callback: function(value) {
