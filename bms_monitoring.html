@@ -87,6 +87,11 @@
     .text-soc-red { color: var(--warning-red); }
     .text-soc-yellow { color: var(--warning); }
     .text-soc-green { color: var(--green-400); }
+
+    /* Kelas warna Arus Baterai */
+    .text-charging { color: var(--green-400); } /* Hijau */
+    .text-discharging { color: var(--warning-red); } /* Merah */
+    .text-standby { color: #F8FAFC; } /* Putih/Default */
     
     .cell-voltage {
       position: relative;
@@ -306,7 +311,7 @@
             <p class="text-sm font-medium text-gray-400">SOC</p>
             <div class="progress-bar mt-2">
                 <!-- ID: soc-progress-summary (Untuk pewarnaan dinamis) -->
-                <div id="soc-progress-summary" class="progress-fill bg-green-500" style="width: 0%"></div>
+                <div id="soc-progress-summary" class="progress-fill bg-blue-500" style="width: 0%"></div>
             </div>
         </div>
 
@@ -322,17 +327,18 @@
             </div>
         </div>
           
-        <!-- Arus Baterai -->
+        <!-- Arus Baterai (Tambahkan ID untuk warna) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
-                <i data-lucide="activity" class="lucide w-7 h-7 text-red-400"></i>
+                <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color" id="icon-current-summary"></i>
                 <div class="flex items-baseline">
-                    <span class="text-3xl font-extrabold text-red-400" id="summary-current">N/A</span>
-                    <span class="text-sm ml-1 text-red-400">A</span>
+                    <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
+                    <span class="text-sm ml-1 text-dc-color" id="summary-current-unit">A</span>
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
-            <p class="text-xs text-gray-500 mt-1">Charging/Discharging</p>
+            <!-- Tambahkan status Charging/Discharging -->
+            <p class="text-xs text-gray-500 mt-1" id="current-status-text">Standby</p>
         </div>
           
         <!-- Tegangan Pack -->
@@ -648,6 +654,15 @@
 
     const cardTimers = {};
 
+    /**
+     * Menghilangkan semua kelas warna teks yang berkaitan dengan Arus Baterai
+     */
+    function removeCurrentColorClasses(element) {
+        if (element) {
+            element.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color');
+        }
+    }
+
     function renderCards(datane) {
         
         // --- LOGIC PEWARNAAN SOC SUMMARY & PROGRESS BAR ---
@@ -678,7 +693,44 @@
 
         const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
         
-        // --- Update elemen summary menggunakan safeUpdate ---
+        // --- LOGIC PEWARNAAN ARUS BATERAI (SUMMARY CARD) ---
+        const currentVal = parseFloat(datane.current);
+        const currentSummaryEl = document.getElementById('summary-current');
+        const currentIconEl = document.getElementById('icon-current-summary');
+        const currentStatusTextEl = document.getElementById('current-status-text');
+        
+        let currentStatusText = 'Standby';
+        let currentColorClass = 'text-standby';
+        const currentThreshold = 0.1; // Threshold 0.1A untuk dianggap Standby
+
+        if (!isNaN(currentVal)) {
+            if (currentVal > currentThreshold) {
+                currentColorClass = 'text-charging';
+                currentStatusText = 'Charging';
+            } else if (currentVal < -currentThreshold) {
+                currentColorClass = 'text-discharging';
+                currentStatusText = 'Discharging';
+            } else {
+                currentColorClass = 'text-standby';
+                currentStatusText = 'Standby';
+            }
+        } else {
+            // Jika N/A
+            currentColorClass = 'text-standby';
+            currentStatusText = 'N/A';
+        }
+
+        // Apply Current Color to Summary Card
+        removeCurrentColorClasses(currentSummaryEl);
+        currentSummaryEl.classList.add(currentColorClass);
+        
+        removeCurrentColorClasses(currentIconEl);
+        currentIconEl.classList.add(currentColorClass);
+        
+        // Update status text
+        safeUpdate('current-status-text', currentStatusText);
+        
+        // --- Update elemen summary SOC/SOH/Voltage/Current ---
         const socContent = datane.soc !== 'N/A' ? `${datane.soc}%` : 'N/A';
         safeUpdate('summary-soc', socContent);
         
@@ -697,7 +749,7 @@
             socProgress.classList.add(summaryProgressColor);
         }
         
-        // --- SOH LOGIC (TIDAK BERUBAH) ---
+        // SOH
         const sohContent = datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A';
         safeUpdate('summary-soh', sohContent);
         
@@ -735,6 +787,19 @@
           let card = document.getElementById(cardId);
           
           const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(parseInt(batt.soc));
+          
+          // --- LOGIC PEWARNAAN ARUS BATERAI (INDIVIDUAL CARD) ---
+          const battCurrentVal = parseFloat(batt.current);
+          let battCurrentColorClass = 'text-standby';
+          if (!isNaN(battCurrentVal)) {
+              if (battCurrentVal > currentThreshold) {
+                  battCurrentColorClass = 'text-charging';
+              } else if (battCurrentVal < -currentThreshold) {
+                  battCurrentColorClass = 'text-discharging';
+              }
+          }
+          // --- END LOGIC ARUS BATERAI ---
+
 
           if (!card) {
             card = document.createElement("div");
@@ -776,12 +841,13 @@
                     </div>
                 </div>
                 
-                <!-- ROW 1 | TENGAH: Current -->
+                <!-- ROW 1 | TENGAH: Current (ARUS DENGAN PEWARNAAN DINAMIS) -->
                 <div class="flex items-center space-x-2 p-1">
-                    <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500"></i>
+                    <i data-lucide="activity" class="lucide w-4 h-4 ${battCurrentColorClass}"></i>
                     <div>
                         <div class="text-gray-500">Arus</div>
-                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.current} A</div>
+                        <!-- Tambahkan ID untuk angka, dan kelas warna dinamis -->
+                        <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battCurrentColorClass}">${batt.current} A</div>
                     </div>
                 </div>
 
@@ -844,6 +910,13 @@
               if (iconSocEl) { iconSocEl.classList.remove(...textClassesToRemove); iconSocEl.classList.add(summaryTextColor); }
               if (socProgress) { socProgress.style.width = `${batt.soc}%`; socProgress.classList.remove(...bgClassesToRemove); socProgress.classList.add(summaryProgressColor); }
 
+              // Update arus di kartu ringkasan utama
+              removeCurrentColorClasses(currentSummaryEl);
+              currentSummaryEl.classList.add(currentColorClass);
+              removeCurrentColorClasses(currentIconEl);
+              currentIconEl.classList.add(currentColorClass);
+              safeUpdate('current-status-text', currentStatusText);
+
               safeUpdate('summary-soh', batt.soh !== 'N/A' ? `${batt.soh}%` : 'N/A');
               safeUpdate('summary-current', datane.current);
               safeUpdate('summary-voltage', datane.voltage);
@@ -853,19 +926,30 @@
                   sohProgress.style.width = `${batt.soh}%`;
               }
 
-              // Update kartu individu
+              // Update kartu individu (SOC BAR)
               const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
               const socTextEl = document.getElementById(`soc-text-${batt.typeBattery}-${batt.addr}`);
 
               if (socBar && socTextEl) {
                 socBar.style.width = `${batt.soc}%`;
                 
-                // Hapus dan tambahkan kelas warna yang baru
                 socTextEl.classList.remove(...textClassesToRemove);
                 socTextEl.classList.add(cardTextColor);
                 
                 socBar.classList.remove(...bgClassesToRemove);
                 socBar.classList.add(cardProgressColor);
+              }
+
+              // Update kartu individu (ARUS)
+              const currentTextEl = document.getElementById(`current-${batt.typeBattery}-${batt.addr}`);
+              const currentIconCardEl = card.querySelector(`.metric-group .space-x-2:nth-child(2) .lucide`);
+
+              if (currentTextEl && currentIconCardEl) {
+                  removeCurrentColorClasses(currentTextEl);
+                  currentTextEl.classList.add(battCurrentColorClass);
+                  
+                  removeCurrentColorClasses(currentIconCardEl);
+                  currentIconCardEl.classList.add(battCurrentColorClass);
               }
               
               // 🔹 Pembaruan Metrik Detail (Harus sinkron dengan HTML di atas)
@@ -946,6 +1030,25 @@
       safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
       
       // 3. Update Metrik Arus & Daya
+      // LOGIC PEWARNAAN ARUS DI MODAL
+      const currentVal = parseFloat(batt.current);
+      let currentModalColor = 'text-standby';
+      const currentThreshold = 0.1;
+
+      if (!isNaN(currentVal)) {
+            if (currentVal > currentThreshold) {
+                currentModalColor = 'text-charging';
+            } else if (currentVal < -currentThreshold) {
+                currentModalColor = 'text-discharging';
+            }
+      }
+      
+      const modalCurrentEl = document.getElementById("modalCurrent");
+      if(modalCurrentEl){
+          removeCurrentColorClasses(modalCurrentEl);
+          modalCurrentEl.classList.add(currentModalColor);
+      }
+      
       safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
       // Daya (Power) - ID: modalPower
       safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
@@ -997,7 +1100,7 @@
     if (closeModalEl) {
         closeModalEl.onclick = () => {
             if (modal) modal.classList.add("hidden");
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'auto';
             currentAddr = null;
         };
     }
