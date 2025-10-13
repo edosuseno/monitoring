@@ -293,7 +293,7 @@
 
   <!-- Main content -->
   <main class="flex-1 p-4 sm:p-8 w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-12xl mx-auto">
       
       <!-- RINGKASAN SOH/SOC -->
       <h2 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h2>
@@ -359,7 +359,8 @@
       <!-- LIST KARTU BATERAI (Grid Baterai yang Terhubung) -->
       <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Baterai Terhubung (<span id="total-batteries">0</span>)</h2>
       
-      <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+      <!-- PERUBAHAN GRID DARI xl:grid-cols-4 MENJADI md:grid-cols-3 UNTUK LAYAR BESAR -->
+      <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5"></div>
       
       <div id="empty-state" class="hidden text-center py-12 solar-card rounded-xl shadow-sm">
         <div class="text-blue-500 mb-4">
