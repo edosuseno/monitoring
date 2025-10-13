@@ -255,13 +255,13 @@
     <main id="monitoring-dashboard" class="hidden">
 
         <!-- RINGKASAN UTAMA (4 Kartu Besar Sesuai Screenshot) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">RINGKASAN KINERJA HARI INI</h2>
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Ringkasan Kinerja Hari Ini</h2>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             
             <!-- V10: ENERGI PV HARI INI (Produksi DC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">ENERGI PV HARI INI</p>
+                    <p class="text-sm font-semibold text-gray-400 uppercase">Energi PV Hari Ini</p>
                     <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                 </div>
                 <div class="summary-block">
@@ -275,7 +275,7 @@
             <!-- V21: BEBAN HARI INI (Konsumsi AC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">BEBAN HARI INI</p>
+                    <p class="text-sm font-semibold text-gray-400 uppercase">Beban Hari Ini</p>
                     <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
                 </div>
                 <div class="summary-block">
@@ -289,7 +289,7 @@
             <!-- V19: PENGHEMATAN HARI INI (Rupiah) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">PENGHEMATAN HARI INI</p>
+                    <p class="text-sm font-semibold text-gray-400 uppercase">Penghematan Hari Ini</p>
                     <i data-lucide="file-text" class="lucide w-7 h-7 text-green-400"></i>
                 </div>
                 <div class="summary-block">
@@ -303,7 +303,7 @@
             <!-- V18: TOTAL PENGHEMATAN (Rupiah Akumulasi) - GANTI WARNA PINK -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400 uppercase">TOTAL PENGHEMATAN</p>
+                    <p class="text-sm font-semibold text-gray-400 uppercase">Total Penghematan</p>
                     <i data-lucide="trending-up" class="lucide w-7 h-7 text-pink-med"></i>
                 </div>
                 <div class="summary-block">
@@ -317,7 +317,7 @@
         </div>
 
         <!-- GRAFIK DAYA & KARTU KECIL (4 Kartu Di Bawah Header Grafik) -->
-        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">GRAFIK DAYA</h2>
+        <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya</h2>
         
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <!-- V2: PV Power (Input) -->
@@ -389,14 +389,14 @@
             <div class="solar-card">
                 <h3 class="text-xl font-semibold text-dc-color mb-4 flex items-center border-b border-gray-700 pb-2">
                     <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2 text-dc-color"></i>
-                    PANEL SURYA (DC)
+                    Panel Surya (DC)
                 </h3 >
                 <div>
                     <!-- V1: Current DC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            ARUS PV
+                            Arus PV
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v1-pzem-current" class="text-xl font-bold loading-animation">...</span>
@@ -407,41 +407,41 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-orange-red"></i>
-                            PV PEAK
+                            PV Peak
                         </div>
                         <div class="flex items-baseline text-orange-red nominal-color">
                             <span id="v6-pv-peak" class="text-xl font-bold loading-animation">...</span>
                             <span id="v6-pv-peak-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-                    <!-- V4: SunHour (PINDAH DARI BATERAI) -->
-                    <div class="detail-item">
-                        <div class="flex items-center metric-title text-white">
-                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            MATAHARI EFEKTIF
-                        </div>
-                        <div class="flex items-baseline text-dc-color nominal-color">
-                            <span id="v4-sunhour" class="text-xl font-bold loading-animation">...</span>
-                            <span id="v4-sunhour-unit" class="text-base ml-1"></span>
-                        </div>
-                    </div>
                     <!-- V5: PV Persen -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            EFISIENSI PV
+                            Eefisiensi PV
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v5-pv-persen" class="text-xl font-bold loading-animation">...</span>
                             <span id="v5-pv-persen-unit" class="text-base ml-1"></span>
                         </div>
                     </div>
-
+                    <!-- V4: SunHour (PINDAH DARI BATERAI) -->
+                    <div class="detail-item">
+                        <div class="flex items-center metric-title text-white">
+                            <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
+                            Matahari efektif
+                        </div>
+                        <div class="flex items-baseline text-dc-color nominal-color">
+                            <span id="v4-sunhour" class="text-xl font-bold loading-animation">...</span>
+                            <span id="v4-sunhour-unit" class="text-base ml-1"></span>
+                        </div>
+                    </div>
+                    
 <!-- V11: Total PV (Total Lifetime Energy) -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            MAX ENERGY PV
+                            Max Energi PV
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v11-total-pv" class="text-xl font-bold loading-animation">...</span>
@@ -454,14 +454,14 @@
             <div class="solar-card">
                 <h3 class="text-xl font-semibold text-blue-bat mb-4 flex items-center border-b border-gray-700 pb-2">
                     <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2 text-blue-bat"></i>
-                    BATERAI & ENERGY
+                    Baterai & Energi
                 </h3 >
                 <div>
                     <!-- V0: BUS VOLTAGE (PINDAH DARI PANEL SURYA) -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                              <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
-                             BUS VOLTAGE
+                             Bus Voltase
                         </div>
                         <div class="flex items-baseline text-pink-med nominal-color">
                             <span id="v0-pzem-voltage" class="text-xl font-bold loading-animation">...</span>
@@ -472,7 +472,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-full" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
-                            BATERAI MAX
+                            Baterai Max
                         </div>
                         <div class="flex items-baseline text-blue-bat nominal-color">
                             <span id="v7-batere-peak" class="text-xl font-bold loading-animation">...</span>
@@ -483,7 +483,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-low" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
-                            BATERAI LOW
+                            Baterai Low
                         </div>
                         <div class="flex items-baseline text-warning-red nominal-color">
                             <span id="v8-batere-low" class="text-xl font-bold loading-animation">...</span>
@@ -494,7 +494,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="battery-medium" class="lucide w-4 h-4 mr-3 text-blue-bat"></i>
-                            BATERAI AH
+                            Kapasitas Baterai
                         </div>
                         <div class="flex items-baseline text-blue-bat nominal-color">
                             <span id="v9-batere-ah" class="text-xl font-bold loading-animation">...</span>
@@ -505,7 +505,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="gauge" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            TOTAL ENERGY DC
+                            Total Energi DC
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v3-pzem-energy" class="text-xl font-bold loading-animation">...</span>
@@ -519,14 +519,14 @@
             <div class="solar-card">
                 <h3 class="text-xl font-semibold text-ac-color mb-4 flex items-center border-b border-gray-700 pb-2">
                     <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2 text-ac-color"></i>
-                   INVERTER & BEBAN (AC)
+                   Inverter & Beban (AC)
                 </h3>
                 <div>
                     <!-- V12: Voltage AC -->
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="bolt" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
-                            TEGANGAN AC 
+                            Tegangan AC 
                         </div>
                         <div class="flex items-baseline text-ac-color nominal-color">
                             <span id="v12-voltage" class="text-xl font-bold loading-animation">...</span>
@@ -537,7 +537,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
-                            ARUS AC
+                            Arus AC
                         </div>
                         <div class="flex items-baseline text-ac-color nominal-color">
                             <span id="v13-current" class="text-xl font-bold loading-animation">...</span>
@@ -549,7 +549,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="refresh-cw" class="lucide w-4 h-4 mr-3 text-pink-med"></i>
-                            FREQUENSI
+                            Frequensi
                         </div>
                         <div class="flex items-baseline text-pink-med nominal-color">
                             <span id="v16-frequency" class="text-xl font-bold loading-animation">...</span>
@@ -560,7 +560,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="maximize-2" class="lucide w-4 h-4 mr-3 text-warning-red"></i>
-                            INVERTER PEAK
+                            Inverter Peak
                         </div>
                         <div class="flex items-baseline text-warning-red nominal-color">
                             <span id="v20-inverter-peak" class="text-xl font-bold loading-animation">...</span>
@@ -571,7 +571,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-ac-color"></i>
-                            TOTAL ENERGY AC
+                            Total Energi AC
                         </div>
                         <div class="flex items-baseline text-ac-color nominal-color">
                             <span id="v15-energy" class="text-xl font-bold loading-animation">...</span>
