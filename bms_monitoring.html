@@ -24,6 +24,7 @@
       --green-400: #00C853; /* Hijau Cerah */
       --warning-red: #EF4444; /* Merah Peringatan */
       --orange-red: #E74C3C; /* Merah Oranye */
+      --pink-400: #F472B6; /* Pink */ 
       
       /* SKEMA WARNA BARU SESUAI PERMINTAAN */
       --stabilo-green: #BFFF00; /* Hijau Stabilo (dc-color) */
@@ -93,9 +94,8 @@
     .text-soc-green { color: var(--green-400); }
 
     /* Kelas warna Arus Baterai dan Daya Baterai */
-    /* KELAS ARUS DAN DAYA (KEDUA METRIK HARUS MENGGUNAKAN KELAS INI) */
     .text-charging { color: var(--stabilo-green); } 
-    .text-discharging { color: var(--soft-brown); } /* COKLAT MUDA (INI ADALAH WARNA DEFAULT DISCHARGE) */
+    .text-discharging { color: var(--soft-brown); }
     .text-standby { color: #F8FAFC; }
 
     /* KELAS KHUSUS UNTUK ARUS (AMPER) DISCHARGING (Merah Peringatan) */
@@ -500,10 +500,12 @@
             <div class="space-y-3 text-sm">
                 <div class="detail-metric">
                     <span class="text-gray-400">Arus Pack</span>
+                    <!-- PERBAIKAN: Tambahkan ID untuk pewarnaan dinamis di Modal -->
                     <span class="font-semibold text-white" id="modalCurrent">N/A</span>
                 </div>
                 <div class="detail-metric">
                     <span class="text-gray-400">Daya (Power)</span>
+                    <!-- PERBAIKAN: Tambahkan ID untuk pewarnaan dinamis di Modal -->
                     <span class="font-semibold text-white" id="modalPower">N/A</span>
                 </div>
                 <div class="detail-metric">
@@ -722,7 +724,7 @@
      function removePowerColorClasses(element) {
         if (element) {
             // Tambahkan kelas warna baru di sini
-            element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby'); 
+            element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby', 'text-charging', 'text-discharging', 'text-standby'); 
         }
     }
 
@@ -784,7 +786,7 @@
             currentStatusText = 'N/A';
         }
         
-        // --- PEWARNAAN ARUS (AMPER) ---
+        // --- PEWARNAAN ARUS (AMPER) RINGKASAN ---
         // Saat Discharging, Amper harus MERAH (High Alert), bukan Coklat Muda.
         const ampColorClass = statusClass === 'text-discharging' ? 'text-amp-discharging' : statusClass;
         
@@ -805,7 +807,7 @@
         currentIconEl.classList.add(ampColorClass); 
         
         
-        // --- PEWARNAAN DAYA (WATT) ---
+        // --- PEWARNAAN DAYA (WATT) RINGKASAN ---
         // Saat Standby, Daya harus PINK. Saat Discharging, Coklat Muda. Saat Charging, Hijau Stabilo.
         const powerSummaryEl = document.getElementById('summary-power');
         const powerIconEl = document.getElementById('icon-power-summary');
@@ -967,15 +969,32 @@
                 const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(parseInt(batt.soc));
                 
                 const battCurrentVal = parseFloat(batt.current);
-                let battCurrentColorClass = 'text-standby';
+                
+                let battStatusClass = 'text-standby';
                 if (!isNaN(battCurrentVal)) {
                     if (battCurrentVal > currentThreshold) {
-                        battCurrentColorClass = 'text-charging'; // HIJAU STABILO
+                        battStatusClass = 'text-charging';
                     } else if (battCurrentVal < -currentThreshold) {
-                        battCurrentColorClass = 'text-discharging'; // COKLAT MUDA
+                        battStatusClass = 'text-discharging';
                     }
                 }
+
+                // ARUS: Red for Discharging (matching summary logic)
+                let battAmpColorClass = battStatusClass;
+                if (battStatusClass === 'text-discharging') {
+                    battAmpColorClass = 'text-amp-discharging'; // MERAH
+                }
                 
+                // DAYA: Pink for Standby, Soft Brown for Discharging (matching summary logic)
+                let battPowerColorClass = battStatusClass;
+                if (battStatusClass === 'text-standby') {
+                     battPowerColorClass = 'text-power-standby'; // PINK
+                } else if (battStatusClass === 'text-discharging') {
+                     battPowerColorClass = 'text-discharging'; // COKLAT MUDA
+                }
+                // Jika charging, battPowerColorClass adalah 'text-charging' (Hijau Stabilo)
+
+
                 card.id = cardId;
                 card.className = "solar-card rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition fade-in";
                 card.dataset.addr = String(batt.addr);
@@ -1010,12 +1029,12 @@
                             </div>
                         </div>
                         
-                        <!-- Current (ARUS DENGAN PEWARNAAN DINAMIS) -->
+                        <!-- Current (ARUS DENGAN PEWARNAAN DINAMIS: RED/STABILO GREEN/WHITE) -->
                         <div class="flex items-center space-x-2 p-1">
-                            <i data-lucide="activity" class="lucide w-4 h-4 ${battCurrentColorClass}" id="current-icon-${batt.typeBattery}-${batt.addr}"></i>
+                            <i data-lucide="activity" class="lucide w-4 h-4 ${battAmpColorClass}" id="current-icon-${batt.typeBattery}-${batt.addr}"></i>
                             <div>
                                 <div class="text-gray-500">Arus</div>
-                                <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battCurrentColorClass}">${batt.current} A</div>
+                                <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battAmpColorClass}">${batt.current} A</div>
                             </div>
                         </div>
 
@@ -1028,12 +1047,12 @@
                             </div>
                         </div>
 
-                        <!-- Daya -->
+                        <!-- Daya (POWER DENGAN PEWARNAAN DINAMIS: PINK/SOFT BROWN/STABILO GREEN) -->
                         <div class="flex items-center space-x-2 p-1">
-                            <i data-lucide="power" class="lucide w-4 h-4 text-red-400"></i>
+                            <i data-lucide="power" class="lucide w-4 h-4 ${battPowerColorClass}" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
                             <div>
                                 <div class="text-gray-500">Daya</div>
-                                <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.power} W</div>
+                                <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerColorClass}">${batt.power} W</div>
                             </div>
                         </div>
 
@@ -1081,17 +1100,32 @@
             const cardId = `card-${batt.typeBattery}-${batt.addr}`;
             const { textColor: cardTextColor, progressColor: cardProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(parseInt(batt.soc));
             
-            // --- LOGIC PEWARNAAN ARUS BATERAI (INDIVIDUAL CARD) ---
+            
             const battCurrentVal = parseFloat(batt.current);
-            let battCurrentColorClass = 'text-standby';
+            let battStatusClass = 'text-standby';
             if (!isNaN(battCurrentVal)) {
                 if (battCurrentVal > currentThreshold) {
-                    battCurrentColorClass = 'text-charging';
+                    battStatusClass = 'text-charging';
                 } else if (battCurrentVal < -currentThreshold) {
-                    battCurrentColorClass = 'text-discharging';
+                    battStatusClass = 'text-discharging';
                 }
             }
-            // --- END LOGIC ARUS BATTERAI ---
+
+            // ARUS: Red for Discharging (matching summary logic)
+            let battAmpColorClass = battStatusClass;
+            if (battStatusClass === 'text-discharging') {
+                battAmpColorClass = 'text-amp-discharging'; 
+            }
+            
+            // DAYA: Pink for Standby, Soft Brown for Discharging (matching summary logic)
+            let battPowerColorClass = battStatusClass;
+            if (battStatusClass === 'text-standby') {
+                 battPowerColorClass = 'text-power-standby'; 
+            } else if (battStatusClass === 'text-discharging') {
+                 battPowerColorClass = 'text-discharging'; 
+            }
+            // Jika charging, battPowerColorClass adalah 'text-charging' (Hijau Stabilo)
+
 
             // Update in-place
             
@@ -1108,17 +1142,30 @@
                 socBar.classList.add(cardProgressColor);
             }
 
-            // Arus
+            // Arus (Arus menggunakan battAmpColorClass)
             const currentTextEl = document.getElementById(`current-${batt.typeBattery}-${batt.addr}`);
             const currentIconCardEl = document.getElementById(`current-icon-${batt.typeBattery}-${batt.addr}`);
 
             if (currentTextEl && currentIconCardEl) {
                 removeCurrentColorClasses(currentTextEl);
-                currentTextEl.classList.add(battCurrentColorClass);
+                currentTextEl.classList.add(battAmpColorClass);
                 
                 removeCurrentColorClasses(currentIconCardEl);
-                currentIconCardEl.classList.add(battCurrentColorClass);
+                currentIconCardEl.classList.add(battAmpColorClass);
             }
+            
+            // Daya (Daya menggunakan battPowerColorClass)
+            const powerTextEl = document.getElementById(`power-${batt.typeBattery}-${batt.addr}`);
+            const powerIconCardEl = document.getElementById(`power-icon-${batt.typeBattery}-${batt.addr}`);
+            
+            if (powerTextEl && powerIconCardEl) {
+                removePowerColorClasses(powerTextEl);
+                powerTextEl.classList.add(battPowerColorClass);
+                
+                removePowerColorClasses(powerIconCardEl);
+                powerIconCardEl.classList.add(battPowerColorClass);
+            }
+
 
             // Pembaruan Metrik Detail
             safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`);
@@ -1187,29 +1234,43 @@
       safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
       safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
       
-      // 3. Update Metrik Arus & Daya
-      // LOGIC PEWARNAAN ARUS DI MODAL
+      // 3. Update Metrik Arus & Daya (Sama seperti logika di renderCards)
       const currentVal = parseFloat(batt.current);
-      let currentModalColor = 'text-standby';
       const currentThreshold = 0.1;
 
+      let battStatusClass = 'text-standby';
       if (!isNaN(currentVal)) {
-            if (currentVal > currentThreshold) {
-                currentModalColor = 'text-charging';
-            } else if (currentVal < -currentThreshold) {
-                currentModalColor = 'text-discharging';
-            }
+          if (currentVal > currentThreshold) {
+              battStatusClass = 'text-charging';
+          } else if (currentVal < -currentThreshold) {
+              battStatusClass = 'text-discharging';
+          }
+      }
+
+      // ARUS (Ampere) DI MODAL: Merah saat Discharging
+      const ampModalColor = battStatusClass === 'text-discharging' ? 'text-amp-discharging' : battStatusClass;
+
+      // DAYA (Power) DI MODAL: Pink saat Standby, Soft Brown saat Discharging
+      let powerModalColor = battStatusClass;
+      if (battStatusClass === 'text-standby') {
+           powerModalColor = 'text-power-standby'; // PINK
+      } else if (battStatusClass === 'text-discharging') {
+           powerModalColor = 'text-discharging'; // COKLAT MUDA
       }
       
       const modalCurrentEl = document.getElementById("modalCurrent");
       if(modalCurrentEl){
-          // Perlu memastikan penghapusan kelas warna lama yang benar (yang sekarang adalah text-charging/text-discharging)
-          modalCurrentEl.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color');
-          modalCurrentEl.classList.add(currentModalColor);
+          removeCurrentColorClasses(modalCurrentEl);
+          modalCurrentEl.classList.add(ampModalColor);
+      }
+      
+      const modalPowerEl = document.getElementById("modalPower");
+      if(modalPowerEl){
+          removePowerColorClasses(modalPowerEl);
+          modalPowerEl.classList.add(powerModalColor);
       }
       
       safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
-      // Daya (Power) - ID: modalPower
       safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
       safeUpdate("modalTemp", batt.tempStatus); // Placeholder
       
@@ -1306,3 +1367,4 @@
   </script>
 </body>
 </html>
+
