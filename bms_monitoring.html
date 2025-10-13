@@ -21,9 +21,13 @@
       --solar-dark: #05050D; /* Hitam Paling Gelap */
       --solar-card-bg: rgba(20, 20, 48, 0.4); /* Hitam Transparan */
       --blue-bat: #00FFFF; /* Cyan Cerah (Baterai) */
-      --dc-color: #BFFF00; /* Hijau Lime */
       --green-400: #00C853; /* Hijau Cerah */
       --warning-red: #EF4444; /* Merah Peringatan */
+      --orange-red: #E74C3C; /* Merah Oranye */
+      
+      /* SKEMA WARNA BARU SESUAI PERMINTAAN */
+      --stabilo-green: #BFFF00; /* Hijau Stabilo (dc-color) */
+      --soft-brown: #B8860B; /* Coklat Muda / Goldenrod */
       
       --red-cell: #F87171;
       --green-cell: #34D399;
@@ -88,10 +92,21 @@
     .text-soc-yellow { color: var(--warning); }
     .text-soc-green { color: var(--green-400); }
 
-    /* Kelas warna Arus Baterai */
-    .text-charging { color: var(--green-400); } /* Hijau */
-    .text-discharging { color: var(--warning-red); } /* Merah */
-    .text-standby { color: #F8FAFC; } /* Putih/Default */
+    /* Kelas warna Arus Baterai dan Daya Baterai */
+    /* KELAS ARUS DAN DAYA (KEDUA METRIK HARUS MENGGUNAKAN KELAS INI) */
+    .text-charging { color: var(--stabilo-green); } 
+    .text-discharging { color: var(--soft-brown); } /* COKLAT MUDA (INI ADALAH WARNA DEFAULT DISCHARGE) */
+    .text-standby { color: #F8FAFC; }
+
+    /* KELAS KHUSUS UNTUK ARUS (AMPER) DISCHARGING (Merah Peringatan) */
+    .text-amp-discharging { color: var(--warning-red); } 
+    /* KELAS KHUSUS UNTUK DAYA (WATT) STANDBY (Pink) */
+    .text-power-standby { color: var(--pink-400); } 
+    
+    /* Warna Kustom Umum */
+    .text-purple-400 { color: #A78BFA; } /* Ungu */
+    .text-pink-400 { color: #F472B6; } /* Pink */
+    .text-orange-red-power { color: var(--orange-red); } 
     
     .cell-voltage {
       position: relative;
@@ -293,29 +308,26 @@
 
   <!-- Main content -->
   <main class="flex-1 p-4 sm:p-8 w-full">
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-12xl mx-auto">
       
       <!-- RINGKASAN SOH/SOC -->
       <h2 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <!-- MODIFIKASI: Grid 6 Kolom di Desktop (lg:grid-cols-6) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           
-        <!-- SOC (State of Charge) -->
+        <!-- 1. SOC (State of Charge) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
-                <!-- ID: icon-soc-summary (Untuk pewarnaan dinamis) -->
                 <i data-lucide="battery-charging" class="lucide w-7 h-7 text-blue-bat" id="icon-soc-summary"></i>
-                <!-- ID: summary-soc (Untuk pewarnaan dinamis) -->
                 <span class="text-3xl font-extrabold text-blue-bat" id="summary-soc">N/A</span>
             </div>
-            <!-- Ganti teks dari SOC/SOH menjadi hanya SOC -->
             <p class="text-sm font-medium text-gray-400">SOC</p>
             <div class="progress-bar mt-2">
-                <!-- ID: soc-progress-summary (Untuk pewarnaan dinamis) -->
                 <div id="soc-progress-summary" class="progress-fill bg-blue-500" style="width: 0%"></div>
             </div>
         </div>
 
-        <!-- SOH (State of Health) -->
+        <!-- 2. SOH (State of Health) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
                 <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400"></i>
@@ -327,31 +339,59 @@
             </div>
         </div>
           
-        <!-- Arus Baterai (Tambahkan ID untuk warna) -->
+        <!-- 3. ARUS BATERAI (Total Penjumlahan) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
                 <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color" id="icon-current-summary"></i>
                 <div class="flex items-baseline">
+                    <!-- CATATAN: text-dc-color adalah warna default. Akan digantikan oleh ampColorClass di JS -->
                     <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
                     <span class="text-sm ml-1 text-dc-color" id="summary-current-unit">A</span>
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
-            <!-- Tambahkan status Charging/Discharging -->
             <p class="text-xs text-gray-500 mt-1" id="current-status-text">Standby</p>
         </div>
-          
-        <!-- Tegangan Pack -->
+
+        <!-- 4. DAYA BATERAI (Power) - WARNA PINK DINAMIS -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
-                <i data-lucide="bolt" class="lucide w-7 h-7 text-yellow-500"></i>
+                <i data-lucide="power" class="lucide w-7 h-7 text-pink-400" id="icon-power-summary"></i>
+                <div class="flex items-baseline">
+                    <!-- CATATAN: text-pink-400 adalah warna default. Akan digantikan oleh powerColorClass di JS -->
+                    <span class="text-3xl font-extrabold text-pink-400" id="summary-power">N/A</span>
+                    <span class="text-sm ml-1 text-pink-400" id="summary-power-unit">W</span>
+                </div>
+            </div>
+            <p class="text-sm font-medium text-gray-400">Daya Baterai</p>
+            <p class="text-xs text-gray-500 mt-1" id="power-status-text">Total Daya Sistem</p>
+        </div>
+
+        <!-- 5. TEGANGAN PACK (Rata-Rata) -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="bolt" class="lucide w-7 h-7 text-yellow-500" id="icon-pack-voltage-summary"></i>
                 <div class="flex items-baseline">
                     <span class="text-3xl font-extrabold text-yellow-500" id="summary-voltage">N/A</span>
                     <span class="text-sm ml-1 text-yellow-500">V</span>
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-400">Tegangan Pack</p>
-            <p class="text-xs text-gray-500 mt-1">Total Tegangan Baterai</p>
+            <p class="text-xs text-gray-500 mt-1">Rata-rata Tegangan Pack</p>
+        </div>
+
+        <!-- 6. TEGANGAN BUS (Bus Voltage) - WARNA UNGU -->
+        <div class="solar-card p-4 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <i data-lucide="zap-off" class="lucide w-7 h-7 text-purple-400" id="icon-bus-voltage-summary"></i>
+                <div class="flex items-baseline">
+                    <!-- Default text-purple-400, diganti dinamis di JS -->
+                    <span class="text-3xl font-extrabold text-purple-400" id="summary-bus-voltage">N/A</span>
+                    <span class="text-sm ml-1 text-purple-400" id="summary-bus-voltage-unit">V</span>
+                </div>
+            </div>
+            <p class="text-sm font-medium text-gray-400">Tegangan Bus</p>
+            <p class="text-xs text-gray-500 mt-1">Rata-rata Tegangan Bus </p>
         </div>
 
       </div>
@@ -359,7 +399,7 @@
       <!-- LIST KARTU BATERAI (Grid Baterai yang Terhubung) -->
       <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Baterai Terhubung (<span id="total-batteries">0</span>)</h2>
       
-      <!-- PERUBAHAN GRID DARI xl:grid-cols-4 MENJADI md:grid-cols-3 UNTUK LAYAR BESAR -->
+      <!-- Tetap 3 kolom untuk kartu detail baterai agar tidak terlalu sempit -->
       <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5"></div>
       
       <div id="empty-state" class="hidden text-center py-12 solar-card rounded-xl shadow-sm">
@@ -671,20 +711,36 @@
      */
     function removeCurrentColorClasses(element) {
         if (element) {
-            element.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color');
+            // Kita perlu menghapus semua kelas yang mungkin telah diterapkan
+            element.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color', 'text-warning-red', 'text-stabilo-green', 'text-soft-brown', 'text-amp-discharging');
         }
     }
+    
+    /**
+     * Menghilangkan semua kelas warna teks yang berkaitan dengan Daya Baterai
+     */
+     function removePowerColorClasses(element) {
+        if (element) {
+            // Tambahkan kelas warna baru di sini
+            element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby'); 
+        }
+    }
+
 
     function renderCards(datane) {
         
         // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS & RATA-RATA VOLTAGE) ---
         let totalCurrent = 0;
         let totalVoltage = 0;
+        let totalPower = 0; // Menghitung total Power
+        let totalBusVoltage = 0; // Menghitung total Bus Voltage
         let validBatteryCount = 0;
 
         batteries.forEach(b => {
             const current = parseFloat(b.current);
             const voltage = parseFloat(b.voltage);
+            const power = parseFloat(b.power);
+            const busVoltage = parseFloat(b.busVoltage);
 
             if (!isNaN(current)) {
                 totalCurrent += current;
@@ -693,50 +749,87 @@
                 totalVoltage += voltage;
                 validBatteryCount++;
             }
+            if (!isNaN(power)) {
+                totalPower += power;
+            }
+            if (!isNaN(busVoltage)) {
+                totalBusVoltage += busVoltage;
+            }
         });
         
         // Final calculations
         const currentVal = totalCurrent.toFixed(2);
         const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
+        const totalPowerVal = totalPower.toFixed(0); // Daya dalam Watt (W) dibulatkan
+        const avgBusVoltage = validBatteryCount > 0 ? (totalBusVoltage / validBatteryCount).toFixed(2) : 'N/A';
+
         
-        
-        // --- ARUS (Total Penjumlahan) ---
-        const currentSummaryEl = document.getElementById('summary-current');
-        const currentUnitEl = document.getElementById('summary-current-unit');
-        const currentIconEl = document.getElementById('icon-current-summary');
-        const currentStatusTextEl = document.getElementById('current-status-text');
-        
+        // Tentukan Status (Charging/Discharging/Standby)
         let currentStatusText = 'Standby';
-        let currentColorClass = 'text-standby';
+        let statusClass = 'text-standby';
         const currentThreshold = 0.1;
 
         if (validBatteryCount > 0) {
             if (totalCurrent > currentThreshold) {
-                currentColorClass = 'text-charging';
+                statusClass = 'text-charging'; 
                 currentStatusText = 'Charging';
             } else if (totalCurrent < -currentThreshold) {
-                currentColorClass = 'text-discharging';
+                statusClass = 'text-discharging'; 
                 currentStatusText = 'Discharging';
             } else {
-                currentColorClass = 'text-standby';
+                statusClass = 'text-standby';
                 currentStatusText = 'Standby';
             }
         } else {
             currentStatusText = 'N/A';
         }
-
-        // Apply Current Color to Summary Card
+        
+        // --- PEWARNAAN ARUS (AMPER) ---
+        // Saat Discharging, Amper harus MERAH (High Alert), bukan Coklat Muda.
+        const ampColorClass = statusClass === 'text-discharging' ? 'text-amp-discharging' : statusClass;
+        
+        const currentSummaryEl = document.getElementById('summary-current');
+        const currentUnitEl = document.getElementById('summary-current-unit');
+        const currentIconEl = document.getElementById('icon-current-summary');
+        
         safeUpdate('summary-current', isNaN(totalCurrent) ? 'N/A' : currentVal);
+        safeUpdate('current-status-text', currentStatusText);
+        
         removeCurrentColorClasses(currentSummaryEl);
-        currentSummaryEl.classList.add(currentColorClass);
+        currentSummaryEl.classList.add(ampColorClass);
         
         removeCurrentColorClasses(currentUnitEl);
-        currentUnitEl.classList.add(currentColorClass);
+        currentUnitEl.classList.add(ampColorClass);
 
-        removeCurrentColorClasses(currentIconEl);
-        currentIconEl.classList.add(currentColorClass);
+        currentIconEl.classList.remove('text-dc-color', 'text-warning-red', 'text-green-400');
+        currentIconEl.classList.add(ampColorClass); 
         
-        safeUpdate('current-status-text', currentStatusText);
+        
+        // --- PEWARNAAN DAYA (WATT) ---
+        // Saat Standby, Daya harus PINK. Saat Discharging, Coklat Muda. Saat Charging, Hijau Stabilo.
+        const powerSummaryEl = document.getElementById('summary-power');
+        const powerIconEl = document.getElementById('icon-power-summary');
+        const powerUnitEl = document.getElementById('summary-power-unit');
+        
+        let powerColorClass = statusClass; // Default: Charging/Discharging/Standby
+        
+        if (statusClass === 'text-standby') {
+             powerColorClass = 'text-power-standby'; // PINK
+        } else if (statusClass === 'text-discharging') {
+             powerColorClass = 'text-discharging'; // COKLAT MUDA
+        }
+        // Jika charging, powerColorClass sudah menjadi 'text-charging' (Hijau Stabilo)
+
+        safeUpdate('summary-power', isNaN(totalPower) ? 'N/A' : totalPowerVal);
+        
+        removePowerColorClasses(powerSummaryEl);
+        removePowerColorClasses(powerIconEl);
+        if (powerUnitEl) removePowerColorClasses(powerUnitEl);
+
+        powerSummaryEl.classList.add(powerColorClass);
+        powerIconEl.classList.add(powerColorClass);
+        if (powerUnitEl) powerUnitEl.classList.add(powerColorClass);
+        
         
         // --- TEGANGAN PACK (Rata-Rata) ---
         const voltageSummaryEl = document.getElementById('summary-voltage');
@@ -750,6 +843,25 @@
             voltageSummaryEl.classList.remove('text-red-500');
             if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500');
         }
+
+        // --- TEGANGAN BUS (Rata-Rata) ---
+        safeUpdate('summary-bus-voltage', avgBusVoltage);
+        const busVoltageSummaryEl = document.getElementById('summary-bus-voltage');
+        const busVoltageIconEl = document.getElementById('icon-bus-voltage-summary');
+        const busVoltageUnitEl = document.getElementById('summary-bus-voltage-unit'); // Ambil dari ID di HTML
+        
+        const busVoltageColorClass = 'text-purple-400';
+        const busVoltageColorsToRemove = ['text-blue-bat', 'text-red-500', 'text-purple-400']; // Tambahkan warna baru
+
+        // Atur warna Bus Voltage (Ungu)
+        busVoltageSummaryEl.classList.remove(...busVoltageColorsToRemove);
+        busVoltageIconEl.classList.remove(...busVoltageColorsToRemove);
+        if (busVoltageUnitEl) busVoltageUnitEl.classList.remove(...busVoltageColorsToRemove);
+
+        busVoltageSummaryEl.classList.add(busVoltageColorClass);
+        busVoltageIconEl.classList.add(busVoltageColorClass);
+        if (busVoltageUnitEl) busVoltageUnitEl.classList.add(busVoltageColorClass);
+
         
         // --- END LOGIC RINGKASAN UTAMA ---
 
@@ -858,9 +970,9 @@
                 let battCurrentColorClass = 'text-standby';
                 if (!isNaN(battCurrentVal)) {
                     if (battCurrentVal > currentThreshold) {
-                        battCurrentColorClass = 'text-charging';
+                        battCurrentColorClass = 'text-charging'; // HIJAU STABILO
                     } else if (battCurrentVal < -currentThreshold) {
-                        battCurrentColorClass = 'text-discharging';
+                        battCurrentColorClass = 'text-discharging'; // COKLAT MUDA
                     }
                 }
                 
@@ -979,7 +1091,7 @@
                     battCurrentColorClass = 'text-discharging';
                 }
             }
-            // --- END LOGIC ARUS BATERAI ---
+            // --- END LOGIC ARUS BATTERAI ---
 
             // Update in-place
             
@@ -1091,7 +1203,8 @@
       
       const modalCurrentEl = document.getElementById("modalCurrent");
       if(modalCurrentEl){
-          removeCurrentColorClasses(modalCurrentEl);
+          // Perlu memastikan penghapusan kelas warna lama yang benar (yang sekarang adalah text-charging/text-discharging)
+          modalCurrentEl.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color');
           modalCurrentEl.classList.add(currentModalColor);
       }
       
