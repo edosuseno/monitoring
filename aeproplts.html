@@ -429,7 +429,7 @@
                     <div class="detail-item">
                         <div class="flex items-center metric-title text-white">
                             <i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>
-                            Matahari efektif
+                            Matahari Efektif
                         </div>
                         <div class="flex items-baseline text-dc-color nominal-color">
                             <span id="v4-sunhour" class="text-xl font-bold loading-animation">...</span>
@@ -916,7 +916,7 @@ function handleBMSNavigation() {
                 labels: window.realtimeData.labels,
                 datasets: [
                     {
-                        label: 'PV Power (W) - V2',
+                        label: 'PV Power (W)',
                         data: window.realtimeData.pvPower,
                         backgroundColor: 'rgba(191, 255, 0, 0.2)', // Background Fill (Soft)
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
@@ -928,7 +928,7 @@ function handleBMSNavigation() {
                         yAxisID: 'y'
                     },
                     {
-                        label: 'AC Load (W) - V14',
+                        label: 'AC Load (W)',
                         data: window.realtimeData.acLoad,
                         backgroundColor: 'rgba(255, 185, 0, 0.2)', // Background Fill (Soft)
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
