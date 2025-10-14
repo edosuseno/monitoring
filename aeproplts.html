@@ -231,18 +231,26 @@
     <div id="config-panel" class="solar-card p-6 rounded-xl shadow-xl mb-8">
         <h2 class="text-xl font-semibold text-white mb-4 flex items-center">
             <i data-lucide="settings" class="lucide w-5 h-5 mr-2 text-blynk-primary"></i>
-            Konfigurasi API
+            Konfigurasi API & Kalibrasi
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Kolom 1: IP Server -->
+            <div class="md:col-span-2 lg:col-span-1">
                 <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain </label>
                 <input type="text" id="server-ip" placeholder="contoh: iot.server.com:9443" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
             </div>
-            <div>
+            <!-- Kolom 2: Auth Token -->
+            <div class="md:col-span-2 lg:col-span-1">
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
                 <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
             </div>
-            <div class="flex items-end">
+            <!-- Kolom 3: Koreksi Energi Harian (BARU) -->
+            <div class="md:col-span-2 lg:col-span-1">
+                 <label for="energy-offset" class="block text-sm font-medium text-gray-300 mb-1" title="Untuk mengoreksi selisih kWh harian antara Blynk dan MPPT. Positif untuk menambah.">Koreksi Harian (kWh)</label>
+                <input type="number" step="0.1" id="energy-offset" placeholder="contoh: 1.5 atau -0.5" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="0.0">
+            </div>
+            <!-- Kolom 4: Tombol Mulai -->
+            <div class="md:col-span-2 lg:col-span-1 flex items-end">
                 <button onclick="saveAndFetchData()" class="w-full bg-blynk-primary text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-600 transition duration-300">
                     Mulai Monitoring
                 </button>
@@ -261,7 +269,7 @@
             <!-- V10: ENERGI PV HARI INI (Produksi DC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400">Energi Hari Ini</p>
+                    <p class="text-sm font-semibold text-gray-400">Energi Hari Ini (Terkoreksi)</p>
                     <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                 </div>
                 <div class="summary-block">
@@ -637,11 +645,13 @@
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
         const STORAGE_KEY_IP = 'blynk_server_ip';
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; // Kunci untuk menyimpan data chart
+        const STORAGE_KEY_OFFSET = 'energy_calibration_offset'; // Kunci BARU untuk offset kalibrasi
         const UPDATE_INTERVAL = 5000; // 5 detik
 
         let fetchInterval = null; // Untuk menyimpan ID interval
         let serverIp = '';
         let authToken = '';
+        let ENERGY_CALIBRATION_OFFSET = 0.0; // Variabel global untuk offset
         
         let isMinimalUI = false;
 
@@ -686,6 +696,27 @@
         function saveHistoricalData() {
             localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
         }
+        
+        // --- FUNGSI BARU UNTUK KALIBRASI ENERGI ---
+        function loadEnergyOffset() {
+            const savedOffset = localStorage.getItem(STORAGE_KEY_OFFSET);
+            const offsetInput = document.getElementById('energy-offset');
+            
+            if (savedOffset !== null && !isNaN(parseFloat(savedOffset))) {
+                ENERGY_CALIBRATION_OFFSET = parseFloat(savedOffset);
+                offsetInput.value = ENERGY_CALIBRATION_OFFSET.toFixed(1);
+            } else {
+                 ENERGY_CALIBRATION_OFFSET = 0.0;
+                 offsetInput.value = '0.0';
+            }
+        }
+        
+        function saveEnergyOffset(offsetValue) {
+            localStorage.setItem(STORAGE_KEY_OFFSET, offsetValue);
+            ENERGY_CALIBRATION_OFFSET = parseFloat(offsetValue);
+            showMessage(`Offset energi harian diatur ke ${offsetValue} kWh.`, 'success');
+        }
+
 
         /**
          * Utility untuk membuat jeda (delay)
@@ -1120,8 +1151,16 @@
          * Fungsi untuk memformat nilai berdasarkan kebutuhan pin
          */
         function formatValue(pin, value) {
-            const numericValue = parseFloat(value);
+            let numericValue = parseFloat(value);
             if (isNaN(numericValue)) return 'N/A';
+            
+            // --- LOGIC KALIBRASI V10 (ENERGI HARI INI) ---
+            if (pin === 'V10') {
+                 // Tambahkan offset kalibrasi hanya untuk V10
+                 numericValue += ENERGY_CALIBRATION_OFFSET;
+            }
+            // --- AKHIR LOGIC KALIBRASI V10 ---
+
 
             // Pin yang harus diformat sebagai Bilangan Bulat (tanpa desimal)
             const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20'];
@@ -1137,23 +1176,19 @@
 
 
             if (rupiahPins.includes(pin)) {
-                return numericValue.toLocaleString('id-ID', {
+                // Pastikan nilai rupiah tidak negatif setelah koreksi (meskipun jarang terjadi)
+                return Math.max(0, numericValue).toLocaleString('id-ID', {
                     minimumFractionDigits: 0, 
                     maximumFractionDigits: 0
                 });
             }
             
-            // Self Consumption V22 -> Integer/1 desimal tergantung kebutuhan. Pakai 0 desimal karena biasanya % itu integer
-            // if (pin === 'V22') {
-            //      return numericValue.toFixed(0); 
-            // }
-
             if (integerPins.includes(pin) || chartPowerPins.includes(pin)) {
-                return numericValue.toFixed(0);  
+                return Math.max(0, numericValue).toFixed(0);  
             }
             
             if (summaryEnergyPins.includes(pin)) {
-                return numericValue.toFixed(1);
+                return Math.max(0, numericValue).toFixed(1);
             }
 
             // Default: 1 angka di belakang koma untuk pin lainnya 
@@ -1203,15 +1238,18 @@
                 if (result.status === 'fulfilled') {
                     const rawValue = result.value || '0';
                     const numericValue = parseFloat(rawValue);
-                    const formattedValue = formatValue(pin, rawValue);
-                    
-                    // --- Ambil data daya untuk Penghitungan Lokal dan Realtime Chart ---
+
+                    // PENTING: Dapatkan nilai daya untuk chart/perhitungan lokal SEBELUM format
                     if (pin === 'V2') {
                          currentPvPower = numericValue || 0;
                     } else if (pin === 'V14') {
                          currentAcLoad = numericValue || 0;
                     }
 
+                    // Panggil formatValue (yang kini mencakup kalibrasi V10)
+                    const formattedValue = formatValue(pin, rawValue);
+
+                    
                     // 1. Tentukan konten teks
                     if (pin === 'V18' || pin === 'V19') {
                         element.textContent = formattedValue;
@@ -1220,7 +1258,7 @@
                         element.textContent = formattedValue;
                         if (unitElement) unitElement.textContent = unit;
                     }
-
+                    
                     // 2. Tambahkan efek kilat/update
                     element.style.transform = 'scale(1.05)';
                     setTimeout(() => {
@@ -1357,20 +1395,28 @@
         function saveAndFetchData() {
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
+            const offsetInput = document.getElementById('energy-offset'); // Input BARU
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
+            const newEnergyOffset = parseFloat(offsetInput.value); // Ambil nilai offset
 
             if (!newAuthToken || !newServerIp) {
                 showMessage('IP Server dan Auth Token harus diisi!', 'warning');
+                return;
+            }
+            
+            if (isNaN(newEnergyOffset)) {
+                showMessage('Nilai Koreksi Harian harus berupa angka!', 'warning');
                 return;
             }
 
             // Simpan ke Local Storage
             localStorage.setItem(STORAGE_KEY_IP, newServerIp);
             localStorage.setItem(STORAGE_KEY_TOKEN, newAuthToken);
+            saveEnergyOffset(newEnergyOffset.toFixed(1)); // Simpan offset baru
 
             serverIp = newServerIp;
             authToken = newAuthToken;
@@ -1430,10 +1476,12 @@
                     localStorage.removeItem(STORAGE_KEY_IP);
                     localStorage.removeItem(STORAGE_KEY_TOKEN);
                     localStorage.removeItem(STORAGE_KEY_CHART_DATA); // Hapus data historis
+                    localStorage.removeItem(STORAGE_KEY_OFFSET); // Hapus offset kalibrasi
                     
                     // 4. Reset state global
                     serverIp = '';
                     authToken = '';
+                    ENERGY_CALIBRATION_OFFSET = 0.0;
                     window.realtimeData.labels = [];
                     window.realtimeData.pvPower = [];
                     window.realtimeData.acLoad = [];
@@ -1441,6 +1489,7 @@
                     // 5. Reset input field
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
                     document.getElementById('auth-token').value = '';
+                    document.getElementById('energy-offset').value = '0.0'; // Reset offset input
                     
                     // 6. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
                     document.getElementById('config-panel').classList.remove('hidden');
@@ -1478,18 +1527,21 @@
             // Muat dari Local Storage
             const savedIp = localStorage.getItem(STORAGE_KEY_IP);
             const savedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+            
+            loadEnergyOffset(); // Muat offset kalibrasi
 
             if (savedIp) {
                 document.getElementById('server-ip').value = savedIp;
                 serverIp = savedIp;
-            }
-            if (savedToken) {
-                document.getElementById('auth-token').value = savedToken;
-                authToken = savedToken;
             } else {
                  // Set default value if no saved token
                 document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             }
+            if (savedToken) {
+                document.getElementById('auth-token').value = savedToken;
+                authToken = savedToken;
+            }
+
 
             // Atur jam
             updateTime();
@@ -1506,10 +1558,9 @@
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
                 saveAndFetchData();
             } else {
-                showMessage('Silakan masukkan IP Server dan Auth Token Blynk Anda di atas.', 'warning');
+                showMessage('Silakan masukkan IP Server, Auth Token Blynk, dan atur Koreksi Harian Anda.', 'warning');
             }
         };
     </script>
 </body>
 </html>
-
