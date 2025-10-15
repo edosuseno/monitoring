@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMS MONITORING</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Memuat MQTT Client -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Memuat ikon Lucide untuk Navigasi -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Menggunakan skema warna Dark dari Dasbor PLTS (Hitam Pekat & Transparan) */
+    :root {
+      --primary: #4B87FF; 
+      --secondary: #10B981;
+      --danger: #F87171;
+      --warning: #FACC15; /* Kuning */
+      --solar-dark: #05050D; /* Hitam Paling Gelap */
+      --solar-card-bg: rgba(20, 20, 48, 0.4); /* Hitam Transparan */
+      --blue-bat: #00FFFF; /* Cyan Cerah (Baterai) */
+      --green-400: #00C853; /* Hijau Cerah */
+      --warning-red: #EF4444; /* Merah Peringatan */
+      --orange-red: #E74C3C; /* Merah Oranye */
+      --pink-400: #F472B6; /* Pink */ 
+      
+      /* SKEMA WARNA BARU SESUAI PERMINTAAN */
+      --stabilo-green: #BFFF00; /* Hijau Stabilo (dc-color) */
+      --soft-brown: #B8860B; /* Coklat Muda / Goldenrod */
+      
+      --red-cell: #F87171;
+      --green-cell: #34D399;
+    }
+     .led {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 6px;
+      background: #ccc;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    
+    .led.active {
+      background: var(--secondary);
+      box-shadow: 0 0 8px var(--secondary);
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--solar-dark);
+      color: #F8FAFC; 
+    }
+    
+    /* GAYA KARTU UTAMA (Transparan & Ramping) */
+    .solar-card {
+        background-color: var(--solar-card-bg); 
+        color: #F8FAFC;
+        border-radius: 16px; 
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); 
+        border: 1px solid rgba(71, 85, 105, 0.2); 
+        transition: all 0.3s ease;
+    }
+    .solar-card:hover {
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+        transform: translateY(-2px); 
+        background-color: rgba(20, 20, 48, 0.6); 
+    }
+    
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: rgba(51, 65, 85, 0.5); /* Slate-700 Transparan */
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    /* Kelas warna khusus untuk progres bar SOC */
+    .bg-soc-red { background-color: var(--warning-red); }
+    .bg-soc-yellow { background-color: var(--warning); }
+    .bg-soc-green { background-color: var(--green-400); }
+
+    /* Kelas warna khusus untuk teks SOC */
+    .text-soc-red { color: var(--warning-red); }
+    .text-soc-yellow { color: var(--warning); }
+    .text-soc-green { color: var(--green-400); }
+
+    /* Kelas warna Arus Baterai dan Daya Baterai */
+    .text-charging { color: var(--stabilo-green); } 
+    .text-discharging { color: var(--soft-brown); }
+    .text-standby { color: #F8FAFC; }
+
+    /* KELAS KHUSUS UNTUK ARUS (AMPER) DISCHARGING (Merah Peringatan) */
+    .text-amp-discharging { color: var(--warning-red); } 
+    /* KELAS KHUSUS UNTUK DAYA (WATT) STANDBY (Pink) */
+    .text-power-standby { color: var(--pink-400); } 
+    
+    /* Warna Kustom Umum */
+    .text-purple-400 { color: #A78BFA; } /* Ungu */
+    .text-pink-400 { color: #F472B6; } /* Pink */
+    .text-orange-red-power { color: var(--orange-red); } 
+    
+    .cell-voltage {
+      position: relative;
+    }
+    
+    /* Warna Aksen Kiri di Detail Sel */
+    .cell-normal::before { background-color: var(--green-cell); } 
+    .cell-warning::before { background-color: var(--warning); } 
+    .cell-danger::before { background-color: var(--red-cell); } 
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Styling Modal agar konsisten */
+    #batteryModal {
+        background-color: rgba(0, 0, 0, 0.85);
+    }
+    #batteryModal > div {
+        background-color: rgba(20, 20, 48, 0.9);
+        color: #F8FAFC;
+    }
+    
+    /* Styling khusus untuk modal header (ringkasan) */
+    .modal-summary-card {
+        padding: 1rem;
+        border-radius: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 120px;
+        background-color: rgba(20, 20, 48, 0.8); /* Latar belakang card di dalam modal */
+        border-bottom: 5px solid;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .modal-soc { border-bottom-color: #3b82f6; /* Blue-500 */ }
+    .modal-soh { border-bottom-color: #22c55e; /* Green-500 */ }
+    .modal-cycles { border-bottom-color: #a855f7; /* Purple-500 */ }
+
+
+    /* Gaya Card Detail Sesuai Screenshot */
+    .detail-metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(51, 65, 85, 0.5); /* Abu-abu gelap transparan */
+    }
+    .detail-metric:last-child {
+        border-bottom: none;
+    }
+    
+    /* Cell Voltage Container */
+    #modalCells {
+        /* Mengatur ulang grid responsif agar tetap 2 kolom di HP */
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @media (min-width: 640px) { /* sm */
+        #modalCells { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 768px) { /* md */
+        #modalCells { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) { /* lg */
+        #modalCells { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    }
+
+    /* Card di Modal (Untuk Cell Voltages & Metrik) */
+    .bg-gray-800 { 
+      background-color: rgba(30, 41, 59, 0.6); /* Lebih transparan */
+    }
+
+    /* Gaya Card Ringkasan di grid utama (3x2) */
+    .metric-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    /* Di desktop (>lg), paksa 3 kolom */
+    @media (min-width: 1024px) {
+        .metric-group {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+    }
+    .metric-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem; 
+    }
+    .metric-value {
+        font-weight: 600; 
+        margin-left: auto;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ========================================================== -->
+    <!-- 1. FORMULIR AKTIVASI (LOCK SCREEN) -->
+    <!-- ========================================================== -->
+    <div id="activation-form" class="max-w-xl mx-auto solar-card p-8 rounded-xl shadow-2xl mt-8">
+        <h2 class="text-2xl font-bold text-red-400 mb-2 flex items-center justify-center">
+            <i data-lucide="lock" class="lucide w-6 h-6 mr-2"></i>
+            Dashboard Terkunci (BMS)
+        </h2>
+        <p class="text-gray-400 mb-6 text-center">Harap masukkan Kunci Aktivasi (Hash) untuk memuat monitoring. Kunci ini sensitif terhadap desain.</p>
+        
+        <!-- INPUT WATERMARK ID -->
+        <label for="activation-id-bms" class="block text-sm font-medium text-gray-300 mb-2">ID Lisensi Pembeli (Watermark):</label>
+        <input type="text" id="activation-id-bms" placeholder="Masukkan ID Pembeli (Contoh: AHMAD_007)" 
+               class="w-full p-3 rounded-xl bg-slate-700 text-white border-none focus:ring-red-500 focus:border-red-500 font-mono text-sm mb-4">
+        
+        <!-- INPUT HASH KUNCI -->
+        <label for="activation-hash-bms" class="block text-sm font-medium text-gray-300 mb-2">Kunci Aktivasi (Hash SHA-256):</label>
+        <input type="text" id="activation-hash-bms" placeholder="Masukkan Hash Kunci di sini" 
+               class="w-full p-3 rounded-xl bg-slate-700 text-white border-none focus:ring-red-500 focus:border-red-500 font-mono text-sm">
+        
+        <div id="hash-info" class="text-xs text-yellow-400 mt-2"></div>
+
+        <button onclick="activateBMSDashboard()" 
+                class="w-full bg-red-600 text-white font-bold py-3 mt-4 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+            <i data-lucide="unlock" class="lucide w-5 h-5 mr-2"></i>
+            AKTIVASI DASHBOARD BMS
+        </button>
+         <p id="hash-status-message-bms" class="mt-4 text-sm text-red-400 hidden text-center font-semibold"></p>
+         
+         <!-- TOMBOL BARU UNTUK BERSIHKAN KUNCI LAMA -->
+         <button onclick="clearStoredBMSHash()" 
+                 class="w-full text-gray-400 text-sm font-semibold py-2 mt-4 rounded-xl hover:bg-slate-700 transition duration-300 flex items-center justify-center">
+             <i data-lucide="trash-2" class="lucide w-4 h-4 mr-2"></i>
+             Bersihkan Kunci Lama di Browser
+         </button>
+         
+         <!-- DEBUG OUTPUT (Hanya terlihat di console, tetapi markup ada di sini) -->
+         <div id="hash-debug-output-bms" class="hidden"></div>
+    </div>
+
+
+    <!-- Main content (Disembunyikan sampai aktivasi) -->
+    <main id="monitoring-dashboard-bms" class="flex-1 p-4 sm:p-8 w-full hidden">
+        <div class="max-w-7xl mx-auto">
+             <!-- Header -->
+            <header id="mainHeader" class="text-white w-full mb-4">
+              <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Struktur Desktop (Grid 3 Kolom) -->
+                <div class="hidden md:grid md:grid-cols-3 md:items-center">
+                    <!-- 1. Tombol Kembali (Kiri) -->
+                    <div class="flex justify-start">
+                         <button onclick="window.history.back()" 
+                                class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center text-sm">
+                            <i data-lucide="arrow-left" class="lucide w-4 h-4 mr-2"></i>
+                            KEMBALI
+                        </button>
+                    </div>
+
+                    <!-- 2. Judul dan Deskripsi (Tengah, Rata Tengah) -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="flex items-center justify-center">
+                            <div class="p-2 rounded-lg mr-2">
+                                <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl sm:text-3xl font-extrabold text-blue-bat tracking-tight">
+                                    BMS MONITORING
+                                </h1>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
+                    </div>
+
+                    <!-- 3. Jam & IP Logger (Kanan) -->
+                    <div class="flex flex-col items-end">
+                        <div id="time-display-desktop">
+                            <p id="current-date-desktop" class="text-sm text-gray-400"></p>
+                            <p id="current-time-desktop" class="text-2xl font-bold text-white"></p>
+                        </div>
+                        <div class="mt-1 text-xs text-gray-400">
+                            IP: <span class="font-bold text-white" id="bms-logger-ip-header-desktop">N/A</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Struktur Mobile (STACKING/TENGAH) -->
+                <div class="md:hidden flex flex-col items-center text-center w-full">
+                    
+                    <!-- ROW 1: Judul & Deskripsi (Tengah) -->
+                    <div class="flex flex-col items-center justify-center mb-4">
+                        <div class="flex items-center">
+                            <div class="p-2 rounded-lg mr-2">
+                                <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl font-extrabold text-blue-bat tracking-tight">
+                                    BMS MONITORING
+                                </h1>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 mt-0.5 text-sm">Detail Tegangan Sel dan Kesehatan Baterai.</p>
+                    </div>
+
+                    <!-- ROW 2: Tombol Kembali, Jam & ID (Di bawah Judul, Rata Samping) -->
+                    <div class="flex justify-between items-center w-full px-2">
+                        <!-- Tombol Kembali (Kiri) -->
+                        <button onclick="window.history.back()" 
+                                class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center text-xs">
+                            <i data-lucide="arrow-left" class="lucide w-3 h-3 mr-1"></i>
+                            KEMBALI
+                        </button>
+                        
+                        <!-- Jam & IP Logger (Kanan) -->
+                        <div class="flex flex-col items-end text-right">
+                            <div id="time-display-mobile">
+                                <p id="current-date-mobile" class="text-xs text-gray-400"></p>
+                                <p id="current-time-mobile" class="text-lg font-bold text-white"></p>
+                            </div>
+                            <div class="mt-0.5 text-xs text-gray-400">
+                                IP: <span class="font-bold text-white" id="bms-logger-ip-header-mobile">N/A</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </header>
+
+            <!-- RINGKASAN SOH/SOC -->
+            <h2 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h2>
+            <!-- MODIFIKASI: Grid 6 Kolom di Desktop (lg:grid-cols-6) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                
+                <!-- 1. SOC (State of Charge) -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="battery-charging" class="lucide w-7 h-7 text-blue-bat" id="icon-soc-summary"></i>
+                        <span class="text-3xl font-extrabold text-blue-bat" id="summary-soc">N/A</span>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">SOC</p>
+                    <div class="progress-bar mt-2">
+                        <div id="soc-progress-summary" class="progress-fill bg-blue-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- 2. SOH (State of Health) -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400"></i>
+                        <span class="text-3xl font-extrabold text-green-400" id="summary-soh">N/A</span>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">SOH</p>
+                    <div class="progress-bar mt-2">
+                        <div id="soh-progress-summary" class="progress-fill bg-green-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                  
+                <!-- 3. ARUS BATERAI (Total Penjumlahan) -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color" id="icon-current-summary"></i>
+                        <div class="flex items-baseline">
+                            <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
+                            <span class="text-sm ml-1 text-dc-color" id="summary-current-unit">A</span>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
+                    <p class="text-xs text-gray-500 mt-1" id="current-status-text">Total Arus Sistem</p>
+                </div>
+
+                <!-- 4. DAYA BATERAI (Power) - WARNA PINK DINAMIS -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="power" class="lucide w-7 h-7 text-pink-400" id="icon-power-summary"></i>
+                        <div class="flex items-baseline">
+                            <span class="text-3xl font-extrabold text-pink-400" id="summary-power">N/A</span>
+                            <span class="text-sm ml-1 text-pink-400" id="summary-power-unit">W</span>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">Daya Baterai</p>
+                    <p class="text-xs text-gray-500 mt-1" id="power-status-text">Total Daya Sistem</p>
+                </div>
+
+                <!-- 5. TEGANGAN PACK (Rata-Rata) -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="bolt" class="lucide w-7 h-7 text-yellow-500" id="icon-pack-voltage-summary"></i>
+                        <div class="flex items-baseline">
+                            <span class="text-3xl font-extrabold text-yellow-500" id="summary-voltage">N/A</span>
+                            <span class="text-sm ml-1 text-yellow-500">V</span>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">Tegangan Pack</p>
+                    <p class="text-xs text-gray-500 mt-1">Rata-rata Tegangan Pack</p>
+                </div>
+
+                <!-- 6. TEGANGAN BUS (Bus Voltage) - WARNA UNGU -->
+                <div class="solar-card p-4 shadow-xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <i data-lucide="zap-off" class="lucide w-7 h-7 text-purple-400" id="icon-bus-voltage-summary"></i>
+                        <div class="flex items-baseline">
+                            <span class="text-3xl font-extrabold text-purple-400" id="summary-bus-voltage">N/A</span>
+                            <span class="text-sm ml-1 text-purple-400" id="summary-bus-voltage-unit">V</span>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-gray-400">Tegangan Bus</p>
+                    <p class="text-xs text-gray-500 mt-1">Rata-rata Tegangan Bus </p>
+                </div>
+
+            </div>
+          
+            <!-- LIST KARTU BATERAI (Grid Baterai yang Terhubung) -->
+            <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Baterai Terhubung (<span id="total-batteries">0</span>)</h2>
+            
+            <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5"></div>
+            
+            <div id="empty-state" class="hidden text-center py-12 solar-card rounded-xl shadow-sm">
+                <div class="text-blue-500 mb-4">
+                    <i class="fas fa-car-battery text-5xl opacity-50"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-300 mb-2">Tidak ada baterai terhubung</h3>
+                <p class="text-gray-400 max-w-md mx-auto">Data baterai akan muncul di sini setelah sistem BMS Anda terhubung dan mengirim data.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="app-footer" class="bg-solar-dark text-gray-500 py-4 w-full">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
+        <div class="text-sm">
+          © 2025 BMS Monitor System | IP: <span class="font-bold text-white" id="bms-logger-ip-footer">N/A</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Modal Detail Baterai (Disesuaikan agar mirip Screenshot) -->
+    <div id="batteryModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
+        <!-- MODAL CONTENT HERE -->
+    </div>
+
+
+    <script>
+        // Memuat Hash Kunci dari Local Storage
+        const ACTIVATION_KEY_STORAGE_BMS = 'bms_activation_key';
+        let VALID_DESIGN_HASH_BMS = localStorage.getItem(ACTIVATION_KEY_STORAGE_BMS) || '';
+
+        // WATERMARK KEY STORAGE
+        const ACTIVATION_ID_STORAGE_BMS = 'bms_activation_id';
+        
+        // Konstan untuk BMS ID/Key (Digunakan untuk langganan topik MQTT)
+        const BMS_MQTT_TOPIC_KEY = "316506218"; 
+
+        let client;
+        let batteries = [];
+        let currentAddr = null;
+        const cardTimers = {};
+        let lastRenderedAddresses = '';
+
+        // --- Hashing & Integrity Check Utilities ---
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Watermark template di file locked harus sama persis dengan yang ada di Admin
+        const WATERMARK_TEMPLATE_LOCKED = '/* WATERMARK_KEY: {{BUYER_ID}} */';
+        const BASE_CSS = document.getElementsByTagName('style')[0].textContent.trim(); // Ambil CSS dasar dari tag <style>
+
+
+        async function checkDesignIntegrity(hashKey, buyerId) {
+            try {
+                if (!buyerId) {
+                    console.error("Buyer ID missing for hash check.");
+                    return false;
+                }
+                
+                // 1. Sisipkan watermark ke CSS dasar file ini
+                const watermarkedContent = WATERMARK_TEMPLATE_LOCKED.replace('{{BUYER_ID}}', buyerId.toUpperCase()) + BASE_CSS;
+
+                // 2. Normalisasi konten CSS (sama seperti di Admin Dashboard)
+                const normalizedContent = watermarkedContent
+                    .replace(/\/\*[\s\S]*?\*\/|([^\\:])\/\/.*/g, '')
+                    .replace(/\s+/g, '') 
+                    .toLowerCase();
+                
+                const currentHash = await sha256(normalizedContent);
+                const isMatch = (currentHash === hashKey);
+
+                // --- DEBUGGING OUTPUT DI CONSOLE ---
+                console.log('--- DEBUG HASH BMS ---');
+                console.log('Buyer ID Used: ' + buyerId);
+                console.log('Hash Dihitung (Saat Ini): ' + currentHash);
+                console.log('Hash Kunci (Tersimpan/Input): ' + hashKey);
+                console.log('Match: ' + isMatch);
+                console.log('------------------');
+                // --- END DEBUGGING OUTPUT ---
+
+                if (!isMatch) {
+                    console.error('Hash Saat Ini (' + currentHash + ') tidak cocok dengan Hash Kunci (' + hashKey + ').');
+                }
+                
+                return isMatch;
+            } catch (e) {
+                console.error("Integrity check failed:", e);
+                return false;
+            }
+        }
+        
+        // --- Activation Logic ---
+        async function activateBMSDashboard() {
+            const inputHash = document.getElementById('activation-hash-bms').value.trim();
+            const inputId = document.getElementById('activation-id-bms').value.trim(); // Ambil ID Pembeli
+            const statusMessageEl = document.getElementById('hash-status-message-bms');
+            
+            statusMessageEl.classList.add('hidden');
+            
+            if (!inputHash || inputHash.length !== 64 || inputId.length < 3) {
+                 statusMessageEl.textContent = 'Kunci/ID tidak valid. Pastikan Hash 64 karakter dan ID Pembeli sudah diisi.';
+                 statusMessageEl.classList.remove('hidden');
+                 return;
+            }
+
+            const isValid = await checkDesignIntegrity(inputHash, inputId);
+
+            if (isValid) {
+                // SIMPAN HASH DAN ID YANG VALID KE LOCAL STORAGE
+                localStorage.setItem(ACTIVATION_KEY_STORAGE_BMS, inputHash);
+                localStorage.setItem(ACTIVATION_ID_STORAGE_BMS, inputId);
+                VALID_DESIGN_HASH_BMS = inputHash; // Update global
+                toggleBMSDashboard(true);
+            } else {
+                statusMessageEl.textContent = 'AKTIVASI GAGAL! Kunci Hash salah atau desain telah diubah.';
+                statusMessageEl.classList.remove('hidden');
+            }
+        }
+
+        function toggleBMSDashboard(show) {
+            const form = document.getElementById('activation-form');
+            const dashboard = document.getElementById('monitoring-dashboard-bms');
+            
+            if (show) {
+                form.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                initBMSMonitoring(); 
+            } else {
+                form.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+            }
+        }
+
+        function clearStoredBMSHash() {
+            localStorage.removeItem(ACTIVATION_KEY_STORAGE_BMS);
+            localStorage.removeItem(ACTIVATION_ID_STORAGE_BMS);
+            VALID_DESIGN_HASH_BMS = '';
+            document.getElementById('hash-status-message-bms').textContent = 'Kunci lama berhasil dihapus. Coba masukkan kunci baru Anda.';
+            document.getElementById('hash-status-message-bms').classList.remove('hidden', 'text-red-400');
+            document.getElementById('hash-status-message-bms').classList.add('text-green-400');
+            document.getElementById('activation-hash-bms').value = '';
+            document.getElementById('activation-id-bms').value = '';
+            toggleBMSDashboard(false); // Pastikan formulir kembali tampil
+        }
+        
+        // --- BMS Monitoring Logic (Functions from original file) ---
+        function safeUpdate(id, content, isHtml = false) {
+            const el = document.getElementById(id);
+            if (el) {
+                if (isHtml) { el.innerHTML = content; } else { el.textContent = content; }
+            } 
+        }
+        
+        function updateTime() {
+          const now = new Date();
+          const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+          const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+          
+          const dateStr = now.toLocaleDateString('id-ID', dateOptions);
+          const timeStr = now.toLocaleTimeString('id-ID', timeOptions);
+
+          safeUpdate('current-date-desktop', dateStr);
+          safeUpdate('current-time-desktop', timeStr);
+          safeUpdate('current-date-mobile', dateStr);
+          safeUpdate('current-time-mobile', timeStr);
+        }
+
+        function startMQTT(){
+          client = mqtt.connect("wss://public.cloud.shiftr.io", {
+            username: "public",
+            password: "public"
+          });
+          
+          client.on("connect", () => {
+            console.log("Connected to MQTT");
+            client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/AutoPoll/#");
+            client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/info/#");
+          });
+
+          client.on("message", (topic, message) => {
+             // (Logic penanganan pesan MQTT disisipkan di sini)
+             if(topic == "sysMon/"+BMS_MQTT_TOPIC_KEY+"/info" ){
+                  let ip_address = message.toString().split(",")[0];
+                  if (ip_address && ip_address !== 'N/A') {
+                      safeUpdate("bms-logger-ip-header-desktop", ip_address);
+                      safeUpdate("bms-logger-ip-header-mobile", ip_address);
+                      safeUpdate("bms-logger-ip-footer", ip_address);
+                  }
+            } else {
+                  try {
+                      const raw = JSON.parse(message.toString());
+                      const batt = normalizeFromMqtt(raw);
+
+                      const idx = batteries.findIndex(b => (b.addr === batt.addr)&&(b.typeBattery === batt.typeBattery));
+                      if (idx >= 0) {
+                        batteries[idx] = batt; // update
+                      } else {
+                        batt.elementId = `battery-${batt.typeBattery}-${batt.addr}`;
+                        batteries.push(batt); // kalau address baru
+                      }
+                      batteries.sort((a, b) => {
+                          const addrA = parseInt(a.addr);
+                          const addrB = parseInt(b.addr);
+                          if (isNaN(addrA) || isNaN(addrB)) return 0;
+                          return addrA - addrB;
+                      });
+                      renderCards(batt);
+                      // updateModal(); // Modal logic is more complex for a locked file, omitted for brevity.
+                  } catch (e) {
+                      console.error("Invalid JSON Error: ", e, e.stack); 
+                  }
+            }
+          });
+          client.on("error", (error) => { console.error("MQTT Error:", error); });
+        }
+
+        function getCurrentTimeHHMMSS() {
+          const now = new Date();
+          return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+        
+        function normalizeFromMqtt(data) {
+          const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
+          const cells = cellVoltages.map(v => (v/1000).toFixed(3));
+          
+          const cell_vmax_val = cellVoltages.length > 0 ? Math.max(...cellVoltages) / 1000 : 'N/A';
+          const cell_vmin_val = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 'N/A';
+          
+          let cell_vdiff_val = 'N/A';
+          if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number') {
+              cell_vdiff_val = (cell_vmax_val - cell_vmin_val) * 1000;
+          }
+          
+          const voltage = (data.bat_voltage !== undefined) ? data.bat_voltage : 'N/A';
+          const current = (data.bat_current !== undefined) ? data.bat_current : 'N/A';
+
+          let power = 'N/A';
+          if (typeof voltage === 'number' && typeof current === 'number') {
+            power = (voltage * current).toFixed(2); // DUA ANGKA SETELAH KOMA
+          }
+          
+          return {
+            typeBattery: data.typeBattery || 'Baterai',
+            addr: data.AddrBattery || 'N/A',
+            soc: (data.SOC !== undefined) ? data.SOC.toFixed(0) : 'N/A',
+            soh: (data.SOH !== undefined) ? data.SOH.toFixed(0) : 'N/A',
+            voltage: typeof voltage === 'number' ? voltage.toFixed(2) : voltage,
+            busVoltage: (data.bus_voltage !== undefined) ? data.bus_voltage.toFixed(2) : 'N/A',
+            current: typeof current === 'number' ? current.toFixed(2) : current,
+            capacity: (data.full_capacity !== undefined) ? data.full_capacity.toFixed(2) : 'N/A',
+            remaining: (data.rem_capacity !== undefined) ? data.rem_capacity.toFixed(2) : 'N/A',
+            cycles: data.cycle_count || 0,
+            cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A',
+            cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A',
+            cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
+            tempStatus: data.temp_status || 'Normal',
+            time: getCurrentTimeHHMMSS(),
+            cells: cells,
+            power: power
+          };
+        }
+        
+        function removeCurrentColorClasses(element) { 
+            if (element) {
+                element.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color', 'text-warning-red', 'text-stabilo-green', 'text-soft-brown', 'text-amp-discharging');
+            }
+        }
+        function removePowerColorClasses(element) { 
+             if (element) {
+                element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby', 'text-charging', 'text-discharging', 'text-standby'); 
+            }
+        }
+        function getSocColorClasses(soc) {
+            let textColor = 'text-soc-yellow'; let progressColor = 'bg-soc-yellow'; 
+            if (soc > 70) { textColor = 'text-soc-green'; progressColor = 'bg-soc-green'; } 
+            else if (soc < 30) { textColor = 'text-soc-red'; progressColor = 'bg-soc-red'; }
+            const textClassesToRemove = ['text-soc-red', 'text-soc-yellow', 'text-soc-green', 'text-blue-bat', 'text-green-400', 'text-warning-red'];
+            const bgClassesToRemove = ['bg-soc-red', 'bg-soc-yellow', 'bg-soc-green', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500'];
+            return { textColor, progressColor, textClassesToRemove, bgClassesToRemove };
+        }
+        
+        function renderCards(datane) {
+            const grid = document.getElementById("batteryGrid");
+            const emptyState = document.getElementById("empty-state");
+            const currentThreshold = 0.1;
+            
+            // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS & RATA-RATA VOLTAGE) ---
+            let totalCurrent = 0;
+            let totalVoltage = 0;
+            let totalPower = 0; 
+            let totalBusVoltage = 0; 
+            let validBatteryCount = 0;
+
+            batteries.forEach(b => {
+                const current = parseFloat(b.current);
+                const voltage = parseFloat(b.voltage);
+                const power = parseFloat(b.power);
+                const busVoltage = parseFloat(b.busVoltage);
+
+                if (!isNaN(current)) totalCurrent += current;
+                if (!isNaN(voltage)) { totalVoltage += voltage; validBatteryCount++; }
+                if (!isNaN(power)) totalPower += power;
+                if (!isNaN(busVoltage)) totalBusVoltage += busVoltage;
+            });
+            
+            const currentVal = totalCurrent.toFixed(2);
+            const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
+            const totalPowerVal = totalPower.toFixed(0); 
+            const avgBusVoltage = validBatteryCount > 0 ? (totalBusVoltage / validBatteryCount).toFixed(2) : 'N/A';
+
+            let currentStatusText = 'Standby';
+            let statusClass = 'text-standby';
+
+            if (validBatteryCount > 0) {
+                if (totalCurrent > currentThreshold) {
+                    statusClass = 'text-charging'; 
+                    currentStatusText = 'Charging';
+                } else if (totalCurrent < -currentThreshold) {
+                    statusClass = 'text-discharging'; 
+                    currentStatusText = 'Discharging';
+                } else {
+                    statusClass = 'text-standby';
+                    currentStatusText = 'Standby';
+                }
+            } else {
+                currentStatusText = 'N/A';
+            }
+            
+            const ampColorClass = statusClass === 'text-discharging' ? 'text-amp-discharging' : statusClass;
+            let powerColorClass = statusClass;
+            if (statusClass === 'text-standby') { powerColorClass = 'text-power-standby'; } 
+            else if (statusClass === 'text-discharging') { powerColorClass = 'text-discharging'; }
+
+            // Update Ringkasan Utama (Lanjutan)
+            const avgSOC = validBatteryCount > 0 ? (batteries.reduce((sum, b) => sum + (parseFloat(b.soc) || 0), 0) / validBatteryCount).toFixed(0) : 'N/A';
+            const socValue = parseInt(avgSOC);
+            const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
+            
+            // --- PEWARNAAN ARUS (AMPER) RINGKASAN ---
+            const currentSummaryEl = document.getElementById('summary-current');
+            const currentUnitEl = document.getElementById('summary-current-unit');
+            const currentIconEl = document.getElementById('icon-current-summary');
+            
+            safeUpdate('summary-current', isNaN(totalCurrent) ? 'N/A' : currentVal);
+            safeUpdate('current-status-text', currentStatusText);
+            
+            removeCurrentColorClasses(currentSummaryEl);
+            if (currentSummaryEl) currentSummaryEl.classList.add(ampColorClass);
+            if (currentUnitEl) removeCurrentColorClasses(currentUnitEl);
+            if (currentUnitEl) currentUnitEl.classList.add(ampColorClass);
+            
+            if (currentIconEl) { currentIconEl.classList.remove('text-dc-color', 'text-warning-red', 'text-green-400'); currentIconEl.classList.add(ampColorClass); } 
+            
+            // --- PEWARNAAN DAYA (WATT) RINGKASAN ---
+            const powerSummaryEl = document.getElementById('summary-power');
+            const powerIconEl = document.getElementById('icon-power-summary');
+            const powerUnitEl = document.getElementById('summary-power-unit');
+
+            safeUpdate('summary-power', isNaN(totalPower) ? 'N/A' : totalPowerVal);
+
+            removePowerColorClasses(powerSummaryEl);
+            removePowerColorClasses(powerIconEl);
+            if (powerUnitEl) removePowerColorClasses(powerUnitEl);
+
+            if (powerSummaryEl) powerSummaryEl.classList.add(powerColorClass);
+            if (powerIconEl) powerIconEl.classList.add(powerColorClass);
+            if (powerUnitEl) powerUnitEl.classList.add(powerColorClass);
+            
+            // --- SOC/SOH/VOLTAGE Update ---
+            safeUpdate('summary-soh', datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A');
+
+            safeUpdate('summary-voltage', avgVoltage);
+            safeUpdate('summary-bus-voltage', avgBusVoltage);
+            
+            safeUpdate('summary-soc', avgSOC !== 'N/A' ? `${avgSOC}%` : 'N/A');
+            const summarySocEl = document.getElementById('summary-soc');
+            if (summarySocEl) { summarySocEl.classList.remove(...textClassesToRemove); summarySocEl.classList.add(summaryTextColor); }
+            const socProgress = document.getElementById("soc-progress-summary");
+            if (!isNaN(socValue) && socProgress) {
+                socProgress.style.width = `${socValue}%`;
+                socProgress.classList.remove(...bgClassesToRemove); socProgress.classList.add(summaryProgressColor);
+            }
+            const sohProgress = document.getElementById("soh-progress-summary");
+             if(datane.soh !== 'N/A' && sohProgress){
+                sohProgress.style.width = `${datane.soh}%`;
+            }
+
+            // --- 2. LOGIC RENDER KARTU INDIVIDUAL ---
+            if (grid) grid.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
+            safeUpdate('total-batteries', batteries.length.toString());
+
+            const currentAddresses = batteries.map(b => b.addr).join(',');
+
+            if (currentAddresses !== lastRenderedAddresses || batteries.length !== grid.children.length) {
+                // Render Ulang Seluruh Grid jika ada perubahan struktur
+                if (grid) grid.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+
+                batteries.forEach(batt => {
+                    const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(parseInt(batt.soc));
+                    const battCurrentVal = parseFloat(batt.current);
+                    
+                    let battStatusClass = 'text-standby';
+                    if (!isNaN(battCurrentVal)) {
+                        if (battCurrentVal > currentThreshold) { battStatusClass = 'text-charging'; } 
+                        else if (battCurrentVal < -currentThreshold) { battStatusClass = 'text-discharging'; }
+                    }
+                    
+                    let battAmpColorClass = battStatusClass === 'text-discharging' ? 'text-amp-discharging' : battStatusClass;
+                    let battPowerColorClass = battStatusClass;
+                    if (battStatusClass === 'text-standby') { battPowerColorClass = 'text-power-standby'; } 
+                    else if (battStatusClass === 'text-discharging') { battPowerColorClass = 'text-discharging'; }
+
+                    let cardId = `card-${batt.typeBattery}-${batt.addr}`;
+                    let card = document.createElement("div");
+                    card.id = cardId;
+                    card.className = "solar-card rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition fade-in";
+                    card.dataset.addr = String(batt.addr);
+                    
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between mb-3 border-b border-gray-700 pb-2">
+                            <h3 class="text-lg font-bold text-white">${batt.typeBattery} <span class="text-blue-400 font-semibold">#${batt.addr}</span></h3>
+                            <div class="led active" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="flex justify-between items-center mb-1 text-sm">
+                            <span class="text-gray-400">SOC</span>
+                            <span class="font-bold ${cardTextColor}" id="soc-text-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span> 
+                            <span class="font-bold text-gray-400">/ ${batt.soh}%</span>
+                            </div>
+                            <div class="progress-bar mt-1">
+                                <div id="soc-bar-${batt.typeBattery}-${batt.addr}" class="progress-fill ${cardProgressColor}" style="width: ${batt.soc}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="metric-group text-xs mt-2">
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="zap" class="lucide w-6 h-4 text-yellow-500"></i><div><div class="text-gray-500">Tegangan</div><div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div></div></div>
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="activity" class="lucide w-4 h-4 ${battAmpColorClass}" id="current-icon-${batt.typeBattery}-${batt.addr}"></i><div><div class="text-gray-500">Arus</div><div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battAmpColorClass}">${batt.current} A</div></div></div>
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="divide" class="lucide w-4 h-4 text-blue-400"></i><div><div class="text-gray-500">Selisih Sel</div><div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold text-blue-400">${batt.cell_vdif} mV</div></div></div>
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="power" class="lucide w-4 h-4 ${battPowerColorClass}" id="power-icon-${batt.typeBattery}-${batt.addr}"></i><div><div class="text-gray-500">Daya</div><div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerColorClass}">${batt.power} W</div></div></div>
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="minus-circle" class="lucide w-4 h-4 text-red-500"></i><div><div class="text-gray-500">Sel Min</div><div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div></div></div>
+                            <div class="flex items-center space-x-2 p-1"><i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500"></i><div><div class="text-gray-500">Sel Max</div><div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div></div></div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-gray-700 text-xs text-gray-400 flex justify-between">
+                            <span>Siklus: ${batt.cycles}</span>
+                            <span class="last-update" id="time-update-${batt.typeBattery}-${batt.addr}"><i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>
+                        </div>
+                    `;
+                    
+                    // card.onclick = () => openModal(batt.addr); // Modal logic is omitted for simplicity in locked file
+                    fragment.appendChild(card);
+                });
+
+                if (grid) grid.appendChild(fragment);
+                lastRenderedAddresses = currentAddresses;
+                lucide.createIcons(); 
+
+            } else {
+                // Jika hanya update data (tanpa perubahan struktur)
+                const batt = batteries.find(b => (b.addr === datane.addr) && (b.typeBattery === datane.typeBattery));
+                if (!batt) return;
+
+                const { textColor: cardTextColor, progressColor: cardProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(parseInt(batt.soc));
+                const battCurrentVal = parseFloat(batt.current);
+                let battStatusClass = 'text-standby';
+                if (!isNaN(battCurrentVal)) {
+                    if (battCurrentVal > currentThreshold) { battStatusClass = 'text-charging'; } 
+                    else if (battCurrentVal < -currentThreshold) { battStatusClass = 'text-discharging'; }
+                }
+
+                let battAmpColorClass = battStatusClass === 'text-discharging' ? 'text-amp-discharging' : battStatusClass;
+                let battPowerColorClass = battStatusClass;
+                if (battStatusClass === 'text-standby') { battPowerColorClass = 'text-power-standby'; } 
+                else if (battStatusClass === 'text-discharging') { battPowerColorClass = 'text-discharging'; }
+                
+                // Update elemen-elemen di kartu yang sudah ada
+                const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
+                const socTextEl = document.getElementById(`soc-text-${batt.typeBattery}-${batt.addr}`);
+                if (socBar && socTextEl) {
+                    socBar.style.width = `${batt.soc}%`;
+                    socTextEl.classList.remove(...textClassesToRemove); socTextEl.classList.add(cardTextColor);
+                    socBar.classList.remove(...bgClassesToRemove); socBar.classList.add(cardProgressColor);
+                }
+
+                const currentTextEl = document.getElementById(`current-${batt.typeBattery}-${batt.addr}`);
+                const currentIconCardEl = document.getElementById(`current-icon-${batt.typeBattery}-${batt.addr}`);
+                if (currentTextEl && currentIconCardEl) {
+                    removeCurrentColorClasses(currentTextEl); currentTextEl.classList.add(battAmpColorClass);
+                    removeCurrentColorClasses(currentIconCardEl); currentIconCardEl.classList.add(battAmpColorClass);
+                }
+                
+                const powerTextEl = document.getElementById(`power-${batt.typeBattery}-${batt.addr}`);
+                const powerIconCardEl = document.getElementById(`power-icon-${batt.typeBattery}-${batt.addr}`);
+                if (powerTextEl && powerIconCardEl) {
+                    removePowerColorClasses(powerTextEl); powerTextEl.classList.add(battPowerColorClass);
+                    removePowerColorClasses(powerIconCardEl); powerIconCardEl.classList.add(battPowerColorClass);
+                }
+                
+                safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`);
+                safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`);
+                safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`); 
+                safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`);       
+                safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`);
+                safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`); 
+                safeUpdate(`time-update-${batt.typeBattery}-${batt.addr}`, `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>`, true);
+                
+                // Blink LED
+                const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
+                if (led) { led.classList.add("active"); setTimeout(() => led.classList.remove("active"), 250); }
+            }
+            
+            // 🔹 RESET / SET timeout tiap update (agar kartu hilang jika tidak ada data)
+            const cardId = `card-${datane.typeBattery}-${datane.addr}`;
+            if (cardTimers[cardId]) { clearTimeout(cardTimers[cardId]); }
+            cardTimers[cardId] = setTimeout(() => {
+                let c = document.getElementById(cardId);
+                if (c) c.remove();
+                delete cardTimers[cardId];
+            }, 30000); 
+        }
+        
+        function initBMSMonitoring() {
+            safeUpdate("bms-logger-ip-header-desktop", 'N/A');
+            safeUpdate("bms-logger-ip-header-mobile", 'N/A');
+            safeUpdate("bms-logger-ip-footer", 'N/A');
+
+            startMQTT();
+            
+            updateTime();
+            setInterval(updateTime, 1000); 
+            lucide.createIcons();
+        }
+
+        // --- Initialization ---
+        window.onload = async function() {
+            lucide.createIcons();
+            
+            // Coba aktivasi otomatis jika hash sudah tersimpan
+            const storedId = localStorage.getItem(ACTIVATION_ID_STORAGE_BMS);
+            if (VALID_DESIGN_HASH_BMS && VALID_DESIGN_HASH_BMS.length === 64 && storedId) {
+                 const isValid = await checkDesignIntegrity(VALID_DESIGN_HASH_BMS, storedId);
+                 if (isValid) {
+                     toggleBMSDashboard(true);
+                     return;
+                 } else {
+                     document.getElementById('hash-info').textContent = 'Kunci tersimpan gagal. Desain visual file telah diubah. Harap bersihkan kunci.';
+                     localStorage.removeItem(ACTIVATION_KEY_STORAGE_BMS); 
+                     localStorage.removeItem(ACTIVATION_ID_STORAGE_BMS); 
+                 }
+            }
+            
+            // Tampilkan formulir jika hash tidak valid atau tidak ada
+            toggleBMSDashboard(false);
+        };
+    </script>
+</body>
+</html>
