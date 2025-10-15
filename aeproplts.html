@@ -190,7 +190,7 @@
                 <p class="text-gray-400 mt-1">Monitor Kinerja dan Performa Sistem PLTS.</p>
             </div>
               <!-- Konten Kanan (Jam) -->
-            <div class="mt-4 md:mt-0 text-right flex items-center space-x-4">
+            <div class="mt-4 md:mt-0 relentlessly-right flex items-center space-x-4">
                 <div class="hidden md:block">
                     <p id="current-date" class="text-sm text-gray-400"></p>
                     <p id="current-time" class="text-3xl font-bold text-white"></p>
@@ -233,24 +233,35 @@
             <i data-lucide="settings" class="lucide w-5 h-5 mr-2 text-blynk-primary"></i>
             Konfigurasi API & Kalibrasi
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Kolom 1: IP Server -->
-            <div class="md:col-span-2 lg:col-span-1">
+        
+        <!-- Input Server dan Token (2 kolom) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
                 <label for="server-ip" class="block text-sm font-medium text-gray-300 mb-1">IP Server / Domain </label>
                 <input type="text" id="server-ip" placeholder="contoh: iot.server.com:9443" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="iot.serangkota.go.id:9443">
             </div>
-            <!-- Kolom 2: Auth Token -->
-            <div class="md:col-span-2 lg:col-span-1">
+            <div>
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
                 <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
             </div>
-            <!-- Kolom 3: Koreksi Energi Harian (BARU: Persentase) -->
-            <div class="md:col-span-2 lg:col-span-1">
-                 <label for="energy-percent" class="block text-sm font-medium text-gray-300 mb-1" title="Untuk mengoreksi selisih kWh harian antara Blynk dan MPPT. Positif untuk menambah.">Koreksi Persentase (%)</label>
-                <input type="number" step="0.1" id="energy-percent" placeholder="contoh: 10.0 atau -5.5" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="0.0">
+        </div>
+
+        <!-- Input Kalibrasi dan Tombol Mulai (4 Kolom untuk 2 Kalibrasi + 1 Tombol) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+             <!-- Koreksi Energi PV Harian (V10) -->
+            <div class="md:col-span-1 lg:col-span-2">
+                 <label for="energy-percent" class="block text-sm font-medium text-gray-300 mb-1" title="Mengoreksi Energi PV Harian (V10). Positif untuk menambah.">Koreksi PV Harian (%)</label>
+                <!-- DITAMBAHKAN TANDA PLUS PADA PLACEHOLDER -->
+                <input type="number" step="0.1" id="energy-percent" placeholder="contoh: +10.0" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-dc-color focus:border-dc-color" value="0.0">
             </div>
-            <!-- Kolom 4: Tombol Mulai -->
-            <div class="md:col-span-2 lg:col-span-1 flex items-end">
+            <!-- Koreksi Beban AC Harian (V21) - BARU -->
+            <div class="md:col-span-1 lg:col-span-2">
+                 <label for="energy-load-percent" class="block text-sm font-medium text-gray-300 mb-1" title="Mengoreksi Beban AC Harian (V21). Positif untuk menambah.">Koreksi Beban AC (%)</label>
+                <!-- DITAMBAHKAN TANDA PLUS PADA PLACEHOLDER -->
+                <input type="number" step="0.1" id="energy-load-percent" placeholder="contoh: +5.0" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-ac-color focus:border-ac-color" value="0.0">
+            </div>
+            <!-- Tombol Mulai -->
+            <div class="md:col-span-1 lg:col-span-1 flex items-end">
                 <button onclick="saveAndFetchData()" class="w-full bg-blynk-primary text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-blue-600 transition duration-300">
                     Mulai Monitoring
                 </button>
@@ -283,7 +294,7 @@
             <!-- V21: BEBAN HARI INI (Konsumsi AC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400">Beban Hari Ini</p>
+                    <p class="text-sm font-semibold text-gray-400">Beban Hari Ini (Terkoreksi)</p>
                     <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
                 </div>
                 <div class="summary-block">
@@ -642,13 +653,15 @@
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
         const STORAGE_KEY_IP = 'blynk_server_ip';
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; 
-        const STORAGE_KEY_PERCENT = 'energy_calibration_percent'; // Kunci BARU untuk persentase kalibrasi
+        const STORAGE_KEY_PV_PERCENT = 'energy_pv_calibration_percent'; // Kunci persentase PV
+        const STORAGE_KEY_LOAD_PERCENT = 'energy_load_calibration_percent'; // Kunci persentase BEBAN
         const UPDATE_INTERVAL = 5000; // 5 detik
 
         let fetchInterval = null; 
         let serverIp = '';
         let authToken = '';
-        let ENERGY_CALIBRATION_PERCENT = 0.0; // Variabel global untuk persentase
+        let ENERGY_CALIBRATION_PERCENT = 0.0; // Persentase PV (V10)
+        let LOAD_CALIBRATION_PERCENT = 0.0; // Persentase Beban (V21)
         
         let isMinimalUI = false;
 
@@ -692,23 +705,40 @@
         }
         
         // --- FUNGSI BARU UNTUK KALIBRASI PERSENTASE ENERGI ---
-        function loadEnergyPercent() {
-            const savedPercent = localStorage.getItem(STORAGE_KEY_PERCENT);
-            const percentInput = document.getElementById('energy-percent');
+        function loadCalibrationPercent() {
+            const savedPvPercent = localStorage.getItem(STORAGE_KEY_PV_PERCENT);
+            const savedLoadPercent = localStorage.getItem(STORAGE_KEY_LOAD_PERCENT);
+
+            const pvPercentInput = document.getElementById('energy-percent');
+            const loadPercentInput = document.getElementById('energy-load-percent');
             
-            if (savedPercent !== null && !isNaN(parseFloat(savedPercent))) {
-                ENERGY_CALIBRATION_PERCENT = parseFloat(savedPercent);
-                percentInput.value = ENERGY_CALIBRATION_PERCENT.toFixed(1);
+            // PV Calibration (V10)
+            if (savedPvPercent !== null && !isNaN(parseFloat(savedPvPercent))) {
+                ENERGY_CALIBRATION_PERCENT = parseFloat(savedPvPercent);
+                pvPercentInput.value = ENERGY_CALIBRATION_PERCENT.toFixed(1);
             } else {
                  ENERGY_CALIBRATION_PERCENT = 0.0;
-                 percentInput.value = '0.0';
+                 pvPercentInput.value = '0.0';
+            }
+
+            // Load Calibration (V21)
+            if (savedLoadPercent !== null && !isNaN(parseFloat(savedLoadPercent))) {
+                LOAD_CALIBRATION_PERCENT = parseFloat(savedLoadPercent);
+                loadPercentInput.value = LOAD_CALIBRATION_PERCENT.toFixed(1);
+            } else {
+                 LOAD_CALIBRATION_PERCENT = 0.0;
+                 loadPercentInput.value = '0.0';
             }
         }
         
-        function saveEnergyPercent(percentValue) {
-            localStorage.setItem(STORAGE_KEY_PERCENT, percentValue);
-            ENERGY_CALIBRATION_PERCENT = parseFloat(percentValue);
-            showMessage(`Persentase koreksi energi harian diatur ke ${percentValue}%.`, 'success');
+        function saveCalibrationPercent(pvPercentValue, loadPercentValue) {
+            localStorage.setItem(STORAGE_KEY_PV_PERCENT, pvPercentValue);
+            localStorage.setItem(STORAGE_KEY_LOAD_PERCENT, loadPercentValue);
+
+            ENERGY_CALIBRATION_PERCENT = parseFloat(pvPercentValue);
+            LOAD_CALIBRATION_PERCENT = parseFloat(loadPercentValue);
+
+            showMessage(`Koreksi PV Harian: ${pvPercentValue}% dan Koreksi Beban AC: ${loadPercentValue}% berhasil disimpan.`, 'success');
         }
 
 
@@ -1106,19 +1136,23 @@
             let numericValue = parseFloat(value);
             if (isNaN(numericValue)) return 'N/A';
             
-            // --- LOGIC KALIBRASI V10 (ENERGI HARI INI) ---
+            // --- LOGIC KALIBRASI PERSENTASE ---
             if (pin === 'V10') {
-                 // Terapkan koreksi persentase: Nilai * (1 + (Persen / 100))
+                 // PV Energy (V10)
                  const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
                  numericValue *= correctionFactor;
+            } else if (pin === 'V21') {
+                 // Load Energy (V21)
+                 const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
+                 numericValue *= correctionFactor;
             }
-            // --- AKHIR LOGIC KALIBRASI V10 ---
+            // --- AKHIR LOGIC KALIBRASI PERSENTASE ---
 
 
             // Pin yang harus diformat sebagai Bilangan Bulat (tanpa desimal)
             const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20'];
 
-            // Pin yang harus diformat sebagai Rupiah (Tanpa desimal)
+            // Pin yang harus diformat sebagai Rupiah (tanpa desimal)
             const rupiahPins = ['V18', 'V19'];
             
             // Pin yang harus diformat sebagai daya/energi di ringkasan (1 desimal)
@@ -1333,28 +1367,30 @@
         function saveAndFetchData() {
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
-            const percentInput = document.getElementById('energy-percent'); // Input Persentase
+            const pvPercentInput = document.getElementById('energy-percent'); // Input Persentase PV
+            const loadPercentInput = document.getElementById('energy-load-percent'); // Input Persentase Beban AC
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
-            const newEnergyPercent = parseFloat(percentInput.value); // Ambil nilai persentase
+            const newPvPercent = parseFloat(pvPercentInput.value); 
+            const newLoadPercent = parseFloat(loadPercentInput.value);
 
             if (!newAuthToken || !newServerIp) {
                 showMessage('IP Server dan Auth Token harus diisi!', 'warning');
                 return;
             }
             
-            if (isNaN(newEnergyPercent)) {
-                showMessage('Nilai Koreksi Persentase harus berupa angka!', 'warning');
+            if (isNaN(newPvPercent) || isNaN(newLoadPercent)) {
+                showMessage('Nilai Koreksi harus berupa angka!', 'warning');
                 return;
             }
 
             // Simpan ke Local Storage
             localStorage.setItem(STORAGE_KEY_IP, newServerIp);
             localStorage.setItem(STORAGE_KEY_TOKEN, newAuthToken);
-            saveEnergyPercent(newEnergyPercent.toFixed(1)); // Simpan persentase baru
+            saveCalibrationPercent(newPvPercent.toFixed(1), newLoadPercent.toFixed(1)); // Simpan kedua persentase
 
             serverIp = newServerIp;
             authToken = newAuthToken;
@@ -1404,18 +1440,21 @@
                     localStorage.removeItem(STORAGE_KEY_IP);
                     localStorage.removeItem(STORAGE_KEY_TOKEN);
                     localStorage.removeItem(STORAGE_KEY_CHART_DATA); 
-                    localStorage.removeItem(STORAGE_KEY_PERCENT); // Hapus persentase kalibrasi
+                    localStorage.removeItem(STORAGE_KEY_PV_PERCENT); 
+                    localStorage.removeItem(STORAGE_KEY_LOAD_PERCENT); 
                     
                     serverIp = '';
                     authToken = '';
                     ENERGY_CALIBRATION_PERCENT = 0.0;
+                    LOAD_CALIBRATION_PERCENT = 0.0;
                     window.realtimeData.labels = [];
                     window.realtimeData.pvPower = [];
                     window.realtimeData.acLoad = [];
                     
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
                     document.getElementById('auth-token').value = '';
-                    document.getElementById('energy-percent').value = '0.0'; // Reset persentase input
+                    document.getElementById('energy-percent').value = '0.0'; 
+                    document.getElementById('energy-load-percent').value = '0.0'; 
                     
                     document.getElementById('config-panel').classList.remove('hidden');
                     document.getElementById('monitoring-dashboard').classList.add('hidden');
@@ -1448,7 +1487,7 @@
             const savedIp = localStorage.getItem(STORAGE_KEY_IP);
             const savedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
             
-            loadEnergyPercent(); // Muat persentase kalibrasi
+            loadCalibrationPercent(); // Muat kedua persentase kalibrasi
 
             if (savedIp) {
                 document.getElementById('server-ip').value = savedIp;
