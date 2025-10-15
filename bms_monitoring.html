@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMS MONITORING - DEVELOPMENT UNLOCKED</title>
+  <title>BMS MONITORING</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -57,7 +57,7 @@
     
     /* GAYA KARTU UTAMA (Transparan & Ramping) */
     .solar-card {
-        background-color: var(--solar-card-bg); 
+        background-color: rgba(20, 20, 48, 0.4); 
         color: #F8FAFC;
         border-radius: 16px; 
         box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); 
@@ -216,11 +216,6 @@
     .metric-value {
         font-weight: 600; 
         margin-left: auto;
-    }
-    
-    /* Gaya untuk Utilitas Hash */
-    #hash-utility-card {
-        background-color: rgba(30, 30, 60, 0.5);
     }
   </style>
 </head>
@@ -415,21 +410,6 @@
         <p class="text-gray-400 max-w-md mx-auto">Data baterai akan muncul di sini setelah sistem BMS Anda terhubung dan mengirim data.</p>
       </div>
       
-      <!-- ALAT HASHING INSTAN BARU (DISINI) -->
-      <div id="hash-utility-card" class="solar-card p-6 rounded-xl shadow-xl mt-8">
-            <h3 class="text-lg font-semibold text-pink-400 mb-3 flex items-center">
-                 <i data-lucide="key-round" class="lucide w-4 h-4 mr-2 text-pink-400"></i>
-                Alat Utilitas Hashing Desain BMS (Khusus Dev)
-            </h3>
-            <p class="text-sm text-gray-400 mb-3">Gunakan ini untuk mendapatkan Hash SHA-256 baru setelah Anda memodifikasi CSS. Salin dan tempelkan hash ini ke dalam variabel <code>VALID_DESIGN_HASH</code> di file <code>bms_locked.html</code> Anda.</p>
-             <button onclick="calculateAndDisplayHash()" class="w-full bg-orange-red text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
-                 <i data-lucide="fingerprint" class="lucide w-5 h-5 mr-2"></i>
-                 HITUNG HASH DESAIN BARU
-            </button>
-            <textarea id="bms-design-hash-output" readonly placeholder="Hash SHA-256 akan muncul di sini..." class="w-full mt-3 p-2.5 rounded-xl bg-slate-800 text-green-400 font-mono text-sm h-16 resize-none"></textarea>
-            <p id="bms-message-box" class="mt-4 text-sm text-yellow-400 hidden"></p>
-      </div>
-      
     </div>
   </main>
 
@@ -563,9 +543,11 @@
     const BMS_MQTT_TOPIC_KEY = "316506218"; 
 
     // --- KEAMANAN BMS (Diaktifkan di versi locked) ---
-    const VALID_DESIGN_HASH = ''; // HASH KOSONG di versi UNLOCKED
-    const HASH_ERROR_MESSAGE = 'Pelanggaran Integritas Desain Dideteksi. Fungsi Monitoring Dinonaktifkan.';
-    let isDesignValid = true; // Selalu true di versi unlocked
+    // HASH DIBERIKAN DARI KONTEN CSS FILE BMS ANDA
+    const VALID_DESIGN_HASH = '2c9a1ac7080d57054998ac019a20ee3cc54d212ff7f663ba00ef7739312f4c81'; 
+    const HASH_ERROR_MESSAGE = 'PELANGGARAN HAK CIPTA DESAIN DITEMUKAN. Fungsi Monitoring BMS Dinonaktifkan.';
+    
+    let isDesignValid = false; // Default: dianggap tidak valid sampai pengecekan selesai
 
     // --- Fungsi HASHING (SHA-256 Sederhana) ---
     async function sha256(message) {
@@ -577,10 +559,11 @@
     }
 
     /**
-     * Fungsi yang dipanggil dari tombol untuk menghitung dan menampilkan hash.
+     * Mengambil konten CSS dan membandingkannya dengan hash yang valid.
      */
-    async function calculateAndDisplayHash() {
-         try {
+    async function checkDesignIntegrity() {
+        try {
+            // Ambil konten dari tag <style> kedua (style khusus)
             const styleContent = document.getElementsByTagName('style')[0].textContent.trim();
             
             // Hapus komentar dan whitespace yang tidak perlu untuk stabilitas hash
@@ -590,18 +573,19 @@
                 .toLowerCase();
             
             const currentHash = await sha256(normalizedContent);
-            
-            const outputEl = document.getElementById('bms-design-hash-output');
-            outputEl.value = currentHash;
-            outputEl.select();
-            document.execCommand('copy');
-            showMessage(`Hash berhasil dihitung dan disalin ke clipboard: ${currentHash}`, 'success');
 
-         } catch (e) {
-             console.error("Gagal menghitung hash:", e);
-             showMessage(`ERROR: Gagal menghitung hash. Pastikan browser mendukung Crypto API.`, 'error');
-         }
+            if (currentHash === VALID_DESIGN_HASH) {
+                isDesignValid = true;
+            } else {
+                isDesignValid = false;
+                console.error(`Current Hash: ${currentHash}. Expected: ${VALID_DESIGN_HASH}`);
+            }
+        } catch (e) {
+            console.error("Integrity check failed during execution:", e);
+            isDesignValid = false;
+        }
     }
+    // --- AKHIR BLOK KEAMANAN ---
     
     let client;
     let batteries = [];
@@ -620,17 +604,11 @@
     
     // Fungsi untuk menampilkan pesan notifikasi di BMS
     function showMessage(message, type = 'warning') {
-        const msgBox = document.getElementById('bms-message-box');
-        msgBox.textContent = message;
-        msgBox.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); 
-        msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block'; 
-
+        // Karena ini versi locked, kita hanya log error di console
         if (type === 'error') {
-            msgBox.classList.add('bg-red-900', 'text-red-300');
-        } else if (type === 'success') {
-            msgBox.classList.add('bg-green-900', 'text-green-300');
+            console.error(message);
         } else {
-            msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+            console.log(message);
         }
     }
     
@@ -638,7 +616,6 @@
     function updateTime() {
       const now = new Date();
       const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
-      // PERUBAHAN: Menambahkan 'second: "2-digit"' untuk menampilkan detik
       const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
       
       const dateStr = now.toLocaleDateString('id-ID', dateOptions);
@@ -653,6 +630,16 @@
     }
 
     function startMQTT(){
+      // BLOKIR JIKA DESAIN TIDAK VALID
+      if (!isDesignValid) {
+          console.error(HASH_ERROR_MESSAGE);
+          // Ganti judul untuk menunjukkan error
+          // Catatan: Header akan menampilkan pesan error, tetapi eksekusi tidak dihentikan secara total agar header error tetap terlihat
+          document.querySelector('main').innerHTML = `<div class="solar-card p-6 rounded-xl shadow-xl mt-8 text-center"><h3 class="text-xl font-bold text-red-400 mb-3">Akses Ditolak</h3><p class="text-gray-300">${HASH_ERROR_MESSAGE}</p><p class="text-sm text-gray-500 mt-2">Konten visual telah diubah dari desain asli yang dilindungi.</p></div>`;
+          document.getElementById('mainHeader').classList.add('hidden');
+          return;
+      }
+        
       client = mqtt.connect("wss://public.cloud.shiftr.io", {
         username: "public",
         password: "public"
@@ -668,6 +655,8 @@
       });
 
       client.on("message", (topic, message) => {
+        // Jika hash tidak valid, tidak perlu memproses data
+        if (!isDesignValid) return; 
         
         // --- LOGIC PERBAIKAN IP LOKAL ---
         if(topic == "sysMon/"+BMS_MQTT_TOPIC_KEY+"/info" ){
@@ -927,7 +916,7 @@
             if (voltageUnitEl) voltageUnitEl.classList.add('text-red-500');
         } else {
             voltageSummaryEl.classList.remove('text-red-500');
-            if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500');
+            if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500');
         }
 
         // --- TEGANGAN BUS (Rata-Rata) ---
@@ -1433,20 +1422,28 @@
     }
 
     // Initialize on load
-    window.onload = function() {
-      // Pastikan IP disetel ke 'N/A' secara eksplisit sebelum data masuk
+    window.onload = async function() {
+      // 1. Cek Integritas Desain sebelum memulai
+      await checkDesignIntegrity();
+      
+      // 2. Jika tidak valid, sembunyikan main content
+      if (!isDesignValid) {
+          console.error(HASH_ERROR_MESSAGE);
+          document.querySelector('main').innerHTML = `<div class="solar-card p-6 rounded-xl shadow-xl mt-8 text-center"><h3 class="text-xl font-bold text-red-400 mb-3">Akses Ditolak</h3><p class="text-gray-300">${HASH_ERROR_MESSAGE}</p><p class="text-sm text-gray-500 mt-2">Konten visual telah diubah dari desain asli yang dilindungi.</p></div>`;
+          document.getElementById('mainHeader').classList.add('hidden');
+          return;
+      }
+      
+      // 3. Jika valid, lanjutkan
       safeUpdate("bms-logger-ip-header-desktop", 'N/A');
       safeUpdate("bms-logger-ip-header-mobile", 'N/A');
       safeUpdate("bms-logger-ip-footer", 'N/A');
 
       startMQTT();
       
-      // Atur jam
       updateTime();
-      // PERUBAHAN: Memperbarui jam setiap 1000ms (1 detik)
       setInterval(updateTime, 1000); 
       
-      // Gunakan Lucide icons
       lucide.createIcons(); 
     };
   </script>
