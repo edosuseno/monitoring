@@ -543,8 +543,8 @@
     const BMS_MQTT_TOPIC_KEY = "316506218"; 
 
     // --- KEAMANAN BMS (Diaktifkan di versi locked) ---
-    // HASH DIBERIKAN DARI KONTEN CSS FILE BMS ANDA
-    const VALID_DESIGN_HASH = '2c9a1ac7080d57054998ac019a20ee3cc54d212ff7f663ba00ef7739312f4c81'; 
+    // HASH BARU BERDASARKAN ERROR LOG: b40567cd2cf18b0842104d5b4b37c0ee61a6d7f00559ba839894b948e9a1ceb2
+    const VALID_DESIGN_HASH = 'b40567cd2cf18b0842104d5b4b37c0ee61a6d7f00559ba839894b948e9a1ceb2'; 
     const HASH_ERROR_MESSAGE = 'PELANGGARAN HAK CIPTA DESAIN DITEMUKAN. Fungsi Monitoring BMS Dinonaktifkan.';
     
     let isDesignValid = false; // Default: dianggap tidak valid sampai pengecekan selesai
@@ -578,7 +578,7 @@
                 isDesignValid = true;
             } else {
                 isDesignValid = false;
-                console.error(`Current Hash: ${currentHash}. Expected: ${VALID_DESIGN_HASH}`);
+                console.error(`PELANGGARAN HAK CIPTA DITEMUKAN: Hash Saat Ini (${currentHash}) tidak cocok dengan Hash Kunci (${VALID_DESIGN_HASH}).`);
             }
         } catch (e) {
             console.error("Integrity check failed during execution:", e);
