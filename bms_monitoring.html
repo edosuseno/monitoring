@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMS MONITORING</title>
+  <title>BMS MONITORING - DEVELOPMENT UNLOCKED</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -217,6 +217,11 @@
         font-weight: 600; 
         margin-left: auto;
     }
+    
+    /* Gaya untuk Utilitas Hash */
+    #hash-utility-card {
+        background-color: rgba(30, 30, 60, 0.5);
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -342,11 +347,11 @@
         <!-- 3. ARUS BATERAI (Total Penjumlahan) -->
         <div class="solar-card p-4 shadow-xl">
             <div class="flex justify-between items-center mb-2">
-                <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color" id="icon-current-summary"></i>
+                <i data-lucide="activity" class="lucide w-7 h-7 text-stabilo-green" id="icon-current-summary"></i>
                 <div class="flex items-baseline">
                     <!-- CATATAN: text-dc-color adalah warna default. Akan digantikan oleh ampColorClass di JS -->
-                    <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
-                    <span class="text-sm ml-1 text-dc-color" id="summary-current-unit">A</span>
+                    <span class="text-3xl font-extrabold text-stabilo-green" id="summary-current">N/A</span>
+                    <span class="text-sm ml-1 text-stabilo-green" id="summary-current-unit">A</span>
                 </div>
             </div>
             <p class="text-sm font-medium text-gray-400">Arus Baterai</p>
@@ -409,6 +414,22 @@
         <h3 class="text-lg font-medium text-gray-300 mb-2">Tidak ada baterai terhubung</h3>
         <p class="text-gray-400 max-w-md mx-auto">Data baterai akan muncul di sini setelah sistem BMS Anda terhubung dan mengirim data.</p>
       </div>
+      
+      <!-- ALAT HASHING INSTAN BARU (DISINI) -->
+      <div id="hash-utility-card" class="solar-card p-6 rounded-xl shadow-xl mt-8">
+            <h3 class="text-lg font-semibold text-pink-400 mb-3 flex items-center">
+                 <i data-lucide="key-round" class="lucide w-4 h-4 mr-2 text-pink-400"></i>
+                Alat Utilitas Hashing Desain BMS (Khusus Dev)
+            </h3>
+            <p class="text-sm text-gray-400 mb-3">Gunakan ini untuk mendapatkan Hash SHA-256 baru setelah Anda memodifikasi CSS. Salin dan tempelkan hash ini ke dalam variabel <code>VALID_DESIGN_HASH</code> di file <code>bms_locked.html</code> Anda.</p>
+             <button onclick="calculateAndDisplayHash()" class="w-full bg-orange-red text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-red-700 transition duration-300 flex items-center justify-center">
+                 <i data-lucide="fingerprint" class="lucide w-5 h-5 mr-2"></i>
+                 HITUNG HASH DESAIN BARU
+            </button>
+            <textarea id="bms-design-hash-output" readonly placeholder="Hash SHA-256 akan muncul di sini..." class="w-full mt-3 p-2.5 rounded-xl bg-slate-800 text-green-400 font-mono text-sm h-16 resize-none"></textarea>
+            <p id="bms-message-box" class="mt-4 text-sm text-yellow-400 hidden"></p>
+      </div>
+      
     </div>
   </main>
 
@@ -541,6 +562,47 @@
     // Konstan untuk BMS ID/Key (Digunakan untuk langganan topik MQTT)
     const BMS_MQTT_TOPIC_KEY = "316506218"; 
 
+    // --- KEAMANAN BMS (Diaktifkan di versi locked) ---
+    const VALID_DESIGN_HASH = ''; // HASH KOSONG di versi UNLOCKED
+    const HASH_ERROR_MESSAGE = 'Pelanggaran Integritas Desain Dideteksi. Fungsi Monitoring Dinonaktifkan.';
+    let isDesignValid = true; // Selalu true di versi unlocked
+
+    // --- Fungsi HASHING (SHA-256 Sederhana) ---
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    }
+
+    /**
+     * Fungsi yang dipanggil dari tombol untuk menghitung dan menampilkan hash.
+     */
+    async function calculateAndDisplayHash() {
+         try {
+            const styleContent = document.getElementsByTagName('style')[0].textContent.trim();
+            
+            // Hapus komentar dan whitespace yang tidak perlu untuk stabilitas hash
+            const normalizedContent = styleContent
+                .replace(/\/\*[\s\S]*?\*\/|([^\\:])\/\/.*/g, '')
+                .replace(/\s+/g, '') 
+                .toLowerCase();
+            
+            const currentHash = await sha256(normalizedContent);
+            
+            const outputEl = document.getElementById('bms-design-hash-output');
+            outputEl.value = currentHash;
+            outputEl.select();
+            document.execCommand('copy');
+            showMessage(`Hash berhasil dihitung dan disalin ke clipboard: ${currentHash}`, 'success');
+
+         } catch (e) {
+             console.error("Gagal menghitung hash:", e);
+             showMessage(`ERROR: Gagal menghitung hash. Pastikan browser mendukung Crypto API.`, 'error');
+         }
+    }
+    
     let client;
     let batteries = [];
     
@@ -554,6 +616,22 @@
                 el.textContent = content;
             }
         } 
+    }
+    
+    // Fungsi untuk menampilkan pesan notifikasi di BMS
+    function showMessage(message, type = 'warning') {
+        const msgBox = document.getElementById('bms-message-box');
+        msgBox.textContent = message;
+        msgBox.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); 
+        msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block'; 
+
+        if (type === 'error') {
+            msgBox.classList.add('bg-red-900', 'text-red-300');
+        } else if (type === 'success') {
+            msgBox.classList.add('bg-green-900', 'text-green-300');
+        } else {
+            msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+        }
     }
     
     // Fungsi untuk menampilkan Jam dan Tanggal (DITAMBAH DETIK)
@@ -738,6 +816,11 @@
         let totalPower = 0; // Menghitung total Power
         let totalBusVoltage = 0; // Menghitung total Bus Voltage
         let validBatteryCount = 0;
+        
+        // Blok keamanan: Jika hash tidak valid, fungsi ini harus dihentikan
+        if (!isDesignValid) {
+            return; // Hentikan render jika tidak valid
+        }
 
         batteries.forEach(b => {
             const current = parseFloat(b.current);
@@ -844,7 +927,7 @@
             if (voltageUnitEl) voltageUnitEl.classList.add('text-red-500');
         } else {
             voltageSummaryEl.classList.remove('text-red-500');
-            if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500');
+            if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500');
         }
 
         // --- TEGANGAN BUS (Rata-Rata) ---
@@ -1369,4 +1452,3 @@
   </script>
 </body>
 </html>
-
