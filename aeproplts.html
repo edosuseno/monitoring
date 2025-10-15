@@ -244,10 +244,10 @@
                 <label for="auth-token" class="block text-sm font-medium text-gray-300 mb-1">Auth Token</label>
                 <input type="text" id="auth-token" placeholder="Masukkan token Anda" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary">
             </div>
-            <!-- Kolom 3: Koreksi Energi Harian (BARU) -->
+            <!-- Kolom 3: Koreksi Energi Harian (BARU: Persentase) -->
             <div class="md:col-span-2 lg:col-span-1">
-                 <label for="energy-offset" class="block text-sm font-medium text-gray-300 mb-1" title="Untuk mengoreksi selisih kWh harian antara Blynk dan MPPT. Positif untuk menambah.">Koreksi Harian (kWh)</label>
-                <input type="number" step="0.1" id="energy-offset" placeholder="contoh: 1.5 atau -0.5" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="0.0">
+                 <label for="energy-percent" class="block text-sm font-medium text-gray-300 mb-1" title="Untuk mengoreksi selisih kWh harian antara Blynk dan MPPT. Positif untuk menambah.">Koreksi Persentase (%)</label>
+                <input type="number" step="0.1" id="energy-percent" placeholder="contoh: 10.0 atau -5.5" class="w-full p-2.5 rounded-xl bg-slate-700 text-white border-none focus:ring-blynk-primary focus:border-blynk-primary" value="0.0">
             </div>
             <!-- Kolom 4: Tombol Mulai -->
             <div class="md:col-span-2 lg:col-span-1 flex items-end">
@@ -269,7 +269,7 @@
             <!-- V10: ENERGI PV HARI INI (Produksi DC) -->
             <div class="solar-card">
                 <div class="flex justify-between items-start mb-2">
-                    <p class="text-sm font-semibold text-gray-400">Energi Hari Ini</p>
+                    <p class="text-sm font-semibold text-gray-400">Energi Hari Ini (Terkoreksi)</p>
                     <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                 </div>
                 <div class="summary-block">
@@ -615,12 +615,10 @@
             // --- GRAFIK DAYA (4 Kartu Kecil) ---
             'V2': 'v2-pzem-power-chart',    // Daya PV (Input)
             'V14': 'v14-power-chart',       // Beban AC (Output)
-            // V22 & V23 DIHAPUS DARI PIN MAPPINGS KARENA DIHITUNG LOKAL
             
             // --- DETAIL DC ---
             'V0': 'v0-pzem-voltage',
             'V1': 'v1-pzem-current',
-            // V2 sudah di chart
             'V6': 'v6-pv-peak',
             'V5': 'v5-pv-persen',
             
@@ -635,7 +633,6 @@
             // --- DETAIL AC & BIAYA ---
             'V12': 'v12-voltage',
             'V13': 'v13-current',
-            // V14 sudah di chart
             'V15': 'v15-energy',
             'V16': 'v16-frequency',
             'V20': 'v20-inverter-peak',
@@ -644,21 +641,19 @@
 
         const STORAGE_KEY_TOKEN = 'blynk_auth_token';
         const STORAGE_KEY_IP = 'blynk_server_ip';
-        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; // Kunci untuk menyimpan data chart
-        const STORAGE_KEY_OFFSET = 'energy_calibration_offset'; // Kunci BARU untuk offset kalibrasi
+        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data'; 
+        const STORAGE_KEY_PERCENT = 'energy_calibration_percent'; // Kunci BARU untuk persentase kalibrasi
         const UPDATE_INTERVAL = 5000; // 5 detik
 
-        let fetchInterval = null; // Untuk menyimpan ID interval
+        let fetchInterval = null; 
         let serverIp = '';
         let authToken = '';
-        let ENERGY_CALIBRATION_OFFSET = 0.0; // Variabel global untuk offset
+        let ENERGY_CALIBRATION_PERCENT = 0.0; // Variabel global untuk persentase
         
         let isMinimalUI = false;
 
         // --- Variabel Global untuk Chart ---
         let energyChartInstance = null;
-        // 24 Jam: 3600 detik/jam * 24 jam = 86400 detik. Diperbarui setiap 5 detik. 
-        // 86400 / 5 = 17280 titik data.
         const MAX_DATA_POINTS = 17280; 
 
         window.realtimeData = { 
@@ -675,7 +670,6 @@
             if (savedData) {
                 try {
                     const parsedData = JSON.parse(savedData);
-                    // Ambil maksimal MAX_DATA_POINTS terakhir
                     const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
                     
                     window.realtimeData.labels = parsedData.labels.slice(startIndex);
@@ -697,30 +691,29 @@
             localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
         }
         
-        // --- FUNGSI BARU UNTUK KALIBRASI ENERGI ---
-        function loadEnergyOffset() {
-            const savedOffset = localStorage.getItem(STORAGE_KEY_OFFSET);
-            const offsetInput = document.getElementById('energy-offset');
+        // --- FUNGSI BARU UNTUK KALIBRASI PERSENTASE ENERGI ---
+        function loadEnergyPercent() {
+            const savedPercent = localStorage.getItem(STORAGE_KEY_PERCENT);
+            const percentInput = document.getElementById('energy-percent');
             
-            if (savedOffset !== null && !isNaN(parseFloat(savedOffset))) {
-                ENERGY_CALIBRATION_OFFSET = parseFloat(savedOffset);
-                offsetInput.value = ENERGY_CALIBRATION_OFFSET.toFixed(1);
+            if (savedPercent !== null && !isNaN(parseFloat(savedPercent))) {
+                ENERGY_CALIBRATION_PERCENT = parseFloat(savedPercent);
+                percentInput.value = ENERGY_CALIBRATION_PERCENT.toFixed(1);
             } else {
-                 ENERGY_CALIBRATION_OFFSET = 0.0;
-                 offsetInput.value = '0.0';
+                 ENERGY_CALIBRATION_PERCENT = 0.0;
+                 percentInput.value = '0.0';
             }
         }
         
-        function saveEnergyOffset(offsetValue) {
-            localStorage.setItem(STORAGE_KEY_OFFSET, offsetValue);
-            ENERGY_CALIBRATION_OFFSET = parseFloat(offsetValue);
-            showMessage(`Offset energi harian diatur ke ${offsetValue} kWh.`, 'success');
+        function saveEnergyPercent(percentValue) {
+            localStorage.setItem(STORAGE_KEY_PERCENT, percentValue);
+            ENERGY_CALIBRATION_PERCENT = parseFloat(percentValue);
+            showMessage(`Persentase koreksi energi harian diatur ke ${percentValue}%.`, 'success');
         }
 
 
         /**
          * Utility untuk membuat jeda (delay)
-         * @param {number} ms Milidetik untuk menunggu
          */
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -730,28 +723,25 @@
         function updateTime() {
             const now = new Date();
             const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
-            const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             
             document.getElementById('current-date').textContent = now.toLocaleDateString('id-ID', dateOptions);
-            document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', timeOptions);
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
             
-            // Perbarui waktu di kartu Daya (mockup status waktu di screenshot)
-            const timeOnly = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const timeOnly = now.toLocaleTimeString('id-ID', timeOptions);
             
-            // Menggunakan ID spesifik untuk kartu PV dan Beban AC
             document.getElementById('v2-status-time').textContent = `Status ${timeOnly}`;
             document.getElementById('v14-status-time').textContent = `Status ${timeOnly}`;
-
         }
 
         /**
-         * Menampilkan pesan notifikasi di bawah panel konfigurasi
+         * Menampilkan pesan notifikasi
          */
         function showMessage(message, type = 'warning') {
             const msgBox = document.getElementById('message-box');
             msgBox.textContent = message;
             msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block'; 
-            msgBox.classList.remove('bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); // Reset classes
+            msgBox.classList.remove('bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); 
 
             if (type === 'error') {
                 msgBox.classList.add('bg-red-900', 'text-red-300');
@@ -787,15 +777,11 @@
             document.getElementById('custom-modal').classList.remove('flex');
         }
 
-        // Fungsi untuk menangani navigasi BMS
         function handleBMSNavigation() {
-            saveHistoricalData(); // Simpan data chart sebelum pindah
-            window.location.href = 'bms_monitoring.html'; // langsung pindah ke halaman
+            saveHistoricalData(); 
+            window.location.href = 'bms_monitoring.html'; 
         }
         
-        /**
-         * Mengaktifkan/menonaktifkan mode minimal UI (untuk mobile fullscreen imitasi)
-         */
         function toggleMinimalUI() {
             const header = document.getElementById('app-header');
             const footer = document.getElementById('app-footer');
@@ -818,41 +804,35 @@
             lucide.createIcons();
         }
 
-        // --- Native Fullscreen & Orientation Handlers ---
-        
-        // Polyfill untuk meminta mode Fullscreen
+        // Polyfill untuk Fullscreen
         function requestFullscreen(element) {
             if (element.requestFullscreen) {
                 element.requestFullscreen();
-            } else if (element.mozRequestFullScreen) { /* Firefox */
+            } else if (element.mozRequestFullScreen) { 
                 element.mozRequestFullScreen();
-            } else if (element.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+            } else if (element.webkitRequestFullscreen) { 
                 element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) { /* IE/Edge */
+            } else if (element.msRequestFullscreen) { 
                 element.msRequestFullscreen();
             }
         }
 
-        // Polyfill untuk keluar mode Fullscreen
+        // Polyfill untuk keluar Fullscreen
         function exitFullscreen() {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) { /* Firefox */
+            } else if (document.mozCancelFullScreen) { 
                 document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+            } else if (document.webkitExitFullscreen) { 
                 document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { /* IE/Edge */
+            } else if (document.msExitFullscreen) { 
                 document.msExitFullscreen();
             }
         }
 
-        /**
-         * Mengaktifkan atau menonaktifkan mode layar penuh (NATIVE/CSS)
-         */
         function toggleFullscreen() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             
-            // Cek apakah sedang dalam mode fullscreen (Native API check)
             const isFullscreenNative = document.fullscreenElement || 
                                  document.mozFullScreenElement || 
                                  document.webkitFullscreenElement || 
@@ -861,32 +841,25 @@
             const isMobile = window.innerWidth < 768;
 
             if (isMobile) {
-                // --- Mobile: Gunakan CSS Overlay (Solusi andal untuk iOS/Chrome HP) ---
                 if (chartCard.classList.contains('fullscreen-chart')) {
                     chartCard.classList.remove('fullscreen-chart');
                      if (screen.orientation && screen.orientation.unlock) {
-                        screen.orientation.unlock(); // Coba buka kunci orientasi
+                        screen.orientation.unlock(); 
                     }
                 } else {
                     chartCard.classList.add('fullscreen-chart');
                      if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(e => {
-                           // console.warn("Screen orientation lock failed on mobile CSS overlay.");
-                        });
+                        screen.orientation.lock('landscape').catch(e => {});
                     }
                 }
-                // Panggil handleFullscreenChange untuk update UI/resize chart
                 handleFullscreenChange();
                 return;
             } 
             
-            // --- Desktop: Gunakan Native Fullscreen API ---
             if (!isFullscreenNative) {
                 requestFullscreen(chartCard);
                 if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(e => {
-                        // console.warn("Screen orientation lock failed on desktop.");
-                    });
+                    screen.orientation.lock('landscape').catch(e => {});
                 }
             } else {
                 exitFullscreen();
@@ -894,19 +867,14 @@
                     screen.orientation.unlock();
                 }
             }
-            // Listener handleFullscreenChange akan menangani UI/resize
         }
 
 
-        /**
-         * Sinkronisasi UI dan Chart Resize saat status fullscreen berubah (native browser event atau manual trigger)
-         */
         function handleFullscreenChange() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
             
-            // Cek status saat ini (gunakan CSS class untuk mobile/fallback)
             const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
 
             if (isFullscreen) {
@@ -917,7 +885,6 @@
                 chartText.textContent = 'Full Layar';
             }
             
-            // Perbarui ikon dan resize chart
             lucide.createIcons();
             if (energyChartInstance) {
                 setTimeout(() => {
@@ -927,7 +894,6 @@
             }
         }
         
-        // Tambahkan listener untuk event fullscreenchange di berbagai browser
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -935,7 +901,7 @@
 
 
         /**
-         * Merender grafik energi real-time dengan Pan & Zoom
+         * Merender grafik energi real-time
          */
         function renderRealtimeChart() {
             const ctx = document.getElementById('realtime-power-chart').getContext('2d');
@@ -946,31 +912,30 @@
                     {
                         label: 'PV Power (W)',
                         data: window.realtimeData.pvPower,
-                        backgroundColor: 'rgba(191, 255, 0, 0.2)', // Background Fill (Soft)
+                        backgroundColor: 'rgba(191, 255, 0, 0.2)', 
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderWidth: 2,
                         type: 'line',
-                        fill: 'origin', // Isi area di bawah garis
-                        tension: 0.2, // Kurva halus
-                        pointRadius: 0, // Sembunyikan titik
+                        fill: 'origin', 
+                        tension: 0.2, 
+                        pointRadius: 0, 
                         yAxisID: 'y'
                     },
                     {
                         label: 'AC Load (W)',
                         data: window.realtimeData.acLoad,
-                        backgroundColor: 'rgba(255, 185, 0, 0.2)', // Background Fill (Soft)
+                        backgroundColor: 'rgba(255, 185, 0, 0.2)', 
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderWidth: 2,
                         type: 'line',
-                        fill: false, // Tidak isi area di bawah garis
-                        tension: 0.2, // Kurva halus
-                        pointRadius: 0, // Sembunyikan titik
+                        fill: false, 
+                        tension: 0.2, 
+                        pointRadius: 0, 
                         yAxisID: 'y'
                     }
                 ]
             };
 
-            // Hancurkan instance lama jika ada
             if (energyChartInstance) {
                 energyChartInstance.destroy();
             }
@@ -1039,8 +1004,8 @@
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         y: {
-                            min: 0, // Pastikan dimulai dari nol
-                            max: 7000, // <--- PERUBAHAN KRITIS DISINI: Dibatasi 7000W
+                            min: 0, 
+                            max: 7000, 
                             ticks: {
                                 color: '#FFFFFF',
                                 callback: function(value) {
@@ -1059,40 +1024,30 @@
             });
         }
         
-        /**
-         * Mereset pan dan zoom pada grafik
-         */
         function resetChartZoom() {
             if (energyChartInstance) {
                 energyChartInstance.resetZoom();
             }
         }
         
-        /**
-         * Memperbarui data chart historis (dan menyimpan ke Local Storage)
-         */
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
             const timeLabel = now.toLocaleTimeString('id-ID');
 
-            // 1. Geser Data Lama jika melebihi batas 24 jam
             if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
                 window.realtimeData.labels.shift();
                 window.realtimeData.pvPower.shift();
                 window.realtimeData.acLoad.shift();
             }
 
-            // 2. Tambahkan data baru
             window.realtimeData.labels.push(timeLabel);
             window.realtimeData.pvPower.push(pvValue);
             window.realtimeData.acLoad.push(acValue);
 
-            // 3. Perbarui grafik jika instance sudah ada
             if (energyChartInstance) {
                 energyChartInstance.update();
             }
             
-            // 4. Simpan data ke Local Storage (dilakukan setiap update)
             saveHistoricalData();
         }
 
@@ -1118,11 +1073,8 @@
             }
             
             if (protocol === 'http' && window.location.protocol === 'https:') {
-                // Mencoba HTTPS jika berada di konteks HTTPS
                 protocol = 'https'; 
             }
-            
-            // Pin V22 & V23 dihapus dari PIN_MAPPINGS, jadi tidak akan dipanggil di sini.
             
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
             
@@ -1137,7 +1089,7 @@
                     return data[0]; 
                 } catch (error) {
                     if (i < maxRetries - 1) {
-                        const delayTime = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+                        const delayTime = Math.pow(2, i) * 1000; 
                         await delay(delayTime);
                     } else {
                         console.error(`[ERROR PIN ${pin}] Gagal setelah ${maxRetries} percobaan. URL: ${url}`, error);
@@ -1148,7 +1100,7 @@
         }
 
         /**
-         * Fungsi untuk memformat nilai berdasarkan kebutuhan pin
+         * Fungsi untuk memformat nilai berdasarkan kebutuhan pin (TERMASUK KALIBRASI PERSENTASE)
          */
         function formatValue(pin, value) {
             let numericValue = parseFloat(value);
@@ -1156,8 +1108,9 @@
             
             // --- LOGIC KALIBRASI V10 (ENERGI HARI INI) ---
             if (pin === 'V10') {
-                 // Tambahkan offset kalibrasi hanya untuk V10
-                 numericValue += ENERGY_CALIBRATION_OFFSET;
+                 // Terapkan koreksi persentase: Nilai * (1 + (Persen / 100))
+                 const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
+                 numericValue *= correctionFactor;
             }
             // --- AKHIR LOGIC KALIBRASI V10 ---
 
@@ -1176,7 +1129,6 @@
 
 
             if (rupiahPins.includes(pin)) {
-                // Pastikan nilai rupiah tidak negatif setelah koreksi (meskipun jarang terjadi)
                 return Math.max(0, numericValue).toLocaleString('id-ID', {
                     minimumFractionDigits: 0, 
                     maximumFractionDigits: 0
@@ -1188,6 +1140,7 @@
             }
             
             if (summaryEnergyPins.includes(pin)) {
+                // Gunakan 1 desimal untuk kWh harian
                 return Math.max(0, numericValue).toFixed(1);
             }
 
@@ -1239,14 +1192,12 @@
                     const rawValue = result.value || '0';
                     const numericValue = parseFloat(rawValue);
 
-                    // PENTING: Dapatkan nilai daya untuk chart/perhitungan lokal SEBELUM format
                     if (pin === 'V2') {
                          currentPvPower = numericValue || 0;
                     } else if (pin === 'V14') {
                          currentAcLoad = numericValue || 0;
                     }
 
-                    // Panggil formatValue (yang kini mencakup kalibrasi V10)
                     const formattedValue = formatValue(pin, rawValue);
 
                     
@@ -1265,7 +1216,7 @@
                         element.style.transform = 'scale(1)';
                     }, 100);
                     
-                    // 3. Logic Warna Nominal
+                    // 3. Logic Warna Nominal (Dihilangkan untuk brevity, menggunakan kode lama yang sudah benar)
                     let nominalColorClass = '';
                     let iconColorClass = '';
 
@@ -1280,41 +1231,34 @@
                         nominalColorClass = 'text-ac-color';
                         iconColorClass = 'text-ac-color'; 
                     } else if (pin === 'V19' || pin.includes('rupiah')) { 
-                        // V19 (Penghematan Harian) tetap hijau
                         nominalColorClass = 'text-green-400';
                         iconColorClass = 'text-green-400'; 
                     } else if (pin === 'V18') { 
-                        // V18 (Total Penghematan) GANTI KE PINK
                         nominalColorClass = 'text-pink-med';
                         iconColorClass = 'text-pink-med'; 
                     } 
                     
-                    // --- KASUS KHUSUS MERAH/PINK (PUNCAK/PERINGATAN/VOLTAGE BUS) ---
                     if (pin === 'V8' || pin === 'V20') { 
                         nominalColorClass = 'text-warning-red';
                         iconColorClass = 'text-warning-red';
-                    } else if (pin === 'V6') { // PV Peak - Merah Oranye
+                    } else if (pin === 'V6') { 
                         nominalColorClass = 'text-orange-red';
                         iconColorClass = 'text-orange-red';
-                    } else if (pin === 'V0' || pin === 'V16') { // Bus Voltage/Frequency - Pink
+                    } else if (pin === 'V0' || pin === 'V16') { 
                         nominalColorClass = 'text-pink-med';
                         iconColorClass = 'text-pink-med';
-                    } else if (pin === 'V17') { // Power Factor - Ungu
+                    } else if (pin === 'V17') { 
                         nominalColorClass = 'text-purple-med';
                         iconColorClass = 'text-purple-med';
                     }
                     
                     
-                    // --- APPLY COLOR ---
                     const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal', 'text-chart-self-consumption', 'text-chart-surplus'];
                     
-                    // A. Kasus Kartu Ringkasan (Summary Card) & Kartu Daya Kecil
                     if (element.closest('.solar-card') || element.closest('.power-summary-card')) { 
-                        // Angka & Unit
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
                         if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add(nominalColorClass); }
-                        // Ikon di Summary Card (hanya untuk 4 kartu besar)
                         let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
                         if (summaryIcon) {
                              summaryIcon.classList.remove(...colorsToRemove);
@@ -1322,16 +1266,13 @@
                         }
                     } 
                     
-                    // B. Kasus Detail Item (Per Fungsi)
                     else if (element.closest('.detail-item')) {
-                        // Nominal Angka
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
                         if(unitElement) {
                             unitElement.classList.remove(...colorsToRemove);
                             unitElement.classList.add(nominalColorClass);
                         }
-                        // Ikon
                         let detailIconElement = element.closest('.detail-item')?.querySelector('.lucide');
                         if (detailIconElement) {
                             detailIconElement.classList.remove(...colorsToRemove);
@@ -1357,7 +1298,6 @@
             // --- 1. Hitung Self-Consumption (%) ---
             let scValue = 0;
             if (currentPvPower > 0) {
-                // Min(PV Power, AC Load) / PV Power * 100
                 scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100;
             }
             const formattedSC = scValue.toFixed(0); 
@@ -1365,7 +1305,6 @@
             selfConsumptionEl.classList.remove('loading-animation');
             
             // --- 2. Hitung Potensi Surplus (W) ---
-            // Max(0, PV Power - AC Load)
             let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
             const formattedSurplus = surplusValue.toFixed(0);
             potensiSurplusEl.textContent = formattedSurplus;
@@ -1376,7 +1315,6 @@
             // ==========================================================
 
 
-            // Panggil Chart Realtime (Wajib)
             if (!energyChartInstance) {
                  renderRealtimeChart();
             }
@@ -1395,46 +1333,42 @@
         function saveAndFetchData() {
             const ipInput = document.getElementById('server-ip');
             const tokenInput = document.getElementById('auth-token');
-            const offsetInput = document.getElementById('energy-offset'); // Input BARU
+            const percentInput = document.getElementById('energy-percent'); // Input Persentase
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
 
             const newServerIp = ipInput.value.trim();
             const newAuthToken = tokenInput.value.trim();
-            const newEnergyOffset = parseFloat(offsetInput.value); // Ambil nilai offset
+            const newEnergyPercent = parseFloat(percentInput.value); // Ambil nilai persentase
 
             if (!newAuthToken || !newServerIp) {
                 showMessage('IP Server dan Auth Token harus diisi!', 'warning');
                 return;
             }
             
-            if (isNaN(newEnergyOffset)) {
-                showMessage('Nilai Koreksi Harian harus berupa angka!', 'warning');
+            if (isNaN(newEnergyPercent)) {
+                showMessage('Nilai Koreksi Persentase harus berupa angka!', 'warning');
                 return;
             }
 
             // Simpan ke Local Storage
             localStorage.setItem(STORAGE_KEY_IP, newServerIp);
             localStorage.setItem(STORAGE_KEY_TOKEN, newAuthToken);
-            saveEnergyOffset(newEnergyOffset.toFixed(1)); // Simpan offset baru
+            saveEnergyPercent(newEnergyPercent.toFixed(1)); // Simpan persentase baru
 
             serverIp = newServerIp;
             authToken = newAuthToken;
 
-            // Hentikan interval lama (jika ada)
             if (fetchInterval) {
                 clearInterval(fetchInterval);
                 fetchInterval = null;
             }
 
-            // Muat data historis sebelum memulai dashboard
             loadHistoricalData();
             
-            // Tampilkan dashboard, tombol logout, dan sembunyikan panel config
             document.getElementById('config-panel').classList.add('hidden');
             document.getElementById('monitoring-dashboard').classList.remove('hidden');
             
-            // Tentukan tombol mana yang harus ditampilkan
             if (window.innerWidth >= 768) { 
                 desktopButtons.classList.remove('hidden');
                 mobileButtons.classList.add('hidden');
@@ -1443,10 +1377,8 @@
                 desktopButtons.classList.add('hidden');
             }
 
-            // Mulai fetch pertama segera
             updateDashboard();
 
-            // Atur interval fetch data
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
 
             showMessage(`Monitoring dimulai ke ${serverIp}. Memuat data...`, 'success');
@@ -1456,50 +1388,41 @@
          * Menghapus token dari Local Storage dan mengembalikan ke layar konfigurasi.
          */
         function logoutAndClear() {
-            // Menggunakan Modal Kustom untuk konfirmasi logout
             showModal(
                 'Apakah Anda yakin ingin menghentikan monitoring? Konfigurasi Anda akan dihapus dari browser ini.',
                 () => {
-                    // 1. Hentikan interval refresh
                     if (fetchInterval) {
                         clearInterval(fetchInterval);
                         fetchInterval = null;
                     }
 
-                    // 2. Hancurkan chart instance
                     if (energyChartInstance) {
                          energyChartInstance.destroy();
                          energyChartInstance = null;
                     }
                     
-                    // 3. Hapus data dari Local Storage
                     localStorage.removeItem(STORAGE_KEY_IP);
                     localStorage.removeItem(STORAGE_KEY_TOKEN);
-                    localStorage.removeItem(STORAGE_KEY_CHART_DATA); // Hapus data historis
-                    localStorage.removeItem(STORAGE_KEY_OFFSET); // Hapus offset kalibrasi
+                    localStorage.removeItem(STORAGE_KEY_CHART_DATA); 
+                    localStorage.removeItem(STORAGE_KEY_PERCENT); // Hapus persentase kalibrasi
                     
-                    // 4. Reset state global
                     serverIp = '';
                     authToken = '';
-                    ENERGY_CALIBRATION_OFFSET = 0.0;
+                    ENERGY_CALIBRATION_PERCENT = 0.0;
                     window.realtimeData.labels = [];
                     window.realtimeData.pvPower = [];
                     window.realtimeData.acLoad = [];
                     
-                    // 5. Reset input field
                     document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
                     document.getElementById('auth-token').value = '';
-                    document.getElementById('energy-offset').value = '0.0'; // Reset offset input
+                    document.getElementById('energy-percent').value = '0.0'; // Reset persentase input
                     
-                    // 6. Tampilkan kembali panel konfigurasi dan sembunyikan dashboard
                     document.getElementById('config-panel').classList.remove('hidden');
                     document.getElementById('monitoring-dashboard').classList.add('hidden');
                     
-                    // Sembunyikan semua tombol header (Desktop & Mobile)
                     document.getElementById('desktop-buttons').classList.add('hidden');
                     document.getElementById('mobile-buttons').classList.add('hidden');
 
-                    // Reset Minimal UI
                     const header = document.getElementById('app-header');
                     const footer = document.getElementById('app-footer');
                     header.classList.remove('header-hidden');
@@ -1519,22 +1442,18 @@
             const desktopButtons = document.getElementById('desktop-buttons');
             const mobileButtons = document.getElementById('mobile-buttons');
             
-            // Sembunyikan semua tombol header secara default
             desktopButtons.classList.add('hidden');
             mobileButtons.classList.add('hidden');
 
-
-            // Muat dari Local Storage
             const savedIp = localStorage.getItem(STORAGE_KEY_IP);
             const savedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
             
-            loadEnergyOffset(); // Muat offset kalibrasi
+            loadEnergyPercent(); // Muat persentase kalibrasi
 
             if (savedIp) {
                 document.getElementById('server-ip').value = savedIp;
                 serverIp = savedIp;
             } else {
-                 // Set default value if no saved token
                 document.getElementById('server-ip').value = 'iot.serangkota.go.id:9443';
             }
             if (savedToken) {
@@ -1542,12 +1461,9 @@
                 authToken = savedToken;
             }
 
-
-            // Atur jam
             updateTime();
-            setInterval(updateTime, 1000); // Perbarui jam setiap detik
+            setInterval(updateTime, 1000); 
 
-            // Re-render icons
             lucide.createIcons();
         }
 
@@ -1558,7 +1474,7 @@
             if (localStorage.getItem(STORAGE_KEY_TOKEN) && localStorage.getItem(STORAGE_KEY_IP)) {
                 saveAndFetchData();
             } else {
-                showMessage('Silakan masukkan IP Server, Auth Token Blynk, dan atur Koreksi Harian Anda.', 'warning');
+                showMessage('Silakan masukkan IP Server, Auth Token Blynk, dan atur Koreksi Persentase Anda.', 'warning');
             }
         };
     </script>
