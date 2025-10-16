@@ -359,16 +359,19 @@
         <!-- Halaman 1: AEPRO PLTS Dashboard (Sekarang jadi bagian atas halaman) -->
         <!-- ========================================================================= -->
         <div id="plts-page" class="w-full">
-            <!-- Header & Status Jam (DARI PLTS) -->
+            <!-- Header & Status Jam (DARI PLTS) - MODIFIKASI UNTUK RESPONSIVITAS JUDUL/JAM -->
             <header id="app-header" class="mb-6">
-                <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-start">
-                    <!-- Konten Kiri (Judul) -->
-                    <div>
+                <!-- flex-col (HP) / md:flex-row (Desktop) -->
+                <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-center"> 
+                    
+                    <!-- Judul PLTS - Rata Tengah (HP) / Rata Kiri (Desktop) -->
+                    <div class="w-full text-center md:text-left"> 
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                             AEPRO PLTS ONLINE
                         </h1>
                         <p class="text-gray-400 mt-1">Monitor Kinerja dan Performa Sistem PLTS.</p>
                     </div>
+                    
                     <!-- Jam & Tombol Kontrol - Rata Tengah (HP) / Rata Kanan (Desktop) -->
                     <div class="mt-4 md:mt-0 relentlessly-right flex flex-col md:flex-row items-center space-x-4">
                         <div class="show md:block text-center md:text-right"> <!-- text-center (HP) dan md:text-right (Desktop) -->
