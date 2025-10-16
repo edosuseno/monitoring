@@ -180,13 +180,13 @@
         /* ** PERBAIKAN GRAFIK: Atur Ketinggian Kontainer Grafik ** */
         #realtime-chart-container {
             /* Atur ketinggian default yang lebih besar */
-            height: 450px; 
+            height: 350px; 
             margin-top: 1rem;
         }
         @media (min-width: 768px) { /* md */
             #realtime-chart-container {
                 /* Sedikit lebih tinggi di desktop */
-                height: 400px; 
+                height: 350px; 
             }
         }
         /* Akhir PERBAIKAN GRAFIK */
@@ -390,10 +390,6 @@
                 <!-- Tombol Kontrol MOBILE -->
                 <div id="mobile-buttons" class="hidden md:hidden w-full grid grid-cols-2 gap-3 mb-6 mt-4">
                     <!-- Tombol UI Minimal -->
-                    <button id="fullscreen-button-mobile" onclick="toggleMinimalUI()" class="bg-gray-700 text-white font-bold py-2.5 rounded-xl shadow-md hover:bg-gray-600 transition duration-300 flex items-center justify-center">
-                        <i id="fullscreen-icon" data-lucide="minimize-2" class="lucide w-5 h-5 mr-2"></i>
-                        <span id="fullscreen-text">Full Layar</span>
-                    </button>
                     <!-- Tombol Hentikan -->
                 </div>
             </header>
