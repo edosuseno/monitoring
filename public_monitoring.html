@@ -1158,7 +1158,8 @@
 
             client = mqtt.connect("wss://public.cloud.shiftr.io", {
               username: "public",
-              password: "public"
+              password: "public",
+              keepalive: 120 // Ditingkatkan menjadi 120 detik untuk mencegah Keepalive timeout
             });
             
             client.on("connect", () => {
@@ -1817,6 +1818,105 @@
             localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
         }
         
+        /**
+         * FUNGSI-FUNGSI FULLSCREEN DAN CHART HANDLING DITAMBAHKAN KEMBALI DI SINI
+         */
+
+        function requestFullscreen(element) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { 
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { 
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { 
+                element.msRequestFullscreen();
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { 
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { 
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { 
+                document.msExitFullscreen();
+            }
+        }
+
+        function handleFullscreenChange() {
+            const chartCard = document.getElementById('realtime-chart-container').parentElement;
+            const chartIcon = document.getElementById('fullscreen-chart-icon');
+            const chartText = document.getElementById('fullscreen-chart-text');
+            
+            const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
+
+            if (isFullscreen) {
+                chartIcon.setAttribute('data-lucide', 'minimize');
+                chartText.textContent = 'Keluar';
+            } else {
+                chartIcon.setAttribute('data-lucide', 'maximize');
+                chartText.textContent = 'Full Layar';
+            }
+            
+            lucide.createIcons();
+            if (energyChartInstance) {
+                setTimeout(() => {
+                    energyChartInstance.resize();
+                    energyChartInstance.resetZoom(); 
+                }, 50); 
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+        
+        /**
+         * Fungsi yang dipanggil oleh tombol Full Layar di HTML
+         */
+        function toggleFullscreen() {
+            const chartCard = document.getElementById('realtime-chart-container').parentElement;
+            
+            const isFullscreenNative = document.fullscreenElement || 
+                                 document.mozFullScreenElement || 
+                                 document.webkitFullscreenElement || 
+                                 document.msFullscreenElement;
+
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                if (chartCard.classList.contains('fullscreen-chart')) {
+                    chartCard.classList.remove('fullscreen-chart');
+                     if (screen.orientation && screen.orientation.unlock) {
+                        screen.orientation.unlock(); 
+                    }
+                } else {
+                    chartCard.classList.add('fullscreen-chart');
+                     if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(e => {});
+                    }
+                }
+                handleFullscreenChange();
+                return;
+            } 
+            
+            if (!isFullscreenNative) {
+                requestFullscreen(chartCard);
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(e => {});
+                }
+            } else {
+                exitFullscreen();
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        }
+
         function renderRealtimeChart() {
             const ctx = document.getElementById('realtime-power-chart');
             if (!ctx) return;
@@ -2099,7 +2199,14 @@
             // LOGIC PENGHITUNGAN LOKAL
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
             const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
-
+            
+            // Perbaikan: Lakukan pengecekan elemen DOM sebelum menggunakan properti 'textContent'
+            if (!selfConsumptionEl || !potensiSurplusEl) {
+                // Jika elemen belum dimuat (misalnya, di panggilan updateDashboard() pertama), lewati perhitungan ini
+                console.warn("Self-Consumption or Potensi Surplus element not found. Skipping local calculation update.");
+                return; 
+            }
+            
             let scValue = 0;
             if (currentPvPower > 0) { scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100; }
             selfConsumptionEl.textContent = scValue.toFixed(0);
