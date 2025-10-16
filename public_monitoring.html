@@ -177,6 +177,17 @@
         @media (min-width: 1024px) { /* lg */
             #modalCells { grid-template-columns: repeat(7, minmax(0, 1fr)); }
         }
+               /* Gaya Chart (Dari PLTS) */
+        .fullscreen-chart {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: #05050D !important; 
+            z-index: 9999;
+            padding: 20px;
+        }
         /* ** PERBAIKAN GRAFIK: Atur Ketinggian Kontainer Grafik ** */
         #realtime-chart-container {
             /* Atur ketinggian default yang lebih besar */
@@ -2416,3 +2427,4 @@
     </script>
 </body>
 </html>
+
