@@ -45,7 +45,6 @@
                         'chart-load': '#FFB900', 
                         'chart-self-consumption': '#00FFFF', 
                         'chart-surplus': '#8E44AD', 
-                        'gemini-color': '#A78BFA' // Warna ungu untuk fitur LLM
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -305,19 +304,6 @@
                 content: "";
             }
         }
-        /* Loader styles for Gemini */
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #A78BFA;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 
@@ -387,10 +373,6 @@
                         <span class="font-semibold text-white" id="modalcelldif">N/A</span>
                     </div>
                 </div>
-                <!-- Tombol Analisis BMS LLM -->
-                <button onclick="analyzeBatteryHealth(currentAddr)" id="analyze-bms-btn" class="w-full mt-6 flex items-center justify-center bg-gemini-color text-white font-bold py-2.5 rounded-lg shadow-md hover:bg-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                    ✨ Analisis Kesehatan Sel
-                </button>
               </div>
 
               <!-- Right: Current & Power Metrics --> 
@@ -423,27 +405,6 @@
                 <i data-lucide="layout-grid" class="lucide w-4 h-4 text-green-500 mr-2"></i> Tegangan Sel (Cell Voltages)
               </h3>
               <div id="modalCells" class="grid gap-3"></div>
-            </div>
-          </div>
-        </div>
-    </div>
-
-    <!-- Modal Hasil Analisis LLM (Universal) -->
-    <div id="analysisModal" class="fixed inset-0 hidden bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-gray-900 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-          <!-- Header Modal -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gemini-color/20">
-            <h2 id="analysisModalTitle" class="text-xl font-semibold text-white flex items-center">
-                ✨ Hasil Analisis Gemini
-            </h2>
-            <button onclick="closeAnalysisModal()" class="text-gray-400 hover:text-white">
-              <i data-lucide="x" class="lucide w-6 h-6"></i>
-            </button>
-          </div>
-
-          <div class="overflow-y-auto flex-1 p-6 text-gray-300">
-            <div id="analysisModalContent">
-                <!-- Konten dan loading akan dimasukkan di sini -->
             </div>
           </div>
         </div>
@@ -548,13 +509,6 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Akumulasi biaya yang dihemat.</p>
                     </div>
-                </div>
-
-                <!-- Tombol Optimasi Energi LLM -->
-                <div class="w-full mb-8 flex justify-center">
-                    <button onclick="analyzeEnergyOptimization()" id="analyze-energy-btn" class="flex items-center justify-center bg-gemini-color text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
-                        ✨ Saran Optimasi Energi Harian
-                    </button>
                 </div>
 
                 <!-- GRAFIK DAYA & KARTU KECIL -->
@@ -928,7 +882,7 @@
     <!-- Script Fungsionalitas -->
     <script>
         // ==========================================================
-        // KONSTANTA & VARIABEL GLOBAL
+        // KONSTANTA & VARIABEL GLOBAL (Nilai Dibuat Paten/Hardcoded)
         // ==========================================================
         
         // --- KONFIGURASI PATEN ---
@@ -937,10 +891,6 @@
         const INSTANT_PV_PERCENT = 6.0;
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
-        
-        // --- KONFIGURASI GEMINI API ---
-        const API_KEY = ""; // Diisi oleh runtime
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
         // --------------------------
 
         // PLTS (Blynk) Konstan
@@ -973,10 +923,6 @@
         let currentAddr = null; // Alamat baterai yang sedang dibuka di modal
         const cardTimers = {};
         let lastRenderedAddresses = ''; 
-        
-        // Variabel untuk menyimpan data ringkasan PLTS
-        window.pltsSummaryData = {};
-
 
         // ==========================================================
         // UTILITY FUNCTIONS (UMUM)
@@ -1074,23 +1020,7 @@
                 currentAddr = null; // Reset alamat baterai yang sedang dilihat
             }
         }
-
-        /**
-         * FUNGSI MODAL HASIL ANALISIS LLM
-         */
-        function openAnalysisModal(title, content) {
-            const modal = document.getElementById('analysisModal');
-            safeUpdate('analysisModalTitle', '✨ ' + title);
-            safeUpdate('analysisModalContent', content, true);
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeAnalysisModal() {
-            document.getElementById('analysisModal').classList.add('hidden');
-            document.getElementById('analysisModal').classList.remove('flex');
-        }
-
+        
         function blinkLed(id) {
           const el = document.getElementById(id);
           if (!el) return;
@@ -1102,120 +1032,6 @@
             el.classList.remove("active");
             el.classList.add("bg-gray-300");
           }, 250);
-        }
-        
-        // ==========================================================
-        // GEMINI API LOGIC
-        // ==========================================================
-
-        /**
-         * Memanggil Gemini API dengan mekanisme exponential backoff untuk stabilitas.
-         */
-        async function fetchGeminiAnalysis(prompt, title, buttonId) {
-            const button = document.getElementById(buttonId);
-            const originalContent = button ? button.innerHTML : '';
-            
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = `<div class="loader mr-2"></div> Menganalisis...`;
-            }
-
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: {
-                    parts: [{ text: "Anda adalah analis sistem energi PLTS/BMS profesional yang berkomunikasi dalam Bahasa Indonesia. Berikan analisis dan saran yang jelas, ringkas, dan fokus pada tindakan (actionable). Gunakan markup Markdown untuk format hasil yang mudah dibaca." }]
-                }
-            };
-
-            const maxRetries = 3;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(GEMINI_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`API call failed with status: ${response.status}`);
-                    }
-                    
-                    const result = await response.json();
-                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Gagal mendapatkan analisis. Respon kosong.";
-                    
-                    // Sukses: Tampilkan modal hasil
-                    openAnalysisModal(title, text);
-                    return; // Keluar dari loop
-
-                } catch (error) {
-                    console.error(`Gemini API attempt ${i + 1} failed:`, error);
-                    if (i < maxRetries - 1) {
-                        const delayTime = Math.pow(2, i) * 1000;
-                        await delay(delayTime); 
-                    } else {
-                        // Gagal setelah semua retry
-                        openAnalysisModal(title, `<p class="text-red-400">❌ Analisis gagal total setelah beberapa kali percobaan.</p><p>Error: ${error.message}. Periksa kunci API atau koneksi jaringan Anda.</p>`);
-                    }
-                } finally {
-                    if (i === maxRetries - 1 && button) {
-                        button.disabled = false;
-                        button.innerHTML = originalContent; 
-                    }
-                }
-            }
-        }
-        
-        /**
-         * FITUR 1: ANALISIS KESEHATAN SEL BATERAI (di dalam modal)
-         */
-        function analyzeBatteryHealth(addr) {
-            const batt = batteries.find(b => b.addr === addr);
-            if (!batt) {
-                showMessage("Data baterai tidak ditemukan untuk analisis.", 'error');
-                return;
-            }
-
-            const currentData = `
-                Baterai: ${batt.typeBattery} #${batt.addr}
-                SOC (State of Charge): ${batt.soc}%
-                SOH (State of Health): ${batt.soh}%
-                Tegangan Pack: ${batt.voltage} V
-                Arus: ${batt.current} A
-                Selisih Tegangan Sel (Cell Difference): ${batt.cell_vdif} mV
-                Sel Min: ${batt.cell_vmin} V
-                Sel Max: ${batt.cell_vmax} V
-                Siklus (Cycles): ${batt.cycles}
-                Sisa Kapasitas (Remaining Capacity): ${batt.remaining} Ah
-            `;
-
-            const prompt = `Lakukan analisis kesehatan ringkas dan diagnosis potensial dari data baterai LiFePO4 berikut. Fokus pada SOC, SOH, dan Selisih Tegangan Sel. Berikan status: Baik, Perhatian, atau Kritis. Kemudian berikan 3-5 saran spesifik yang perlu dilakukan (Troubleshooting/Maintenance). Gunakan data ini:\n\n${currentData}`;
-
-            fetchGeminiAnalysis(prompt, `Analisis Baterai #${addr}`, 'analyze-bms-btn');
-        }
-
-        /**
-         * FITUR 2: SARAN OPTIMASI ENERGI (di dashboard PLTS)
-         */
-        function analyzeEnergyOptimization() {
-            // Mendapatkan data PLTS dari variabel global yang diisi oleh updateDashboard
-            const { v10_kwh_today, v21_kwh_today_ac, v19_rupiah_day, sc_value, surplus_value } = window.pltsSummaryData;
-            
-            if (!v10_kwh_today || !v21_kwh_today_ac) {
-                showMessage("Data energi harian belum lengkap. Coba lagi setelah pembaruan data berikutnya.", 'warning');
-                return;
-            }
-
-            const currentData = `
-                Energi PV Hari Ini (Produksi): ${v10_kwh_today} kWh
-                Beban AC Hari Ini (Konsumsi): ${v21_kwh_today_ac} kWh
-                Penghematan Rupiah Hari Ini: Rp ${v19_rupiah_day}
-                Self-Consumption Saat Ini: ${sc_value}%
-                Potensi Surplus Daya Saat Ini: ${surplus_value} Watt
-            `;
-
-            const prompt = `Lakukan analisis singkat tentang kinerja energi PLTS hari ini dan berikan 3-5 saran praktis untuk meningkatkan efisiensi Self-Consumption dan penghematan biaya. Asumsikan tujuan utama adalah memaksimalkan penggunaan energi PV di siang hari. Gunakan data berikut:\n\n${currentData}`;
-            
-            fetchGeminiAnalysis(prompt, 'Saran Optimasi Energi', 'analyze-energy-btn');
         }
         
         // ==========================================================
@@ -2254,13 +2070,6 @@
             let currentAcLoad = 0;
 
             const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal', 'text-chart-self-consumption', 'text-chart-surplus', 'text-red-500'];
-            
-            // Variabel lokal untuk menyimpan data PLTS yang akan diumpankan ke Gemini
-            let v10_kwh_today_val = 'N/A';
-            let v21_kwh_today_ac_val = 'N/A';
-            let v19_rupiah_day_val = 'N/A';
-            let sc_value_val = 'N/A';
-            let surplus_value_val = 'N/A';
 
             results.forEach((result, index) => {
                 const pin = pins[index];
@@ -2282,11 +2091,6 @@
 
                     const formattedValue = formatValue(pin, rawValue);
                     
-                    // Menyimpan nilai yang terformat untuk LLM dan display
-                    if (pin === 'V10') v10_kwh_today_val = formattedValue;
-                    if (pin === 'V21') v21_kwh_today_ac_val = formattedValue;
-                    if (pin === 'V19') v19_rupiah_day_val = formattedValue;
-
                     if (pin === 'V18' || pin === 'V19') {
                         element.textContent = formattedValue;
                         if (unitElement) unitElement.textContent = ''; 
@@ -2358,7 +2162,9 @@
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
             const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
             
+            // Perbaikan: Lakukan pengecekan elemen DOM sebelum menggunakan properti 'textContent'
             if (!selfConsumptionEl || !potensiSurplusEl) {
+                // Jika elemen belum dimuat (misalnya, di panggilan updateDashboard() pertama), lewati perhitungan ini
                 console.warn("Self-Consumption or Potensi Surplus element not found. Skipping local calculation update.");
                 return; 
             }
@@ -2371,19 +2177,6 @@
             let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
             potensiSurplusEl.textContent = surplusValue.toFixed(0);
             potensiSurplusEl.classList.remove('loading-animation');
-            
-            // Menyimpan nilai perhitungan lokal untuk LLM
-            sc_value_val = scValue.toFixed(0);
-            surplus_value_val = surplusValue.toFixed(0);
-
-            // Perbarui data ringkasan PLTS global
-            window.pltsSummaryData = {
-                v10_kwh_today: v10_kwh_today_val,
-                v21_kwh_today_ac: v21_kwh_today_ac_val,
-                v19_rupiah_day: v19_rupiah_day_val,
-                sc_value: sc_value_val,
-                surplus_value: surplus_value_val
-            };
             
             if (!energyChartInstance) { renderRealtimeChart(); }
             updateRealtimeChartData(currentPvPower, currentAcLoad);
@@ -2410,7 +2203,8 @@
 
             loadHistoricalData();
             
-            dashboard.classList.remove('hidden'); 
+            // Panel Konfigurasi sudah dihapus di HTML
+            dashboard.classList.remove('hidden'); // Memastikan dashboard terlihat
             
             updateDashboard(); 
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
@@ -2420,37 +2214,34 @@
             showMessage(`Monitoring Instan dimulai ke ${serverIp}. PV Correction: +${INSTANT_PV_PERCENT.toFixed(1)}%.`, 'success');
         }
         
+        // FUNGSI INI KINI TIDAK DIGUNAKAN LAGI
+        // function saveAndFetchData() { startInstantMonitoring(); }
+
+
         // ==========================================================
         // INISIALISASI UTAMA
         // ==========================================================
 
         function initApp() {
             
-            // --- INISIALISASI MODAL FIX ---
+            // --- INISIALISASI BMS MODAL FIX ---
             const closeBatteryModalButton = document.getElementById('closeModalButton');
-            const batteryModal = document.getElementById("batteryModal");
-
             if (closeBatteryModalButton) {
+                // Menetapkan fungsi closeModal ke tombol 'X'
                 closeBatteryModalButton.onclick = closeModal;
             }
 
+            // Listener untuk menutup modal ketika mengklik di luar konten (backdrop)
+            const batteryModal = document.getElementById("batteryModal");
             if (batteryModal) {
                 batteryModal.addEventListener('click', (e) => {
+                    // Cek jika elemen yang diklik adalah backdrop (modal itu sendiri)
                     if (e.target === batteryModal) {
                         closeModal();
                     }
                 });
             }
-            
-            const analysisModal = document.getElementById("analysisModal");
-            if (analysisModal) {
-                 analysisModal.addEventListener('click', (e) => {
-                    if (e.target === analysisModal) {
-                        closeAnalysisModal();
-                    }
-                });
-            }
-            // --- END MODAL FIX ---
+            // --- END BMS MODAL FIX ---
 
 
             updateTime();
@@ -2458,9 +2249,13 @@
 
             lucide.createIcons();
             
+            // Inisialisasi IP Logger di BMS ke N/A
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
             safeUpdate("bms-logger-ip-footer", 'N/A');
 
+            // HIDE CONFIG PANEL (yang kini sudah dihapus, tapi untuk memastikan dashboard muncul)
+            // document.getElementById('monitoring-dashboard').classList.remove('hidden'); // sudah ada di startInstantMonitoring
+            
             // LANGSUNG MULAI MONITORING INSTAN
             startInstantMonitoring();
         }
