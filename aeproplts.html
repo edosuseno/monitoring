@@ -592,7 +592,7 @@
                                 </text>
                                 <a href="#">
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
-                                        -- kWh / -- MWh
+                                        -- kWh / -- kWh
                                     </text>
                                 </a>
 
@@ -2954,7 +2954,7 @@
             // Total Solar (V3 / V11) - Pembulatan ke 0 angka di belakang koma
             const dailySolarRounded = Math.round(tryParseFloat(data.dailySolar));
             const totalSolarRounded = Math.round(tryParseFloat(data.totalSolarMWh));
-            setText('total_solar_value', `${dailySolarRounded} kWh / ${totalSolarRounded} MWh`); 
+            setText('total_solar_value', `${dailySolarRounded} kWh / ${totalSolarRounded} kWh`); 
 
             setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`); 
             
