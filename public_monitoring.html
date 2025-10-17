@@ -155,7 +155,7 @@
             font-weight: 500 !important;
             fill: #C0C0C0 !important;
         }
-        .pv-extra-detail {
+        .pv-extra-detail { 
             font-size: 11px; 
             font-weight: 400;
             fill: #C0C0C0; 
@@ -197,7 +197,8 @@
         }
         .soh-good { fill: var(--color-load) !important; font-weight: 600; }
         .soh-warning { fill: var(--color-bar-yellow) !important; font-weight: 600; }
-        .soh-default { fill: #C0C0C0 !important; font-weight: 600; font-size: 11px; }
+        /* PERBAIKAN #1 CSS: Menghapus font-size 11px dari soh-default agar mewarisi st13 (20px) */
+        .soh-default { fill: #C0C0C0 !important; font-weight: 600; } 
         
         /* HILANGKAN MESSAGE BOX */
         #status-message-diagram, #message-box {
@@ -759,11 +760,11 @@
                                 </svg>
                                 
                                 <!-- Daily Grid Buy Value -->
-                                <text id="daily_grid_buy_value" x="20" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
+                                <text id="daily_grid_buy_value" x="30" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
                                     --
                                 </text>
-                                <text id="daily_grid_buy" x="10" y="280" display="" class="st3 left-align" fill="var(--color-grid)">
-                                    DAILY GRID BUY
+                                <text id="daily_grid_buy" x="30" y="280" display="" class="st3 left-align" fill="var(--color-grid)">
+                                    GRID PLN
                                 </text>
 
                             </svg>
@@ -910,7 +911,7 @@
                                             </text>
                                         </svg>
                                         <svg id="battery_daily_discharge" style="overflow: visible;" x="0%" y="0%">
-                                            <text id="daily_bat_dischcharge_value" x="110" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_dischcharge_value" x="100" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
                                                 -- kWh
                                             </text>
                                             <text id="daily_bat_dischcharge" x="85" y="415" display="" class="st3 left-align" fill="var(--color-battery)">
@@ -1416,7 +1417,7 @@
             solarPower: DEFAULT_DISPLAY, 
             loadPower: DEFAULT_DISPLAY, 
             batteryPower: DEFAULT_DISPLAY, 
-            gridPower: DEFAULT_DISPLAY, 
+            gridPower: 0.0, // Diinisialisasi 0.0 karena non-aktif
             rawGridPower: DEFAULT_DISPLAY,
             dailySolar: DEFAULT_DISPLAY_STR,
             dailyLoad: DEFAULT_DISPLAY_STR,
@@ -1692,7 +1693,7 @@
                     voltage: vpack || DEFAULT_DISPLAY,
                     current: current || DEFAULT_DISPLAY,
                     totalPower: (current * vpack) || DEFAULT_DISPLAY,
-                    remainingAh: `${remAhFallback.toFixed(1)} Ah`, 
+                    remainingAh: remAhFallback, // PERBAIKAN #2: Kembalikan sebagai number
                     count: 0
                 };
             }
@@ -1701,12 +1702,12 @@
             const remainingAh = totalRemCapacity;
 
             return {
-                soc: Math.round(avgSoc),
-                soh: Math.round(avgSoh),
+                soc: Math.round(avgSoc), // Pastikan SOC adalah NUMERIK (integer)
+                soh: Math.round(avgSoh), // Pastikan SOH adalah NUMERIK (integer)
                 voltage: avgVoltage,
                 current: totalCurrent,
                 totalPower: totalPower,
-                remainingAh: `${remainingAh.toFixed(1)} Ah`,
+                remainingAh: remainingAh, // PERBAIKAN #2: Kembalikan sebagai number
                 count: validCount
             };
         }
@@ -1967,12 +1968,13 @@
 
 
             batteries.forEach(b => {
-                const current = parseFloat(b.current);
-                const voltage = parseFloat(b.voltage);
-                const power = parseFloat(b.power);
-                const busVoltage = parseFloat(b.busVoltage);
                 const soc = parseFloat(b.soc);
                 const soh = parseFloat(b.soh);
+                const voltage = parseFloat(b.voltage);
+                const current = parseFloat(b.current);
+                const power = parseFloat(b.power);
+                const busVoltage = parseFloat(b.busVoltage);
+                // Baris yang menyebabkan SyntaxError sebelumnya telah dihapus/dikomentari.
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
@@ -2074,11 +2076,11 @@
             const voltageUnitEl = voltageSummaryEl ? voltageSummaryEl.nextElementSibling : null;
 
             if (voltageSummaryEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
-            if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500', 'text-yellow-500');
+            if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
 
             if (avgVoltage === 'N/A' || parseFloat(avgVoltage) < 24.0) { 
                 if (voltageSummaryEl) voltageSummaryEl.classList.add('text-red-500');
-                if (voltageUnitEl) voltageUnitEl.classList.add('text-red-500');
+                if (voltageUnitEl) voltageSummaryEl.classList.add('text-red-500');
             }
             
             safeUpdate('summary-bus-voltage', avgBusVoltage);
@@ -2763,6 +2765,9 @@
             });
         }
         
+        /**
+         * FUNGSI PERBAIKAN #1: Memastikan SOC adalah nilai numerik yang aman (0-100) untuk digambar.
+         */
         function updateBatteryLevel(soc, batPower) {
             const batteryInner = document.getElementById('bat_inner');
             const svgDefs = document.querySelector('.svg-content defs');
@@ -2778,9 +2783,11 @@
             const startX = 5;
             const startYVisual = 6; 
             
-            soc = parseInt(soc);
-            if (isNaN(soc) || soc < 0) soc = 0;
-            if (soc > 100) soc = 100;
+            // Perbaikan agar SOC selalu berupa integer 0-100
+            let numericSoc = parseInt(soc);
+            if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
+            if (numericSoc > 100) numericSoc = 100;
+            soc = numericSoc; // Gunakan nilai yang aman ini untuk menggambar
 
             let overallColorStop;
             
@@ -2915,7 +2922,9 @@
             const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
 
             // --- BMS DATA (Remaining Capacity) ---
-            setText('battery_remaining_energy', data.batteryRemainingEnergy);
+            // PERBAIKAN #3: Ambil remainingAh (number) dari data dan format di sini
+            const remainingAhValue = data.batteryRemainingEnergy > 0 ? data.batteryRemainingEnergy.toFixed(1) : DEFAULT_DISPLAY_STR;
+            setText('battery_remaining_energy', `${remainingAhValue} Ah`);
 
 
             setText('pv1_power_186', `${solarP} W`); 
@@ -2932,7 +2941,7 @@
             setText('pv_peak_label', `${data.pvPeakPower.toFixed(0)} W`);
             setText('effective_sun_hours', `${data.effectiveSunHours.toFixed(1)} Hrs`);
             setText('pv_efficiency_value', `${data.pvEfficiency.toFixed(1)}%`);
-            // Menggunakan SOC dari BMS
+            // Menggunakan SOC dari BMS (dikonversi ke string untuk display)
             setText('pv_placeholder', `${data.batterySOC}%`); 
             
             // Inverter Detail (V12 / V13 / V16)
@@ -2965,26 +2974,42 @@
                 }
             }
             
+            // --- NONAKTIFKAN TAMPILAN GRID PLN ---
+            // Kotak Grid Power
+            const gridPowerText = document.getElementById('grid_total_power');
+            if (gridPowerText) {
+                gridPowerText.textContent = `${DEFAULT_DISPLAY_STR} W`;
+                gridPowerText.setAttribute('fill', 'var(--color-grid)'); // Pertahankan warna ikon
+            }
+
+            // Kotak Grid Box (hanya untuk memastikan stroke tetap ada)
+            const gridPowerBox = document.getElementById('grid_power_box')?.querySelector('rect');
+            if (gridPowerBox) {
+                 gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
+            }
+
+            // Label Harian
+            setText('daily_grid_buy', "GRID PLN"); 
+            setText('daily_grid_buy_value', `${DEFAULT_DISPLAY_STR} kWh`);
+            document.getElementById('daily_grid_buy_value').setAttribute('fill', '#C0C0C0'); // Set ke abu-abu
+            // ------------------------------------
+
+            
             // --- BMS DATA (SOC dan SOH) ---
             const sohValue = data.batterySOH !== undefined ? data.batterySOH : DEFAULT_DISPLAY_STR;
             let sohFillColor = '#C0C0C0'; 
             let sohClassName = 'soh-default';
-            const parsedSOH = tryParseFloat(sohValue);
-
-            if (parsedSOH > 90) {
-                sohFillColor = 'var(--color-load)'; 
-                sohClassName = 'soh-good';
-            } else if (parsedSOH > 0) {
-                sohFillColor = 'var(--color-bar-yellow)'; 
-                sohClassName = 'soh-warning';
-            }
+            // Pastikan parsedSOH aman
+            const parsedSOH = typeof data.batterySOH === 'number' ? data.batterySOH : 0; 
+            
             
             const socElement = document.getElementById('battery_soc_184');
             if(socElement) {
                 socElement.textContent = `${data.batterySOC}%`;
                 
                 const sohTspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-                sohTspan.textContent = ` | ${sohValue}% `;
+                // Gunakan parsedSOH untuk tampilan SOH
+                sohTspan.textContent = ` | ${parsedSOH}% `; 
                 sohTspan.setAttribute('class', sohClassName);
                 sohTspan.setAttribute('fill', sohFillColor);
                 
@@ -3023,8 +3048,8 @@
         }
         
         /**
-         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai dan menggunakan daya aktual BMS.
-         * LOGIKA BATTERY FLOW TELAH DIPERBAIKI DI SINI.
+         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
+         * Logic Grid PLN di sini DIHAPUS/DINONAKTIFKAN.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3034,34 +3059,13 @@
             // --- MENGGUNAKAN DAYA BATERAI AKTUAL DARI BMS ---
             const calculatedBatP = bmsData.totalPower; 
             
-            let gridPowerToDisplay = 0.0;
+            // --- LOGIKA GRID DIHAPUS/DINONAKTIFKAN ---
+            // Set Grid Power ke 0.0 secara permanen (Off-Grid)
+            latestDiagramData.gridPower = 0.0; 
+            // ----------------------------------------------
             
-            // --- LOGIKA NET FLOW (Solar + Battery) vs Load ---
-            const solarPlusBat = solarP + (-calculatedBatP); // Daya masuk ke Inverter: PV + (Daya Discharge)
-            const netFlow = solarPlusBat - loadP; 
-
-            if (Math.abs(netFlow) > minimumPowerThreshold) {
-                if (netFlow > 0) {
-                    // Surplus setelah Load terpenuhi: Alirkan ke Grid (Sell) atau buang.
-                    // Karena ini PLTS off-grid/hybrid yang tidak fokus jual ke grid, kita asumsikan 0 grid buy.
-                    gridPowerToDisplay = 0.0;
-                } else {
-                    // Defisit: Ambil dari Grid (Buy)
-                    gridPowerToDisplay = Math.abs(netFlow); 
-                }
-            } else {
-                gridPowerToDisplay = 0.0;
-            }
-
             latestDiagramData.batteryPower = calculatedBatP; 
-            latestDiagramData.gridPower = gridPowerToDisplay; 
             
-            // --- MENGGUNAKAN DATA BMS YANG BARU UNTUK DISPLAY ---
-            latestDiagramData.batterySOC = bmsData.soc;
-            latestDiagramData.batterySOH = bmsData.soh;
-            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
-
-
             let eff = 0;
             const pvPeak = latestDiagramData.pvPeakPower > 0.1 ? latestDiagramData.pvPeakPower : CONFIG_PV_PEAK_WATT_DEFAULT;
             if (pvPeak > 0) {
@@ -3070,7 +3074,6 @@
             latestDiagramData.pvEfficiency = Math.min(100, eff); 
 
             const batP = latestDiagramData.batteryPower; 
-            const gridFlowValue = latestDiagramData.gridPower; 
             
             // Rasio Autarky
             const totalEnergyToLoad = loadP > 0 ? loadP : 0;
@@ -3079,6 +3082,7 @@
             
             let ratio = 0;
             if (totalEnergyToLoad > 10) { 
+                // Karena Grid Power 0, Autarky = Self Supply / Load
                 const selfSupply = providedBySolar + providedByBat;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
                 ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
@@ -3087,10 +3091,17 @@
             }
             latestDiagramData.ratioPercentage = ratio;
             
+            // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
+            latestDiagramData.batterySOC = bmsData.soc; 
+            latestDiagramData.batterySOH = bmsData.soh;
+            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
+
+
             // Memperbarui teks dengan data BMS (voltage, current)
             updateTextValues(latestDiagramData, bmsData.voltage, bmsData.current);
-            // Memperbarui level baterai dengan SOC dari BMS dan power BMS
-            updateBatteryLevel(latestDiagramData.batterySOC, latestDiagramData.batteryPower);
+            
+            // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
+            updateBatteryLevel(bmsData.soc, latestDiagramData.batteryPower);
             
             // 3. Kontrol Animasi Aliran
             
@@ -3116,31 +3127,9 @@
                 controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0); 
             }
 
-            // 4. Grid Flow (HANYA BUY/IMPORT jika gridPowerToDisplay > 10W)
-            const gridPowerBox = document.getElementById('grid_power_box').querySelector('rect');
-            const gridPowerText = document.getElementById('grid_total_power');
-
-            if (gridPowerToDisplay > minimumPowerThreshold) { 
-                // Grid Buy (mengambil dari grid): Flow Icon -> Inverter (kanan ke kiri) -> powerValue negatif
-                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], -1, gridPowerToDisplay);
-                gridPowerText.textContent = `${gridPowerToDisplay.toFixed(0)} W`;
-                gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
-                gridPowerText.setAttribute('fill', 'var(--color-grid)');
-                safeUpdate('daily_grid_buy', "DAILY GRID BUY");
-                const dailyGridBuyValue = tryParseFloat(latestDiagramData.dailyGridBuy);
-                safeUpdate('daily_grid_buy_value', `${dailyGridBuyValue.toFixed(2)} kWh`);
-                document.getElementById('daily_grid_buy_value').setAttribute('fill', 'var(--color-grid)');
-            } else {
-                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
-                gridPowerText.textContent = `${DEFAULT_DISPLAY_STR} W`;
-                gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
-                gridPowerText.setAttribute('fill', 'var(--color-grid)');
-
-                // Asumsi: Jika Grid Power Idle/Sell, tampilkan Daily Load sebagai Grid Sell (atau tetap Buy 0.00)
-                safeUpdate('daily_grid_buy', "DAILY GRID (NET)"); // Ganti teks jika tidak ada Buy
-                safeUpdate('daily_grid_buy_value', `${DEFAULT_DISPLAY_STR} kWh`);
-                document.getElementById('daily_grid_buy_value').setAttribute('fill', '#C0C0C0');
-            }
+            // 4. Grid Flow (DIPAKSA OFF)
+            // Karena Grid non-aktif, panggil controlFlow dengan power 0 untuk mematikan animasi
+            controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
             
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
         }
@@ -3291,17 +3280,16 @@
             
             if (!selfConsumptionEl || !potensiSurplusEl) {
                 console.warn("Self-Consumption or Potensi Surplus element not found. Skipping local calculation update.");
-                return; 
+            } else {
+                let scValue = 0;
+                if (currentPvPower > 0) { scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100; }
+                selfConsumptionEl.textContent = scValue.toFixed(0);
+                selfConsumptionEl.classList.remove('loading-animation');
+                
+                let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
+                potensiSurplusEl.textContent = surplusValue.toFixed(0);
+                potensiSurplusEl.classList.remove('loading-animation');
             }
-            
-            let scValue = 0;
-            if (currentPvPower > 0) { scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100; }
-            selfConsumptionEl.textContent = scValue.toFixed(0);
-            selfConsumptionEl.classList.remove('loading-animation');
-            
-            let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
-            potensiSurplusEl.textContent = surplusValue.toFixed(0);
-            potensiSurplusEl.classList.remove('loading-animation');
             
             if (!energyChartInstance) { renderRealtimeChart(); }
             updateRealtimeChartData(currentPvPower, currentAcLoad);
