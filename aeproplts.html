@@ -2727,9 +2727,23 @@
             return `${duration.toFixed(1)}s`;
         }
 
-        function controlFlow(animIds, powerValue, absPower, forwardKeyPoints, reverseKeyPoints) {
+        /**
+         * FUNGSI MODIFIED: Menggunakan powerValue untuk menentukan arah keyPoints
+         * powerValue > 0: Aliran Normal (0;1)
+         * powerValue < 0: Aliran Terbalik (1;0)
+         * powerValue == 0: Stop
+         */
+        function controlFlow(animIds, powerValue, absPower) { 
             const flowSpeed = getFlowDuration(absPower);
             const isFlowing = absPower > 10;
+            
+            // Tentukan keyPoints yang eksplisit
+            let keyPoints;
+            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
+                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
+            } else { // Discharging / Grid Buy (Aliran masuk)
+                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
+            }
             
             animIds.forEach(id => {
                 const animElement = document.getElementById(id);
@@ -2744,12 +2758,7 @@
                     animElement.setAttribute('repeatCount', 'indefinite');
                     animElement.setAttribute('keyTimes', '0;1'); 
                     animElement.setAttribute('dur', flowSpeed);
-                }
-                
-                if (powerValue > 0) { 
-                    animElement.setAttribute('keyPoints', forwardKeyPoints);
-                } else { 
-                    animElement.setAttribute('keyPoints', reverseKeyPoints);
+                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
                 }
             });
         }
@@ -3015,6 +3024,7 @@
         
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai dan menggunakan daya aktual BMS.
+         * LOGIKA BATTERY FLOW TELAH DIPERBAIKI DI SINI.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3085,25 +3095,25 @@
             // 3. Kontrol Animasi Aliran
             
             // 1. Solar Flow 
-            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP), "0;1", "1;0");
+            // PV Power selalu positif (Aliran Normal 0;1: Atas ke Bawah)
+            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP));
 
             // 2. Load Flow 
-            controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP), "0;1", "1;0");
+            // Load Power selalu positif (Aliran Normal 0;1: Kiri ke Kanan)
+            controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
-            // 3. Battery Flow (P>0 = CHARGE, P<0 = DISCHARGE)
+            // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
             const batAbsPower = Math.abs(batP);
             const rawCurrent = bmsData.current; // Gunakan Current untuk menentukan arah
 
             if (batAbsPower > minimumPowerThreshold) { 
-                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
-                    // P > 0, Arah: 0;1 (atas ke bawah)
-                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower, "0;1", "1;0"); 
-                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
-                    // P < 0, Arah: 1;0 (bawah ke atas)
-                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower, "1;0", "0;1"); 
+                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah) -> powerValue positif
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
+                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas) -> powerValue negatif
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower); 
                 }
             } else {
-                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0, "0;1", "1;0"); 
+                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0); 
             }
 
             // 4. Grid Flow (HANYA BUY/IMPORT jika gridPowerToDisplay > 10W)
@@ -3111,8 +3121,8 @@
             const gridPowerText = document.getElementById('grid_total_power');
 
             if (gridPowerToDisplay > minimumPowerThreshold) { 
-                // Grid Buy (mengambil dari grid): Flow Icon -> Inverter (kanan ke kiri)
-                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], -1, gridPowerToDisplay, "1;0", "0;1");
+                // Grid Buy (mengambil dari grid): Flow Icon -> Inverter (kanan ke kiri) -> powerValue negatif
+                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], -1, gridPowerToDisplay);
                 gridPowerText.textContent = `${gridPowerToDisplay.toFixed(0)} W`;
                 gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
                 gridPowerText.setAttribute('fill', 'var(--color-grid)');
@@ -3121,7 +3131,7 @@
                 safeUpdate('daily_grid_buy_value', `${dailyGridBuyValue.toFixed(2)} kWh`);
                 document.getElementById('daily_grid_buy_value').setAttribute('fill', 'var(--color-grid)');
             } else {
-                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0, "1;0", "0;1"); 
+                controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
                 gridPowerText.textContent = `${DEFAULT_DISPLAY_STR} W`;
                 gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
                 gridPowerText.setAttribute('fill', 'var(--color-grid)');
