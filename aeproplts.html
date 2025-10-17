@@ -587,7 +587,7 @@
                                 
                                 <!-- Total Solar Value (Top Center) -->
                                 <text id="total_solar_generation" x="239" y="72" dominant-baseline="central" text-anchor="middle" display="" class="st3" fill="var(--color-solar)">
-                                    DAILY SOLAR / TOTAL SOLAR
+                                    TOTAL SOLAR / TOTAL SOLAR
                                 </text>
                                 <a href="#">
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
@@ -1427,9 +1427,9 @@
             pvPeakPower: CONFIG_PV_PEAK_WATT_DEFAULT,
             pvEfficiency: DEFAULT_DISPLAY, 
             effectiveSunHours: CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT,
-            batterySOC: 0, // Disesuaikan oleh BMS data
-            batterySOH: 100, // Disesuaikan oleh BMS data
-            batteryRemainingEnergy: DEFAULT_DISPLAY_STR, // Disesuaikan oleh BMS data
+            batterySOC: 0, 
+            batterySOH: 100, 
+            batteryRemainingEnergy: DEFAULT_DISPLAY_STR, 
             inverterVoltage: DEFAULT_DISPLAY_STR + ' V',
             inverterCurrent: DEFAULT_DISPLAY_STR + ' A',
             loadFrequency: DEFAULT_DISPLAY_STR + ' Hz',
@@ -1632,8 +1632,8 @@
         }
         
         /**
-         * FUNGSI BARU: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
-         * Digunakan sebagai sumber data utama untuk diagram baterai.
+         * FUNGSI MODIFIED: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
+         * Sekarang menghitung total daya pack.
          */
         function getAggregatedBmsData() {
             let totalSoc = 0;
@@ -1641,8 +1641,8 @@
             let totalVoltage = 0;
             let totalCurrent = 0;
             let totalRemCapacity = 0;
+            let totalCapacity = 0;
             let validCount = 0;
-            let nominalAh = 100; // Kapasitas nominal default
 
             batteries.forEach(b => {
                 const soc = parseFloat(b.soc);
@@ -1650,19 +1650,26 @@
                 const voltage = parseFloat(b.voltage);
                 const current = parseFloat(b.current);
                 const remCapacity = parseFloat(b.remaining);
+                const capacity = parseFloat(b.capacity);
 
-                if (!isNaN(soc) && !isNaN(voltage) && !isNaN(current) && soc >= 0) {
+
+                if (!isNaN(current)) {
+                    totalCurrent += current;
+                }
+                
+                if (!isNaN(soc) && !isNaN(voltage) && soc >= 0) {
                     totalSoc += soc;
                     totalVoltage += voltage;
-                    totalCurrent += current;
                     validCount++;
                 }
                 if (!isNaN(soh) && soh >= 0) {
                     totalSoh += soh;
                 }
-                if (!isNaN(remCapacity) && !isNaN(soc) && soc > 0) {
-                     // Hitung kapasitas nominal rata-rata jika memungkinkan
-                     nominalAh = ((remCapacity * 100) / soc);
+                if (!isNaN(remCapacity)) {
+                    totalRemCapacity += remCapacity;
+                }
+                if (!isNaN(capacity)) {
+                    totalCapacity += capacity;
                 }
             });
 
@@ -1670,12 +1677,13 @@
             const avgSoh = validCount > 0 ? totalSoh / validCount : 100;
             const avgVoltage = validCount > 0 ? totalVoltage / validCount : DEFAULT_DISPLAY;
             
-            // Untuk diagram, gunakan total arus sebagai aliran pack
-            const finalCurrent = validCount > 0 ? totalCurrent : DEFAULT_DISPLAY;
+            // Gunakan rata-rata voltage untuk menghitung total power yang lebih akurat
+            const totalPower = totalCurrent * avgVoltage; 
             
-            // Fallback: Jika tidak ada data BMS yang terhubung, gunakan data Blynk yang terakhir (vpack/current)
+            // Fallback: Jika tidak ada data BMS yang terhubung, gunakan data Blynk yang terakhir
             if (validCount === 0) {
                 const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
+                const nominalAh = tryParseFloat(document.getElementById('v9-batere-ah')?.textContent || '0');
                 const remAhFallback = (socFromBlynkVpack / 100) * nominalAh;
                 
                 return {
@@ -1683,19 +1691,21 @@
                     soh: latestDiagramData.batterySOH || 100,
                     voltage: vpack || DEFAULT_DISPLAY,
                     current: current || DEFAULT_DISPLAY,
+                    totalPower: (current * vpack) || DEFAULT_DISPLAY,
                     remainingAh: `${remAhFallback.toFixed(1)} Ah`, 
                     count: 0
                 };
             }
 
-            // Hitung sisa kapasitas berdasarkan rata-rata SOC dan nominal Ah
-            const remainingAh = (avgSoc / 100) * nominalAh;
+            // Hitung sisa kapasitas berdasarkan total kapasitas sisa
+            const remainingAh = totalRemCapacity;
 
             return {
                 soc: Math.round(avgSoc),
                 soh: Math.round(avgSoh),
                 voltage: avgVoltage,
-                current: finalCurrent,
+                current: totalCurrent,
+                totalPower: totalPower,
                 remainingAh: `${remainingAh.toFixed(1)} Ah`,
                 count: validCount
             };
@@ -2005,7 +2015,7 @@
                     currentStatusText = 'Discharging';
                 } else {
                     statusClass = 'text-standby';
-                    currentStatusText = 'Standby';
+                    currentStatusText = 'Idle';
                 }
             } else {
                 currentStatusText = 'N/A';
@@ -2890,15 +2900,18 @@
             const solarP = data.solarPower > 0.1 ? data.solarPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             
+            // --- BMS DATA (Battery Power Display) ---
+            const batPower = data.batteryPower;
+            const rawBatPower = Math.abs(batPower);
+            const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
+
             // --- BMS DATA (Remaining Capacity) ---
             setText('battery_remaining_energy', data.batteryRemainingEnergy);
 
-            const rawBatPower = Math.abs(data.batteryPower);
-            const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
 
             setText('pv1_power_186', `${solarP} W`); 
             setText('ess_power', `${loadP} W`); 
-            setText('data.batteryPower_190', `${batPDisplay} W`); 
+            setText('data.batteryPower_190', `${batPDisplay} W`); // Menggunakan daya BMS
             
             const pvV = data.pvVoltage.replace(' V', '');
             const pvI = data.pvCurrent.replace(' A', '');
@@ -3001,29 +3014,32 @@
         }
         
         /**
-         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai
+         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai dan menggunakan daya aktual BMS.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower;
             const minimumPowerThreshold = 10;
             
-            let calculatedBatP = 0.0;
+            // --- MENGGUNAKAN DAYA BATERAI AKTUAL DARI BMS ---
+            const calculatedBatP = bmsData.totalPower; 
+            
             let gridPowerToDisplay = 0.0;
+            
+            // --- LOGIKA NET FLOW (Solar + Battery) vs Load ---
+            const solarPlusBat = solarP + (-calculatedBatP); // Daya masuk ke Inverter: PV + (Daya Discharge)
+            const netFlow = solarPlusBat - loadP; 
 
-            const netPVSurplus = solarP - loadP; 
-
-            if (Math.abs(netPVSurplus) > minimumPowerThreshold) {
-                if (netPVSurplus > 0) {
-                    calculatedBatP = netPVSurplus;
-                    gridPowerToDisplay = 0.0; 
+            if (Math.abs(netFlow) > minimumPowerThreshold) {
+                if (netFlow > 0) {
+                    // Surplus setelah Load terpenuhi: Alirkan ke Grid (Sell) atau buang.
+                    // Karena ini PLTS off-grid/hybrid yang tidak fokus jual ke grid, kita asumsikan 0 grid buy.
+                    gridPowerToDisplay = 0.0;
                 } else {
-                    const deficit = Math.abs(netPVSurplus);
-                    calculatedBatP = -deficit;
-                    gridPowerToDisplay = 0.0; 
+                    // Defisit: Ambil dari Grid (Buy)
+                    gridPowerToDisplay = Math.abs(netFlow); 
                 }
             } else {
-                calculatedBatP = 0.0;
                 gridPowerToDisplay = 0.0;
             }
 
@@ -3046,21 +3062,24 @@
             const batP = latestDiagramData.batteryPower; 
             const gridFlowValue = latestDiagramData.gridPower; 
             
-            const batteryDischarge = batP < 0 ? Math.abs(batP) : 0; 
-            const selfGeneratedPower = solarP + batteryDischarge;
+            // Rasio Autarky
+            const totalEnergyToLoad = loadP > 0 ? loadP : 0;
+            const providedBySolar = solarP > 0 ? solarP : 0;
+            const providedByBat = batP < 0 ? Math.abs(batP) : 0; 
+            
             let ratio = 0;
-
-            if (loadP > 10) { 
-                const usedSelfGeneratedPower = Math.min(selfGeneratedPower, loadP);
-                ratio = (usedSelfGeneratedPower / loadP) * 100;
+            if (totalEnergyToLoad > 10) { 
+                const selfSupply = providedBySolar + providedByBat;
+                const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
+                ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
             } else {
-                ratio = (solarP > 10) ? 100 : 0;
+                ratio = (solarP > 10 || providedByBat > 10) ? 100 : 0;
             }
             latestDiagramData.ratioPercentage = ratio;
             
             // Memperbarui teks dengan data BMS (voltage, current)
             updateTextValues(latestDiagramData, bmsData.voltage, bmsData.current);
-            // Memperbarui level baterai dengan SOC dari BMS
+            // Memperbarui level baterai dengan SOC dari BMS dan power BMS
             updateBatteryLevel(latestDiagramData.batterySOC, latestDiagramData.batteryPower);
             
             // 3. Kontrol Animasi Aliran
@@ -3073,11 +3092,16 @@
 
             // 3. Battery Flow (P>0 = CHARGE, P<0 = DISCHARGE)
             const batAbsPower = Math.abs(batP);
-            
-            if (batP > 10) { 
-                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower, "0;1", "1;0"); 
-            } else if (batP < -10) { 
-                 controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower, "1;0", "0;1");
+            const rawCurrent = bmsData.current; // Gunakan Current untuk menentukan arah
+
+            if (batAbsPower > minimumPowerThreshold) { 
+                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
+                    // P > 0, Arah: 0;1 (atas ke bawah)
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower, "0;1", "1;0"); 
+                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
+                    // P < 0, Arah: 1;0 (bawah ke atas)
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower, "1;0", "0;1"); 
+                }
             } else {
                 controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0, "0;1", "1;0"); 
             }
@@ -3087,6 +3111,7 @@
             const gridPowerText = document.getElementById('grid_total_power');
 
             if (gridPowerToDisplay > minimumPowerThreshold) { 
+                // Grid Buy (mengambil dari grid): Flow Icon -> Inverter (kanan ke kiri)
                 controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], -1, gridPowerToDisplay, "1;0", "0;1");
                 gridPowerText.textContent = `${gridPowerToDisplay.toFixed(0)} W`;
                 gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
