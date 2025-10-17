@@ -587,7 +587,7 @@
                                 
                                 <!-- Total Solar Value (Top Center) -->
                                 <text id="total_solar_generation" x="239" y="72" dominant-baseline="central" text-anchor="middle" display="" class="st3" fill="var(--color-solar)">
-                                     TOTAL ENERGY / TOTAL SOLAR
+                                    DAILY SOLAR / TOTAL SOLAR
                                 </text>
                                 <a href="#">
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
@@ -1408,7 +1408,7 @@
         const CONFIG_PV_PEAK_WATT_DEFAULT = 2000.0; 
         const CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT = 5.0; 
         
-        // Global variables for diagram logic (from Blynk V7 and V9)
+        // Global variables for diagram logic (from Blynk V7 and V9 - now only used as fallback)
         let vpack = DEFAULT_DISPLAY; 
         let current = DEFAULT_DISPLAY; 
         
@@ -1427,9 +1427,9 @@
             pvPeakPower: CONFIG_PV_PEAK_WATT_DEFAULT,
             pvEfficiency: DEFAULT_DISPLAY, 
             effectiveSunHours: CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT,
-            batterySOC: 0,
-            batterySOH: 100,
-            batteryRemainingEnergy: DEFAULT_DISPLAY_STR,
+            batterySOC: 0, // Disesuaikan oleh BMS data
+            batterySOH: 100, // Disesuaikan oleh BMS data
+            batteryRemainingEnergy: DEFAULT_DISPLAY_STR, // Disesuaikan oleh BMS data
             inverterVoltage: DEFAULT_DISPLAY_STR + ' V',
             inverterCurrent: DEFAULT_DISPLAY_STR + ' A',
             loadFrequency: DEFAULT_DISPLAY_STR + ' Hz',
@@ -1457,9 +1457,9 @@
             'V16': { key: 'loadFrequency', unit: 'Hz', isFrequency: true }, 
             'V21': { key: 'dailyLoad', unit: 'kWh', isDailyEnergy: true }, 
 
-            // Battery (Used for Diagram Logic)
-            'V7': { key: 'vpack', isGlobal: true, isBatVoltage: true },   
-            'V9': { key: 'current', isGlobal: true, isBatCurrent: true }, 
+            // Battery (Only used for Diagram Logic Fallback and Daily Charge/Discharge)
+            'V7': { key: 'vpack', isGlobal: true, isBatVoltage: true },   // Fallback for Vpack
+            'V9': { key: 'current', isGlobal: true, isBatCurrent: true }, // Fallback for Current
             'V10': { key: 'dailyBatCharge', unit: 'kWh', isDailyEnergy: true, isBatCharge: true}, 
         };
 
@@ -1630,6 +1630,77 @@
 
             return { textColor, progressColor, textClassesToRemove, bgClassesToRemove };
         }
+        
+        /**
+         * FUNGSI BARU: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
+         * Digunakan sebagai sumber data utama untuk diagram baterai.
+         */
+        function getAggregatedBmsData() {
+            let totalSoc = 0;
+            let totalSoh = 0;
+            let totalVoltage = 0;
+            let totalCurrent = 0;
+            let totalRemCapacity = 0;
+            let validCount = 0;
+            let nominalAh = 100; // Kapasitas nominal default
+
+            batteries.forEach(b => {
+                const soc = parseFloat(b.soc);
+                const soh = parseFloat(b.soh);
+                const voltage = parseFloat(b.voltage);
+                const current = parseFloat(b.current);
+                const remCapacity = parseFloat(b.remaining);
+
+                if (!isNaN(soc) && !isNaN(voltage) && !isNaN(current) && soc >= 0) {
+                    totalSoc += soc;
+                    totalVoltage += voltage;
+                    totalCurrent += current;
+                    validCount++;
+                }
+                if (!isNaN(soh) && soh >= 0) {
+                    totalSoh += soh;
+                }
+                if (!isNaN(remCapacity) && !isNaN(soc) && soc > 0) {
+                     // Hitung kapasitas nominal rata-rata jika memungkinkan
+                     nominalAh = ((remCapacity * 100) / soc);
+                }
+            });
+
+            const avgSoc = validCount > 0 ? totalSoc / validCount : 0;
+            const avgSoh = validCount > 0 ? totalSoh / validCount : 100;
+            const avgVoltage = validCount > 0 ? totalVoltage / validCount : DEFAULT_DISPLAY;
+            
+            // Untuk diagram, gunakan total arus sebagai aliran pack
+            const finalCurrent = validCount > 0 ? totalCurrent : DEFAULT_DISPLAY;
+            
+            // Fallback: Jika tidak ada data BMS yang terhubung, gunakan data Blynk yang terakhir (vpack/current)
+            if (validCount === 0) {
+                const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
+                const remAhFallback = (socFromBlynkVpack / 100) * nominalAh;
+                
+                return {
+                    soc: socFromBlynkVpack, 
+                    soh: latestDiagramData.batterySOH || 100,
+                    voltage: vpack || DEFAULT_DISPLAY,
+                    current: current || DEFAULT_DISPLAY,
+                    remainingAh: `${remAhFallback.toFixed(1)} Ah`, 
+                    count: 0
+                };
+            }
+
+            // Hitung sisa kapasitas berdasarkan rata-rata SOC dan nominal Ah
+            const remainingAh = (avgSoc / 100) * nominalAh;
+
+            return {
+                soc: Math.round(avgSoc),
+                soh: Math.round(avgSoh),
+                voltage: avgVoltage,
+                current: finalCurrent,
+                remainingAh: `${remainingAh.toFixed(1)} Ah`,
+                count: validCount
+            };
+        }
+
 
         function normalizeFromMqtt(data) {
              const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
@@ -1879,13 +1950,19 @@
             let totalVoltage = 0;
             let totalPower = 0; 
             let totalBusVoltage = 0; 
+            let totalSoc = 0;
+            let totalSoh = 0;
             let validBatteryCount = 0;
+            let validSocSohCount = 0;
+
 
             batteries.forEach(b => {
                 const current = parseFloat(b.current);
                 const voltage = parseFloat(b.voltage);
                 const power = parseFloat(b.power);
                 const busVoltage = parseFloat(b.busVoltage);
+                const soc = parseFloat(b.soc);
+                const soh = parseFloat(b.soh);
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
@@ -1900,13 +1977,19 @@
                 if (!isNaN(busVoltage)) {
                     totalBusVoltage += busVoltage;
                 }
+                if (!isNaN(soc)) {
+                    totalSoc += soc;
+                    totalSoh += soh;
+                    validSocSohCount++;
+                }
             });
             
             const currentVal = totalCurrent.toFixed(2);
             const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
             const totalPowerVal = totalPower.toFixed(0); 
             const avgBusVoltage = validBatteryCount > 0 ? (totalBusVoltage / validBatteryCount).toFixed(2) : 'N/A';
-
+            const avgSOC = validSocSohCount > 0 ? (totalSoc / validSocSohCount).toFixed(0) : 'N/A';
+            const avgSOH = validSocSohCount > 0 ? (totalSoh / validSocSohCount).toFixed(0) : 'N/A';
             
             // Tentukan Status (Charging/Discharging/Standby)
             let currentStatusText = 'Standby';
@@ -2007,11 +2090,7 @@
             }
 
             // --- SOC & SOH LOGIC (Ringkasan) ---
-            let avgSOC = 0;
-            if(validBatteryCount > 0) {
-                const sumSOC = batteries.reduce((sum, b) => sum + (parseFloat(b.soc) || 0), 0);
-                avgSOC = (sumSOC / validBatteryCount).toFixed(0);
-            }
+            
             const socValue = parseInt(avgSOC);
 
             const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
@@ -2034,11 +2113,11 @@
                 socProgress.classList.add(summaryProgressColor);
             }
             
-            const sohContent = datane.soh !== 'N/A' ? `${datane.soh}%` : 'N/A';
+            const sohContent = avgSOH !== 'N/A' ? `${avgSOH}%` : 'N/A';
             safeUpdate('summary-soh', sohContent);
             
-            if (datane.soh !== 'N/A' && datane.soh !== 0) {
-                const sohVal = parseInt(datane.soh);
+            if (avgSOH !== 'N/A' && parseFloat(avgSOH) !== 0) {
+                const sohVal = parseInt(avgSOH);
                 if(sohProgress){
                     sohProgress.style.width = `${sohVal}%`;
                     sohProgress.classList.remove('bg-green-500', 'bg-yellow-500', 'bg-red-500');
@@ -2797,7 +2876,10 @@
             }
         }
 
-        function updateTextValues(data) {
+        /**
+         * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
+         */
+        function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2808,6 +2890,7 @@
             const solarP = data.solarPower > 0.1 ? data.solarPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             
+            // --- BMS DATA (Remaining Capacity) ---
             setText('battery_remaining_energy', data.batteryRemainingEnergy);
 
             const rawBatPower = Math.abs(data.batteryPower);
@@ -2827,6 +2910,7 @@
             setText('pv_peak_label', `${data.pvPeakPower.toFixed(0)} W`);
             setText('effective_sun_hours', `${data.effectiveSunHours.toFixed(1)} Hrs`);
             setText('pv_efficiency_value', `${data.pvEfficiency.toFixed(1)}%`);
+            // Menggunakan SOC dari BMS
             setText('pv_placeholder', `${data.batterySOC}%`); 
             
             // Inverter Detail (V12 / V13 / V16)
@@ -2859,6 +2943,7 @@
                 }
             }
             
+            // --- BMS DATA (SOC dan SOH) ---
             const sohValue = data.batterySOH !== undefined ? data.batterySOH : DEFAULT_DISPLAY_STR;
             let sohFillColor = '#C0C0C0'; 
             let sohClassName = 'soh-default';
@@ -2881,6 +2966,7 @@
                 sohTspan.setAttribute('class', sohClassName);
                 sohTspan.setAttribute('fill', sohFillColor);
                 
+                // Hapus tspan lama
                 Array.from(socElement.childNodes).forEach(node => {
                     if (node.nodeType === 1 && node.tagName === 'TSPAN') {
                          node.remove();
@@ -2890,10 +2976,11 @@
                 socElement.appendChild(sohTspan);
             }
             
-            const batteryV = vpack !== undefined ? vpack.toFixed(1) : DEFAULT_DISPLAY_STR;
-            setText('duration', `${batteryV} V`);
+            // --- BMS DATA (Voltage Pack) ---
+            const batteryVDisplay = batteryV !== undefined ? batteryV.toFixed(1) : DEFAULT_DISPLAY_STR;
+            setText('duration', `${batteryVDisplay} V`);
             
-            const rawBatteryI = current !== undefined ? current : DEFAULT_DISPLAY; 
+            // --- BMS DATA (Current Pack & Status) ---
             const currentThreshold = 0.1;
             let displayCurrentI = Math.abs(rawBatteryI).toFixed(1);
             
@@ -2913,7 +3000,10 @@
             }
         }
         
-        function calculateAndRenderDiagram() {
+        /**
+         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai
+         */
+        function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower;
             const minimumPowerThreshold = 10;
@@ -2940,8 +3030,11 @@
             latestDiagramData.batteryPower = calculatedBatP; 
             latestDiagramData.gridPower = gridPowerToDisplay; 
             
-            const currentVpack = vpack || DEFAULT_DISPLAY; 
-            latestDiagramData.batterySOC = calculateSOCFromVoltage(currentVpack);
+            // --- MENGGUNAKAN DATA BMS YANG BARU UNTUK DISPLAY ---
+            latestDiagramData.batterySOC = bmsData.soc;
+            latestDiagramData.batterySOH = bmsData.soh;
+            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
+
 
             let eff = 0;
             const pvPeak = latestDiagramData.pvPeakPower > 0.1 ? latestDiagramData.pvPeakPower : CONFIG_PV_PEAK_WATT_DEFAULT;
@@ -2952,7 +3045,6 @@
 
             const batP = latestDiagramData.batteryPower; 
             const gridFlowValue = latestDiagramData.gridPower; 
-            const gridAbsPower = Math.abs(gridFlowValue);
             
             const batteryDischarge = batP < 0 ? Math.abs(batP) : 0; 
             const selfGeneratedPower = solarP + batteryDischarge;
@@ -2966,7 +3058,9 @@
             }
             latestDiagramData.ratioPercentage = ratio;
             
-            updateTextValues(latestDiagramData);
+            // Memperbarui teks dengan data BMS (voltage, current)
+            updateTextValues(latestDiagramData, bmsData.voltage, bmsData.current);
+            // Memperbarui level baterai dengan SOC dari BMS
             updateBatteryLevel(latestDiagramData.batterySOC, latestDiagramData.batteryPower);
             
             // 3. Kontrol Animasi Aliran
@@ -3013,7 +3107,7 @@
                 document.getElementById('daily_grid_buy_value').setAttribute('fill', '#C0C0C0');
             }
             
-            showDiagramStatus('Diagram diperbarui dari Blynk API.', 'success');
+            showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
         }
 
         function processDiagramPins(pin, rawValue) {
@@ -3048,10 +3142,7 @@
                 latestDiagramData[mapping.key] = pValue;
             }
             
-            const nominalAh = 100; 
-            const soc = calculateSOCFromVoltage(vpack);
-            const remainingAh = (soc / 100) * nominalAh;
-            latestDiagramData.batteryRemainingEnergy = `${remainingAh.toFixed(1)} Ah`;
+            // Hapus logika SOC/Remaining Capacity dari sini, sekarang diurus oleh BMS aggregation
         }
 
         async function updateDashboard() {
@@ -3061,7 +3152,6 @@
             const fetchPromises = pins.map(pin => fetchPinValue(pin));
 
             let allSuccessful = true;
-            let diagramPinsSuccessful = true;
             const results = await Promise.allSettled(fetchPromises);
             
             let currentPvPower = 0;
@@ -3181,8 +3271,11 @@
             if (!energyChartInstance) { renderRealtimeChart(); }
             updateRealtimeChartData(currentPvPower, currentAcLoad);
             
+            // --- NEW: Get Aggregated BMS Data ---
+            const bmsAggregatedData = getAggregatedBmsData();
+
             // --- INTEGRASI DIAGRAM: Hitung dan Render Diagram ---
-            calculateAndRenderDiagram(); 
+            calculateAndRenderDiagram(bmsAggregatedData); 
 
             if (allSuccessful) {
                 showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
