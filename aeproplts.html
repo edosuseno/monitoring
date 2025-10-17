@@ -197,7 +197,8 @@
         }
         .soh-good { fill: var(--color-load) !important; font-weight: 600; }
         .soh-warning { fill: var(--color-bar-yellow) !important; font-weight: 600; }
-        .soh-default { fill: #C0C0C0 !important; font-weight: 600; font-size: 11px; }
+        /* PERBAIKAN #1 CSS: Menghapus font-size 11px dari soh-default agar mewarisi st13 (20px) */
+        .soh-default { fill: #C0C0C0 !important; font-weight: 600; } 
         
         /* HILANGKAN MESSAGE BOX */
         #status-message-diagram, #message-box {
@@ -759,11 +760,11 @@
                                 </svg>
                                 
                                 <!-- Daily Grid Buy Value -->
-                                <text id="daily_grid_buy_value" x="20" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
+                                <text id="daily_grid_buy_value" x="30" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
                                     --
                                 </text>
-                                <text id="daily_grid_buy" x="10" y="280" display="" class="st3 left-align" fill="var(--color-grid)">
-                                    DAILY GRID BUY
+                                <text id="daily_grid_buy" x="30" y="280" display="" class="st3 left-align" fill="var(--color-grid)">
+                                    GRID PLN
                                 </text>
 
                             </svg>
@@ -910,7 +911,7 @@
                                             </text>
                                         </svg>
                                         <svg id="battery_daily_discharge" style="overflow: visible;" x="0%" y="0%">
-                                            <text id="daily_bat_dischcharge_value" x="110" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_dischcharge_value" x="100" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
                                                 -- kWh
                                             </text>
                                             <text id="daily_bat_dischcharge" x="85" y="415" display="" class="st3 left-align" fill="var(--color-battery)">
@@ -1692,7 +1693,7 @@
                     voltage: vpack || DEFAULT_DISPLAY,
                     current: current || DEFAULT_DISPLAY,
                     totalPower: (current * vpack) || DEFAULT_DISPLAY,
-                    remainingAh: `${remAhFallback.toFixed(1)} Ah`, 
+                    remainingAh: remAhFallback, // PERBAIKAN #2: Kembalikan sebagai number
                     count: 0
                 };
             }
@@ -1701,12 +1702,12 @@
             const remainingAh = totalRemCapacity;
 
             return {
-                soc: Math.round(avgSoc), // PERBAIKAN #3: Pastikan SOC di sini adalah NUMERIK (integer)
+                soc: Math.round(avgSoc), // Pastikan SOC adalah NUMERIK (integer)
                 soh: Math.round(avgSoh), // Pastikan SOH adalah NUMERIK (integer)
                 voltage: avgVoltage,
                 current: totalCurrent,
                 totalPower: totalPower,
-                remainingAh: `${remainingAh.toFixed(1)} Ah`,
+                remainingAh: remainingAh, // PERBAIKAN #2: Kembalikan sebagai number
                 count: validCount
             };
         }
@@ -1973,9 +1974,7 @@
                 const current = parseFloat(b.current);
                 const power = parseFloat(b.power);
                 const busVoltage = parseFloat(b.busVoltage);
-                // Baris ini dihapus/diperbaiki karena menyebabkan SyntaxError sebelumnya:
-                // const soc = parseFloat(b.soc);
-                // const soh = parseFloat(b.soh);
+                // Baris yang menyebabkan SyntaxError sebelumnya telah dihapus/dikomentari.
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
@@ -2077,11 +2076,11 @@
             const voltageUnitEl = voltageSummaryEl ? voltageSummaryEl.nextElementSibling : null;
 
             if (voltageSummaryEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
-            if (voltageUnitEl) voltageUnitEl.classList.remove('text-red-500', 'text-yellow-500');
+            if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
 
             if (avgVoltage === 'N/A' || parseFloat(avgVoltage) < 24.0) { 
                 if (voltageSummaryEl) voltageSummaryEl.classList.add('text-red-500');
-                if (voltageUnitEl) voltageUnitEl.classList.add('text-red-500');
+                if (voltageUnitEl) voltageSummaryEl.classList.add('text-red-500');
             }
             
             safeUpdate('summary-bus-voltage', avgBusVoltage);
@@ -2923,7 +2922,9 @@
             const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
 
             // --- BMS DATA (Remaining Capacity) ---
-            setText('battery_remaining_energy', data.batteryRemainingEnergy);
+            // PERBAIKAN #3: Ambil remainingAh (number) dari data dan format di sini
+            const remainingAhValue = data.batteryRemainingEnergy > 0 ? data.batteryRemainingEnergy.toFixed(1) : DEFAULT_DISPLAY_STR;
+            setText('battery_remaining_energy', `${remainingAhValue} Ah`);
 
 
             setText('pv1_power_186', `${solarP} W`); 
@@ -2973,7 +2974,7 @@
                 }
             }
             
-            // --- NONAKTIFKAN TAMPILAN GRID PLN (SOLUSI) ---
+            // --- NONAKTIFKAN TAMPILAN GRID PLN ---
             // Kotak Grid Power
             const gridPowerText = document.getElementById('grid_total_power');
             if (gridPowerText) {
@@ -2998,8 +2999,8 @@
             const sohValue = data.batterySOH !== undefined ? data.batterySOH : DEFAULT_DISPLAY_STR;
             let sohFillColor = '#C0C0C0'; 
             let sohClassName = 'soh-default';
-            // PERBAIKAN #2: Pastikan data.batterySOH adalah angka yang aman
-            const parsedSOH = tryParseFloat(sohValue) !== DEFAULT_DISPLAY ? tryParseFloat(sohValue) : 0; 
+            // Pastikan parsedSOH aman
+            const parsedSOH = typeof data.batterySOH === 'number' ? data.batterySOH : 0; 
             
             
             const socElement = document.getElementById('battery_soc_184');
@@ -3090,16 +3091,16 @@
             }
             latestDiagramData.ratioPercentage = ratio;
             
-            // Perbaikan #4: Pastikan SOC dan SOH yang disimpan di latestDiagramData adalah angka
+            // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
             latestDiagramData.batterySOC = bmsData.soc; 
             latestDiagramData.batterySOH = bmsData.soh;
+            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
+
 
             // Memperbarui teks dengan data BMS (voltage, current)
             updateTextValues(latestDiagramData, bmsData.voltage, bmsData.current);
             
             // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
-            // Kita harus pastikan SOC yang masuk ke sini adalah number, tapi updateTextValues akan mengubahnya jadi string.
-            // Kita akan ambil nilai SOC dari BMS Aggregated data (yang sudah berupa number)
             updateBatteryLevel(bmsData.soc, latestDiagramData.batteryPower);
             
             // 3. Kontrol Animasi Aliran
