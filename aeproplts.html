@@ -2707,7 +2707,7 @@
         function calculateSOCFromVoltage(voltage) {
             // ASUMSI PARAMETER BATERAI LITHIUM (LiFePO4) 48V (15S)
             const V_MIN = 46.0;   // 0% SOC (Cutoff)
-            const V_MAX = 52.8;   // 100% SOC (Penuh)
+            const V_MAX = 54.0;   // 100% SOC (Penuh)
             
             if (voltage <= V_MIN) return 0;
             if (voltage >= V_MAX) return 100;
