@@ -7,7 +7,7 @@
   "theme_color": "#05050D",
   "icons": [
     {
-      "src": "/monitoring/icons/icon-192.png",
+      "src": "/monitoring/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
