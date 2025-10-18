@@ -1430,7 +1430,7 @@
             effectiveSunHours: CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT,
             batterySOC: 0, 
             batterySOH: 100, 
-            batteryRemainingEnergy: DEFAULT_DISPLAY_STR, 
+            batteryRemainingEnergy: DEFAULT_DISPLAY, // PERBAIKAN: Gunakan nilai float 0.0 untuk angka
             inverterVoltage: DEFAULT_DISPLAY_STR + ' V',
             inverterCurrent: DEFAULT_DISPLAY_STR + ' A',
             loadFrequency: DEFAULT_DISPLAY_STR + ' Hz',
@@ -1634,7 +1634,7 @@
         
         /**
          * FUNGSI MODIFIED: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
-         * Sekarang menghitung total daya pack.
+         * Ditingkatkan untuk memastikan remainingAh memiliki nilai fallback yang kuat.
          */
         function getAggregatedBmsData() {
             let totalSoc = 0;
@@ -1644,6 +1644,7 @@
             let totalRemCapacity = 0;
             let totalCapacity = 0;
             let validCount = 0;
+            let validCapacityCount = 0;
 
             batteries.forEach(b => {
                 const soc = parseFloat(b.soc);
@@ -1652,7 +1653,6 @@
                 const current = parseFloat(b.current);
                 const remCapacity = parseFloat(b.remaining);
                 const capacity = parseFloat(b.capacity);
-
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
@@ -1666,9 +1666,12 @@
                 if (!isNaN(soh) && soh >= 0) {
                     totalSoh += soh;
                 }
-                if (!isNaN(remCapacity)) {
+                // --- PERBAIKAN SISA KAPASITAS (Ah) ---
+                if (!isNaN(remCapacity) && remCapacity > 0) {
                     totalRemCapacity += remCapacity;
+                    validCapacityCount++; // Hitung berapa BMS yang mengirim sisa kapasitas
                 }
+                // ------------------------------------
                 if (!isNaN(capacity)) {
                     totalCapacity += capacity;
                 }
@@ -1681,25 +1684,21 @@
             // Gunakan rata-rata voltage untuk menghitung total power yang lebih akurat
             const totalPower = totalCurrent * avgVoltage; 
             
-            // Fallback: Jika tidak ada data BMS yang terhubung, gunakan data Blynk yang terakhir
-            if (validCount === 0) {
+            let remainingAh;
+
+            if (validCapacityCount > 0) {
+                remainingAh = totalRemCapacity;
+            } else {
+                // FALLBACK: Jika tidak ada data BMS yang valid, gunakan data Blynk yang terakhir
                 const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
-                const nominalAh = tryParseFloat(document.getElementById('v9-batere-ah')?.textContent || '0');
-                const remAhFallback = (socFromBlynkVpack / 100) * nominalAh;
+                // Ambil Ah nominal dari dashboard PLTS (V9)
+                const nominalAhStr = document.getElementById('v9-batere-ah')?.textContent || '0';
+                const nominalAh = tryParseFloat(nominalAhStr); 
                 
-                return {
-                    soc: socFromBlynkVpack, 
-                    soh: latestDiagramData.batterySOH || 100,
-                    voltage: vpack || DEFAULT_DISPLAY,
-                    current: current || DEFAULT_DISPLAY,
-                    totalPower: (current * vpack) || DEFAULT_DISPLAY,
-                    remainingAh: remAhFallback, // PERBAIKAN #2: Kembalikan sebagai number
-                    count: 0
-                };
+                // Hitung sisa kapasitas dari SOC Blynk dan Ah nominal
+                remainingAh = (socFromBlynkVpack / 100) * nominalAh; 
             }
 
-            // Hitung sisa kapasitas berdasarkan total kapasitas sisa
-            const remainingAh = totalRemCapacity;
 
             return {
                 soc: Math.round(avgSoc), // Pastikan SOC adalah NUMERIK (integer)
@@ -1707,7 +1706,7 @@
                 voltage: avgVoltage,
                 current: totalCurrent,
                 totalPower: totalPower,
-                remainingAh: remainingAh, // PERBAIKAN #2: Kembalikan sebagai number
+                remainingAh: remainingAh, // Gunakan nilai yang sudah dihitung/fallback (number)
                 count: validCount
             };
         }
@@ -1979,6 +1978,7 @@
                 if (!isNaN(current)) {
                     totalCurrent += current;
                 }
+                
                 if (!isNaN(voltage)) {
                     totalVoltage += voltage;
                     validBatteryCount++;
@@ -2697,8 +2697,9 @@
         // ==========================================================
         function tryParseFloat(value) {
             const parsed = parseFloat(value);
+            // Cek apakah nilai adalah NaN, null, atau undefined
             if (isNaN(parsed) || value === null || value === undefined) {
-                return DEFAULT_DISPLAY;
+                return DEFAULT_DISPLAY; // Mengembalikan 0.0
             }
             return parsed;
         }
@@ -2904,6 +2905,7 @@
 
         /**
          * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
+         * Ditingkatkan untuk penanganan Ah yang lebih aman.
          */
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
@@ -2921,10 +2923,16 @@
             const rawBatPower = Math.abs(batPower);
             const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
 
-            // --- BMS DATA (Remaining Capacity) ---
-            // PERBAIKAN #3: Ambil remainingAh (number) dari data dan format di sini
-            const remainingAhValue = data.batteryRemainingEnergy > 0 ? data.batteryRemainingEnergy.toFixed(1) : DEFAULT_DISPLAY_STR;
+            // --- PERBAIKAN SISA KAPASITAS (Ah) ---
+            // Ambil remainingAh (number) dari data dan gunakan tryParseFloat untuk keamanan
+            const remAh = tryParseFloat(data.batteryRemainingEnergy);
+            
+            // Tampilkan nilai jika > 0.01 Ah, jika tidak tampilkan '--'
+            const remainingAhValue = remAh > 0.01 ? remAh.toFixed(1) : DEFAULT_DISPLAY_STR;
+            
+            // Update elemen remaining energy
             setText('battery_remaining_energy', `${remainingAhValue} Ah`);
+            // ------------------------------------
 
 
             setText('pv1_power_186', `${solarP} W`); 
@@ -3094,7 +3102,8 @@
             // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
             latestDiagramData.batterySOC = bmsData.soc; 
             latestDiagramData.batterySOH = bmsData.soh;
-            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
+            // Menggunakan nilai remainingAh yang sudah dihitung fallback
+            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh; 
 
 
             // Memperbarui teks dengan data BMS (voltage, current)
