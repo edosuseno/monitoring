@@ -4,7 +4,7 @@ self.addEventListener('install', function(event) {
       return cache.addAll([
         '/monitoring/aeproplts.html',
         '/monitoring/manifest.json',
-        '/monitoring/icons/icon-192.png',
+        '/monitoring/icon-192.png',
         '/monitoring/icons/icon-512.png'
         // tambah file lain yang penting (CSS, JS, asset) jika kamu mau
       ]);
