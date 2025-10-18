@@ -1,10 +1,10 @@
 {
   "name": "Monitoring AE Pro PLTS",
-  "short_name": "AE-Pro",
+  "short_name": "AEPRO PLTS",
   "start_url": "/monitoring/aeproplts.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2E86DE",
+  "theme_color": "#4B87FF",
   "icons": [
     {
       "src": "/monitoring/icons/icon-192.png",
