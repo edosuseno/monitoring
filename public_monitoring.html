@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
     
+    <link rel="manifest" href="/monitoring/manifest.json">
+<meta name="theme-color" content="#05050D">
+
+<!-- iOS / Apple specific -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<link rel="apple-touch-icon" href="/monitoring/icons/icon-192.png">
+    <!-- END PWA METADATA -->
+    
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -1168,7 +1179,7 @@
                         <h3 class="text-xl font-semibold text-ac-color flex items-center border-b border-gray-700 pl-4">
                             <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2 text-ac-color"></i>
                            Inverter & Beban (AC)
-                        </h3>
+                        </h3 >
                         <div>
                             <div class="detail-item">
                                 <div class="flex items-center metric-title text-white">
@@ -1349,7 +1360,7 @@
 
         <!-- Footer (di akhir halaman) -->
         <footer id="app-footer" class="mt-12 text-center text-gray-500 text-sm py-4 border-t border-gray-700">
-            <p>THEME DESIGN BY AEPRO PLTS</p>
+            <p>DESIGN THEME BY AEPRO PLTS.</p>
              <!-- IP Logger BMS dipindahkan ke footer utama -->
             <div class="mt-1 text-xs text-gray-600">
                 BMS IP: <span class="font-bold text-gray-400" id="bms-logger-ip-footer">N/A</span>
@@ -2707,7 +2718,7 @@
         function calculateSOCFromVoltage(voltage) {
             // ASUMSI PARAMETER BATERAI LITHIUM (LiFePO4) 48V (15S)
             const V_MIN = 46.0;   // 0% SOC (Cutoff)
-            const V_MAX = 54.0;   // 100% SOC (Penuh)
+            const V_MAX = 52.8;   // 100% SOC (Penuh)
             
             if (voltage <= V_MIN) return 0;
             if (voltage >= V_MAX) return 100;
@@ -2927,7 +2938,7 @@
             // Ambil remainingAh (number) dari data dan gunakan tryParseFloat untuk keamanan
             const remAh = tryParseFloat(data.batteryRemainingEnergy);
             
-            // Tampilkan nilai jika > 0.01 Ah, jika tidak tampilkan '--'
+            // Tampilkan nilai jika > 0.01 Ah, jika tidak tampilkan DEFAULT_DISPLAY_STR ('--')
             const remainingAhValue = remAh > 0.01 ? remAh.toFixed(1) : DEFAULT_DISPLAY_STR;
             
             // Update elemen remaining energy
@@ -3376,5 +3387,16 @@
             initApp();
         };
     </script>
+    <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/monitoring/sw.js')
+    .then(function(reg) {
+      console.log('Service worker registered.', reg);
+    })
+    .catch(function(err) {
+      console.error('Service worker registration failed:', err);
+    });
+}
+</script>
 </body>
 </html>
