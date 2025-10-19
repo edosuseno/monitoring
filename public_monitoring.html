@@ -1381,6 +1381,9 @@
         const INSTANT_PV_PERCENT = 6.0;
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
+        
+        // ** BARU: Efisiensi Inverter saat Discharging (98%) **
+        const INVERTER_DISCHARGE_EFFICIENCY = 0.98; 
         // --------------------------
 
         // PLTS (Blynk) Konstan
@@ -1476,7 +1479,7 @@
         };
 
         // ==========================================================
-        // UTILITY FUNCTIONS (UMUM)
+        // UTILITY FUNCTIONS (UMUM) - DIPINDAHKAN KE ATAS AGAR DAPAT DIAKSES OLEH SEMUA FUNGSI
         // ==========================================================
         
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -1500,6 +1503,35 @@
             return `${hours}:${minutes}:${seconds}`;
         }
         
+        /**
+         * FUNGSI KRITIS: Mengonversi string ke float dengan penanganan NaN yang aman.
+         */
+        function tryParseFloat(value) {
+            const parsed = parseFloat(value);
+            // Cek apakah nilai adalah NaN, null, atau undefined
+            if (isNaN(parsed) || value === null || value === undefined) {
+                return DEFAULT_DISPLAY; // Mengembalikan 0.0
+            }
+            return parsed;
+        }
+
+        /**
+         * FUNGSI UTILITY: Menghitung SOC dari voltase pack (fallback).
+         */
+        function calculateSOCFromVoltage(voltage) {
+            // ASUMSI PARAMETER BATERAI LITHIUM (LiFePO4) 48V (15S)
+            const V_MIN = 46.0;   // 0% SOC (Cutoff)
+            const V_MAX = 52.8;   // 100% SOC (Penuh)
+            
+            if (voltage <= V_MIN) return 0;
+            if (voltage >= V_MAX) return 100;
+
+            const range = V_MAX - V_MIN;
+            const soc = ((voltage - V_MIN) / range) * 100;
+            
+            return Math.round(soc);
+        }
+
         /**
          * Menampilkan jam real-time
          */
@@ -1611,7 +1643,7 @@
         }
         
         // ==========================================================
-        // BMS UTILITY & MAIN LOGIC (TIDAK BERUBAH)
+        // BMS UTILITY & MAIN LOGIC
         // ==========================================================
 
         function removeCurrentColorClasses(element) {
@@ -1645,7 +1677,7 @@
         
         /**
          * FUNGSI MODIFIED: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
-         * Ditingkatkan untuk memastikan remainingAh memiliki nilai fallback yang kuat.
+         * MENGEMBALIKAN DAYA DC MURNI (TANPA KOREKSI) UNTUK LOGIKA DIAGRAM YANG LEBIH BAIK
          */
         function getAggregatedBmsData() {
             let totalSoc = 0;
@@ -1658,12 +1690,12 @@
             let validCapacityCount = 0;
 
             batteries.forEach(b => {
-                const soc = parseFloat(b.soc);
-                const soh = parseFloat(b.soh);
-                const voltage = parseFloat(b.voltage);
-                const current = parseFloat(b.current);
-                const remCapacity = parseFloat(b.remaining);
-                const capacity = parseFloat(b.capacity);
+                const soc = tryParseFloat(b.soc); // Menggunakan tryParseFloat
+                const soh = tryParseFloat(b.soh); // Menggunakan tryParseFloat
+                const voltage = tryParseFloat(b.voltage); // Menggunakan tryParseFloat
+                const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
+                const remCapacity = tryParseFloat(b.remaining); // Menggunakan tryParseFloat
+                const capacity = tryParseFloat(b.capacity); // Menggunakan tryParseFloat
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
@@ -1692,8 +1724,11 @@
             const avgSoh = validCount > 0 ? totalSoh / validCount : 100;
             const avgVoltage = validCount > 0 ? totalVoltage / validCount : DEFAULT_DISPLAY;
             
-            // Gunakan rata-rata voltage untuk menghitung total power yang lebih akurat
-            const totalPower = totalCurrent * avgVoltage; 
+            // DAYA DC BATERAI MURNI (Tanpa Koreksi)
+            let totalPowerDC = totalCurrent * avgVoltage; 
+            
+            // Hanya gunakan totalPowerDC, karena koreksi discharge akan dilakukan di calculateAndRenderDiagram
+            let totalPower = totalPowerDC; 
             
             let remainingAh;
 
@@ -1716,7 +1751,7 @@
                 soh: Math.round(avgSoh), // Pastikan SOH adalah NUMERIK (integer)
                 voltage: avgVoltage,
                 current: totalCurrent,
-                totalPower: totalPower,
+                totalPower: totalPower, // DAYA DC BATERAI MURNI
                 remainingAh: remainingAh, // Gunakan nilai yang sudah dihitung/fallback (number)
                 count: validCount
             };
@@ -1815,6 +1850,11 @@
 
                   renderCards(batt);
                   updateModal(); 
+
+                  // FIX ANIMASI BATERAI: Memaksa pembaruan diagram segera setelah data BMS diterima
+                  const bmsAggregatedData = getAggregatedBmsData();
+                  calculateAndRenderDiagram(bmsAggregatedData);
+                  
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack); 
                 }
@@ -1876,7 +1916,7 @@
             safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
             safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
             
-            const currentVal = parseFloat(batt.current);
+            const currentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
             const currentThreshold = 0.1;
             
             let battStatusClass = 'text-standby';
@@ -1978,12 +2018,12 @@
 
 
             batteries.forEach(b => {
-                const soc = parseFloat(b.soc);
-                const soh = parseFloat(b.soh);
-                const voltage = parseFloat(b.voltage);
-                const current = parseFloat(b.current);
-                const power = parseFloat(b.power);
-                const busVoltage = parseFloat(b.busVoltage);
+                const soc = tryParseFloat(b.soc); // Menggunakan tryParseFloat
+                const soh = tryParseFloat(b.soh); // Menggunakan tryParseFloat
+                const voltage = tryParseFloat(b.voltage); // Menggunakan tryParseFloat
+                const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
+                const power = tryParseFloat(b.power); // Menggunakan tryParseFloat
+                const busVoltage = tryParseFloat(b.busVoltage); // Menggunakan tryParseFloat
                 // Baris yang menyebabkan SyntaxError sebelumnya telah dihapus/dikomentari.
 
                 if (!isNaN(current)) {
@@ -2009,7 +2049,24 @@
             
             const currentVal = totalCurrent.toFixed(2);
             const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
-            const totalPowerVal = totalPower.toFixed(0); 
+            // PERBAIKAN: Gunakan totalPower dari BMS yang sudah dikoreksi di getAggregatedBmsData
+            // Kami hanya perlu memastikan totalPower di sini mencerminkan BMS + Koreksi Inverter
+            const bmsAggregatedData = getAggregatedBmsData(); 
+            
+            // Sekarang, koreksi 98% akan dilakukan di calculateAndRenderDiagram untuk tujuan visual diagram.
+            // Tapi untuk ringkasan di sini, kita akan menggunakan P_DC murni, atau P_AC setara (untuk ringkasan)
+            
+            // Untuk ringkasan, kita pakai logika lama (DC * V_AVG), lalu koreksi untuk discharge
+            let displayPower = bmsAggregatedData.totalPower;
+            const currentThreshold = 0.1;
+
+            if (totalCurrent < -currentThreshold) {
+                // Saat discharge, tampilkan nilai AC setara di ringkasan
+                displayPower = displayPower * INVERTER_DISCHARGE_EFFICIENCY;
+            } 
+            
+            const totalPowerVal = Math.abs(displayPower).toFixed(0); 
+
             const avgBusVoltage = validBatteryCount > 0 ? (totalBusVoltage / validBatteryCount).toFixed(2) : 'N/A';
             const avgSOC = validSocSohCount > 0 ? (totalSoc / validSocSohCount).toFixed(0) : 'N/A';
             const avgSOH = validSocSohCount > 0 ? (totalSoh / validSocSohCount).toFixed(0) : 'N/A';
@@ -2017,7 +2074,6 @@
             // Tentukan Status (Charging/Discharging/Standby)
             let currentStatusText = 'Standby';
             let statusClass = 'text-standby';
-            const currentThreshold = 0.1;
 
             if (validBatteryCount > 0) {
                 if (totalCurrent > currentThreshold) {
@@ -2066,7 +2122,7 @@
                  powerColorClass = 'text-discharging'; // COKLAT MUDA
             }
 
-            safeUpdate('summary-power', isNaN(totalPower) ? 'N/A' : totalPowerVal);
+            safeUpdate('summary-power', isNaN(displayPower) ? 'N/A' : totalPowerVal);
             
             if (powerSummaryEl) {
                 removePowerColorClasses(powerSummaryEl);
@@ -2089,7 +2145,7 @@
             if (voltageSummaryEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
             if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
 
-            if (avgVoltage === 'N/A' || parseFloat(avgVoltage) < 24.0) { 
+            if (avgVoltage === 'N/A' || tryParseFloat(avgVoltage) < 24.0) { // Menggunakan tryParseFloat
                 if (voltageSummaryEl) voltageSummaryEl.classList.add('text-red-500');
                 if (voltageUnitEl) voltageSummaryEl.classList.add('text-red-500');
             }
@@ -2139,7 +2195,7 @@
             const sohContent = avgSOH !== 'N/A' ? `${avgSOH}%` : 'N/A';
             safeUpdate('summary-soh', sohContent);
             
-            if (avgSOH !== 'N/A' && parseFloat(avgSOH) !== 0) {
+            if (avgSOH !== 'N/A' && tryParseFloat(avgSOH) !== 0) { // Menggunakan tryParseFloat
                 const sohVal = parseInt(avgSOH);
                 if(sohProgress){
                     sohProgress.style.width = `${sohVal}%`;
@@ -2186,7 +2242,7 @@
                     const battSocValue = batt.soc !== 'N/A' ? parseInt(batt.soc) : NaN;
                     const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(battSocValue);
                     
-                    const battCurrentVal = parseFloat(batt.current);
+                    const battCurrentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
                     
                     let battStatusClass = 'text-standby';
                     if (!isNaN(battCurrentVal)) {
@@ -2316,7 +2372,7 @@
 
                 const { textColor: cardTextColor, progressColor: cardProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(parseInt(batt.soc));
                 
-                const battCurrentVal = parseFloat(batt.current);
+                const battCurrentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
                 
                 let battStatusClass = 'text-standby';
                 if (!isNaN(battCurrentVal)) {
@@ -2657,22 +2713,38 @@
             }
         }
 
+        /**
+         * FUNGSI MODIFIED: Menghitung nilai terformat dan terkoreksi.
+         * Mengembalikan string nilai terformat.
+         */
         function formatValue(pin, value) {
-            let numericValue = parseFloat(value);
-            if (isNaN(numericValue)) return 'N/A';
+            let numericValue = tryParseFloat(value);
+            if (numericValue === DEFAULT_DISPLAY && value !== '0') return 'N/A'; // Cek jika parsing gagal
             
+            // Logika Koreksi Energi (Hanya untuk Energi Hari Ini dan Beban Hari Ini)
             if (pin === 'V10') {
                  const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
                  numericValue *= correctionFactor;
             } else if (pin === 'V21') {
                  const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
                  numericValue *= correctionFactor;
+            } 
+            
+            // Logika Koreksi Daya (V2 dan V14)
+            const chartPowerPins = ['V2', 'V14'];
+            if (chartPowerPins.includes(pin)) {
+                 if (pin === 'V2') {
+                    const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
+                    numericValue *= correctionFactor;
+                 } else if (pin === 'V14') {
+                    const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
+                    numericValue *= correctionFactor;
+                 }
             }
 
             const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20'];
             const rupiahPins = ['V18', 'V19'];
             const summaryEnergyPins = ['V10', 'V21'];
-            const chartPowerPins = ['V2', 'V14'];
 
 
             if (rupiahPins.includes(pin)) {
@@ -2689,6 +2761,28 @@
 
             return numericValue.toFixed(1);
         }
+        
+        /**
+         * FUNGSI TAMBAHAN: Mengembalikan nilai mentah NUMERIK yang SUDAH dikoreksi.
+         * Ini diperlukan untuk memperbarui `currentPvPower` dan `currentAcLoad`.
+         */
+        function getCorrectedNumericValue(pin, rawValue) {
+             let numericValue = tryParseFloat(rawValue);
+            if (numericValue === DEFAULT_DISPLAY && rawValue !== '0') return 0; // Pastikan 0 jika gagal parsing
+
+            // Koreksi Daya PV (V2)
+            if (pin === 'V2') {
+                const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
+                return numericValue * correctionFactor;
+            } 
+            // Koreksi Daya Beban AC (V14)
+            else if (pin === 'V14') {
+                const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
+                return numericValue * correctionFactor;
+            }
+            
+            return numericValue;
+        }
 
         function getUnit(pin) {
             if (pin === 'V0' || pin === 'V12') return ' V';
@@ -2702,33 +2796,54 @@
             if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; 
             return '';
         }
-
-        // ==========================================================
-        // DIAGRAM LOGIC (DARI FILE DIAGRAM.HTML)
-        // ==========================================================
-        function tryParseFloat(value) {
-            const parsed = parseFloat(value);
-            // Cek apakah nilai adalah NaN, null, atau undefined
-            if (isNaN(parsed) || value === null || value === undefined) {
-                return DEFAULT_DISPLAY; // Mengembalikan 0.0
-            }
-            return parsed;
-        }
-
-        function calculateSOCFromVoltage(voltage) {
-            // ASUMSI PARAMETER BATERAI LITHIUM (LiFePO4) 48V (15S)
-            const V_MIN = 46.0;   // 0% SOC (Cutoff)
-            const V_MAX = 52.8;   // 100% SOC (Penuh)
-            
-            if (voltage <= V_MIN) return 0;
-            if (voltage >= V_MAX) return 100;
-
-            const range = V_MAX - V_MIN;
-            const soc = ((voltage - V_MIN) / range) * 100;
-            
-            return Math.round(soc);
-        }
         
+        /**
+         * FUNGSI DIPINDAHKAN: processDiagramPins
+         */
+        const processDiagramPins = (pin, rawValue) => {
+            const mapping = DIAGRAM_BLYNK_MAPPING[pin];
+            if (!mapping) return; 
+
+            // Gunakan nilai NUMERIK yang SUDAH dikoreksi untuk PV/Load Power
+            const pValue = getCorrectedNumericValue(pin, rawValue);
+            
+            if (isNaN(pValue)) return;
+
+            if (mapping.isGlobal) {
+                if(mapping.key === 'vpack') vpack = pValue;
+                if(mapping.key === 'current') current = pValue;
+            }
+
+            if (mapping.isPower) {
+                // Gunakan nilai yang sudah dikoreksi dari getCorrectedNumericValue
+                latestDiagramData[mapping.key] = parseFloat(Math.abs(pValue).toFixed(1));
+            } else if (mapping.isDailyEnergy) {
+                // Karena V10 dan V21 sudah dikoreksi di formatValue, kita ambil nilai koreksi di sana
+                // Di sini kita gunakan nilai yang sudah dikoreksi untuk V10/V21 dari formatValue
+                const formattedValue = formatValue(pin, rawValue); // Ini sudah mengaplikasikan koreksi
+                const numericValue = tryParseFloat(formattedValue);
+                latestDiagramData[mapping.key] = numericValue.toFixed(2);
+            } else if (mapping.isTotalEnergy) {
+                latestDiagramData[mapping.key] = pValue / 1000; // kWh to MWh
+            } else if (mapping.isVoltage) {
+                latestDiagramData[mapping.key] = `${pValue.toFixed(1)} V`;
+            } else if (mapping.isCurrent) {
+                if (mapping.key === 'inverterCurrent') {
+                    latestDiagramData.inverterCurrent = `${pValue.toFixed(1)} A`;
+                } else {
+                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} A`;
+                }
+            } else if (mapping.isFrequency) {
+                latestDiagramData[mapping.key] = `${pValue.toFixed(1)} Hz`;
+            } else if (mapping.isStatic) {
+                latestDiagramData[mapping.key] = pValue;
+            }
+        };
+
+        // ==========================================================
+        // DIAGRAM LOGIC
+        // ==========================================================
+
         function getFlowDuration(power) {
             const minDuration = 0.5;
             const maxDuration = 10;
@@ -2764,10 +2879,13 @@
                 if (!animElement) return;
 
                 if (!isFlowing) {
+                    // Set opasitas ke 0 untuk menghilangkan titik
                     animElement.parentNode.style.opacity = 0;
+                    // Tetapkan durasi tinggi dan hitungan 1 agar animasi berhenti
                     animElement.setAttribute('dur', '10.0s');
                     animElement.setAttribute('repeatCount', '1');
                 } else {
+                    // Set opasitas ke 1 untuk menampilkan titik
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
                     animElement.setAttribute('keyTimes', '0;1'); 
@@ -2926,11 +3044,12 @@
                 }
             };
             
+            // PENGGUNAAN P-Koreksi: solarPower dan loadPower sudah dikoreksi di updateDashboard
             const solarP = data.solarPower > 0.1 ? data.solarPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             
             // --- BMS DATA (Battery Power Display) ---
-            const batPower = data.batteryPower;
+            const batPower = data.batteryPower; // Nilai ini sudah dikoreksi Efisiensi Inverter jika Discharge (untuk tujuan visual)
             const rawBatPower = Math.abs(batPower);
             const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
 
@@ -2948,7 +3067,7 @@
 
             setText('pv1_power_186', `${solarP} W`); 
             setText('ess_power', `${loadP} W`); 
-            setText('data.batteryPower_190', `${batPDisplay} W`); // Menggunakan daya BMS
+            setText('data.batteryPower_190', `${batPDisplay} W`); // Menggunakan daya BMS yang sudah dikoreksi
             
             const pvV = data.pvVoltage.replace(' V', '');
             const pvI = data.pvCurrent.replace(' A', '');
@@ -3048,16 +3167,17 @@
             
             // --- BMS DATA (Current Pack & Status) ---
             const currentThreshold = 0.1;
-            let displayCurrentI = Math.abs(rawBatteryI).toFixed(1);
+            const rawCurrent = rawBatteryI;
+            let displayCurrentI = Math.abs(rawCurrent).toFixed(1);
             
             const durationTextElement = document.getElementById('duration_text');
             if (durationTextElement) {
                 durationTextElement.className = 'st3 left-align';
                 
-                if (rawBatteryI < -currentThreshold) { 
+                if (rawCurrent < -currentThreshold) { 
                     durationTextElement.classList.add('battery-current-disch');
                     durationTextElement.textContent = `${displayCurrentI} A (Discharge)`; 
-                } else if (rawBatteryI > currentThreshold) { 
+                } else if (rawCurrent > currentThreshold) { 
                     durationTextElement.classList.add('battery-current-charge');
                     durationTextElement.textContent = `${displayCurrentI} A (Charge)`; 
                 } else {
@@ -3069,17 +3189,31 @@
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
          * Logic Grid PLN di sini DIHAPUS/DINONAKTIFKAN.
+         * **PERBAIKAN LOGIKA:** Saat discharge, Daya Baterai (DC) dihitung berdasarkan Beban AC (V14) untuk visual yang benar.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower;
             const minimumPowerThreshold = 10;
             
-            // --- MENGGUNAKAN DAYA BATERAI AKTUAL DARI BMS ---
-            const calculatedBatP = bmsData.totalPower; 
+            // Daya DC murni dari BMS
+            const rawBatP_DC = bmsData.totalPower;
+            const rawCurrent = bmsData.current;
             
+            let calculatedBatP;
+
+            if (rawCurrent < -minimumPowerThreshold) {
+                // Saat DISCHARGE (rawCurrent negatif), BATERAI HARUS MENGELUARKAN DC > AC
+                // Gunakan Beban AC (loadP) sebagai referensi, lalu inversi koreksi efisiensi (dibagi 0.98)
+                // Daya DC yang DIBUTUHKAN = Daya Beban AC / Efisiensi Inverter.
+                // Nilai harus NEGATIF karena discharge.
+                calculatedBatP = -(loadP / INVERTER_DISCHARGE_EFFICIENCY);
+            } else {
+                // Saat CHARGE atau IDLE, gunakan nilai DC murni dari BMS
+                calculatedBatP = rawBatP_DC;
+            }
+
             // --- LOGIKA GRID DIHAPUS/DINONAKTIFKAN ---
-            // Set Grid Power ke 0.0 secara permanen (Off-Grid)
             latestDiagramData.gridPower = 0.0; 
             // ----------------------------------------------
             
@@ -3095,18 +3229,21 @@
             const batP = latestDiagramData.batteryPower; 
             
             // Rasio Autarky
+            // Saat discharge, kita harus menggunakan nilai batP yang *sudah dikoreksi* (seharusnya < 0)
             const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
-            const providedByBat = batP < 0 ? Math.abs(batP) : 0; 
             
+            // Disini kita gunakan nilai BMS yang sudah dikalikan efisiensi 0.98 untuk kalkulasi rasio,
+            // untuk tujuan realistis: Daya AC yang disediakan baterai = Abs(Raw DC) * 0.98
+            const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0; 
+
             let ratio = 0;
             if (totalEnergyToLoad > 10) { 
-                // Karena Grid Power 0, Autarky = Self Supply / Load
-                const selfSupply = providedBySolar + providedByBat;
+                const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
                 ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
             } else {
-                ratio = (solarP > 10 || providedByBat > 10) ? 100 : 0;
+                ratio = (solarP > 10 || providedByBat_AC_Equivalent > 10) ? 100 : 0;
             }
             latestDiagramData.ratioPercentage = ratio;
             
@@ -3118,7 +3255,9 @@
 
 
             // Memperbarui teks dengan data BMS (voltage, current)
-            updateTextValues(latestDiagramData, bmsData.voltage, bmsData.current);
+            // *PENTING*: Di sini kita gunakan raw current dari BMS (rawBatteryI) untuk menentukan status dan tampilan A, 
+            // tetapi kita gunakan calculatedBatP untuk tampilan W di diagram.
+            updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
             
             // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
             updateBatteryLevel(bmsData.soc, latestDiagramData.batteryPower);
@@ -3134,9 +3273,8 @@
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
-            const batAbsPower = Math.abs(batP);
-            const rawCurrent = bmsData.current; // Gunakan Current untuk menentukan arah
-
+            const batAbsPower = Math.abs(batP); // Menggunakan P_AC setara (visual)
+            
             if (batAbsPower > minimumPowerThreshold) { 
                 if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah) -> powerValue positif
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
@@ -3152,41 +3290,6 @@
             controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
             
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
-        }
-
-        function processDiagramPins(pin, rawValue) {
-            const mapping = DIAGRAM_BLYNK_MAPPING[pin];
-            if (!mapping) return; 
-
-            const pValue = parseFloat(rawValue);
-            if (isNaN(pValue)) return;
-
-            if (mapping.isGlobal) {
-                if(mapping.key === 'vpack') vpack = pValue;
-                if(mapping.key === 'current') current = pValue;
-            }
-
-            if (mapping.isPower) {
-                latestDiagramData[mapping.key] = parseFloat(Math.abs(pValue).toFixed(1));
-            } else if (mapping.isDailyEnergy) {
-                latestDiagramData[mapping.key] = pValue.toFixed(2);
-            } else if (mapping.isTotalEnergy) {
-                latestDiagramData[mapping.key] = pValue / 1000; // kWh to MWh
-            } else if (mapping.isVoltage) {
-                latestDiagramData[mapping.key] = `${pValue.toFixed(1)} V`;
-            } else if (mapping.isCurrent) {
-                if (mapping.key === 'inverterCurrent') {
-                    latestDiagramData.inverterCurrent = `${pValue.toFixed(1)} A`;
-                } else {
-                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} A`;
-                }
-            } else if (mapping.isFrequency) {
-                latestDiagramData[mapping.key] = `${pValue.toFixed(1)} Hz`;
-            } else if (mapping.isStatic) {
-                latestDiagramData[mapping.key] = pValue;
-            }
-            
-            // Hapus logika SOC/Remaining Capacity dari sini, sekarang diurus oleh BMS aggregation
         }
 
         async function updateDashboard() {
@@ -3208,24 +3311,33 @@
                 const elementId = PIN_MAPPINGS[pin];
                 const element = document.getElementById(elementId);
                 const unitElement = document.getElementById(`${elementId}-unit`); 
-                const unit = getUnit(pin); 
+                
+                let rawValue = null;
 
                 if (!element) return; 
 
                 element.classList.remove('loading-animation', 'text-red-500');
 
                 if (result.status === 'fulfilled') {
-                    const rawValue = result.value || '0';
-                    const numericValue = parseFloat(rawValue);
-
-                    if (pin === 'V2') { currentPvPower = numericValue || 0; } 
-                    else if (pin === 'V14') { currentAcLoad = numericValue || 0; }
+                    rawValue = result.value || '0';
+                    
+                    // --- LOGIKA PENGAMBILAN NILAI KOREKSI UNTUK CHART/DIAGRAM ---
+                    if (pin === 'V2') { 
+                        // Ambil nilai numerik yang sudah dikoreksi PV Power
+                        currentPvPower = getCorrectedNumericValue(pin, rawValue); 
+                    } 
+                    else if (pin === 'V14') { 
+                        // Ambil nilai numerik yang sudah dikoreksi AC Load
+                        currentAcLoad = getCorrectedNumericValue(pin, rawValue); 
+                    }
                     
                     // --- INTEGRASI DIAGRAM: Proses Pin Blynk untuk Diagram ---
+                    // Raw value digunakan karena koreksi daya/energi harian sudah diurus di formatValue/processDiagramPins
                     processDiagramPins(pin, rawValue);
                     
-                    // --- PLTS Dashboard Logic ---
+                    // --- PLTS Dashboard Logic: Menggunakan nilai format (yang sudah terkoreksi untuk V2/V14/V10/V21) ---
                     const formattedValue = formatValue(pin, rawValue);
+                    const unit = getUnit(pin); 
                     
                     if (pin === 'V18' || pin === 'V19') {
                         element.textContent = formattedValue;
@@ -3255,7 +3367,10 @@
                     if (element.closest('.solar-card') || element.closest('.power-summary-card')) { 
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
-                        if (unitElement) { unitElement.classList.remove(...colorsToRemove); unitElement.classList.add(nominalColorClass); }
+                        if (unitElement) { // Perbaikan null check
+                            unitElement.classList.remove(...colorsToRemove); 
+                            unitElement.classList.add(nominalColorClass);
+                        }
                         let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
                         if (summaryIcon) {
                              summaryIcon.classList.remove(...colorsToRemove);
@@ -3294,7 +3409,7 @@
                 }
             });
 
-            // LOGIC PENGHITUNGAN LOKAL
+            // LOGIC PENGHITUNGAN LOKAL (Menggunakan nilai yang sudah dikoreksi)
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
             const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
             
@@ -3387,16 +3502,5 @@
             initApp();
         };
     </script>
-    <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/monitoring/sw.js')
-    .then(function(reg) {
-      console.log('Service worker registered.', reg);
-    })
-    .catch(function(err) {
-      console.error('Service worker registration failed:', err);
-    });
-}
-</script>
 </body>
 </html>
