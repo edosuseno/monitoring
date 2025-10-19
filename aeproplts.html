@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
-    <link rel="manifest" href="/monitoring/manifest.json">
+        <link rel="manifest" href="/monitoring/manifest.json">
 <meta name="theme-color" content="#05050D">
 
 <!-- iOS / Apple specific -->
@@ -13,7 +13,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 <link rel="apple-touch-icon" href="/monitoring/icon-192.png">
-   
+    <!-- END PWA METADATA -->
+    
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -656,7 +657,7 @@
 
 
                                     <!-- BARIS 3: Matahari Efektif dan Placeholder (SOC Bat) -->
-                                    <text id="effective_sun_hours_text" x="197" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
+                                    <text id="effective_sun_hours_text" x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
                                         Matahari Efektif:
                                     </text>
                                     <text id="effective_sun_hours" x="201" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
@@ -2735,7 +2736,8 @@
             const minDuration = 0.5;
             const maxDuration = 10;
             const maxPower = 5000;
-            let duration = maxDuration - (power / maxPower) * (maxPower - minDuration);
+            // PERBAIKAN BUG: Mengganti 'maxMax' menjadi 'maxDuration'
+            let duration = maxDuration - (power / maxPower) * (maxDuration - minDuration); 
             
             if (power < 10) duration = maxDuration;
             if (power > maxPower) duration = minDuration; 
@@ -2767,8 +2769,9 @@
 
                 if (!isFlowing) {
                     animElement.parentNode.style.opacity = 0;
-                    animElement.setAttribute('dur', '10.0s');
-                    animElement.setAttribute('repeatCount', '1');
+                    // PERBAIKAN ANIMASI: Menggunakan 'freeze' untuk memastikan animasi berhenti dan tidak memicu restart yang aneh.
+                    animElement.setAttribute('dur', '0s');
+                    animElement.setAttribute('repeatCount', '0');
                 } else {
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
@@ -3076,8 +3079,10 @@
          * DITAMBAHKAN LOGIKA KOREKSI DAYA DC SAAT DISCHARGING.
          */
         function calculateAndRenderDiagram(bmsData) {
-            const solarP = latestDiagramData.solarPower;
-            const loadP = latestDiagramData.loadPower;
+            // Definisikan variabel lokal dari latestDiagramData untuk kejelasan scope
+            const localSolarP = latestDiagramData.solarPower;
+            const localLoadP = latestDiagramData.loadPower;
+            
             const minimumPowerThreshold = 10;
             
             // --- MENGGUNAKAN DAYA BATERAI AKTUAL DARI BMS (Data Mentah) ---
@@ -3087,9 +3092,9 @@
             let calculatedBatP_final = 0.0; 
             
             // --- LOGIKA KOREKSI DAYA DC SAAT DISCHARGING (Raw Current < 0) ---
-            if (loadP > minimumPowerThreshold && rawCurrent < -0.1) {
+            if (localLoadP > minimumPowerThreshold && rawCurrent < -0.1) {
                 // A. Tentukan Daya DC Teoritis yang DIBUTUHKAN (berdasarkan Efisiensi 90%)
-                const requiredDCDischarge = loadP / INVERTER_EFFICIENCY;
+                const requiredDCDischarge = localLoadP / INVERTER_EFFICIENCY;
                 
                 // B. Pembacaan BMS mentah (absolut) saat ini
                 const absBatP_raw = Math.abs(calculatedBatP_raw);
@@ -3124,14 +3129,14 @@
             let eff = 0;
             const pvPeak = latestDiagramData.pvPeakPower > 0.1 ? latestDiagramData.pvPeakPower : CONFIG_PV_PEAK_WATT_DEFAULT;
             if (pvPeak > 0) {
-                 eff = (solarP / pvPeak) * 100;
+                 eff = (localSolarP / pvPeak) * 100;
             }
             latestDiagramData.pvEfficiency = Math.min(100, eff); 
 
             
             // Rasio Autarky
-            const totalEnergyToLoad = loadP > 0 ? loadP : 0;
-            const providedBySolar = solarP > 0 ? solarP : 0;
+            const totalEnergyToLoad = localLoadP > 0 ? localLoadP : 0;
+            const providedBySolar = localSolarP > 0 ? localSolarP : 0;
             const providedByBat = batP < 0 ? Math.abs(batP) : 0; 
             
             let ratio = 0;
@@ -3141,7 +3146,7 @@
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
                 ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
             } else {
-                ratio = (solarP > 10 || providedByBat > 10) ? 100 : 0;
+                ratio = (localSolarP > 10 || providedByBat > 10) ? 100 : 0;
             }
             latestDiagramData.ratioPercentage = ratio;
             
@@ -3161,16 +3166,17 @@
             // 3. Kontrol Animasi Aliran
             
             // 1. Solar Flow 
-            // PV Power selalu positif (Aliran Normal 0;1: Atas ke Bawah)
-            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP));
+            // Menggunakan localSolarP
+            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], localSolarP, Math.abs(localSolarP));
 
             // 2. Load Flow 
-            // Load Power selalu positif (Aliran Normal 0;1: Kiri ke Kanan)
-            controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
+            // Menggunakan localLoadP
+            controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], localLoadP, Math.abs(localLoadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
             const batAbsPower = Math.abs(calculatedBatP_final);
             
+            // PERBAIKAN PENTING: Gunakan calculatedBatP_final untuk menentukan arah aliran.
             if (batAbsPower > minimumPowerThreshold) { 
                 if (calculatedBatP_final > 0) { // CHARGING: Flow Inverter -> Baterai (ke bawah)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
