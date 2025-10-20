@@ -1382,7 +1382,7 @@
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
-        // ** BARU: Efisiensi Inverter saat Discharging (98%) **
+        // ** BARU: Efisiensi Inverter saat Discharging (92%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.92; 
         // --------------------------
 
@@ -3189,7 +3189,8 @@
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
          * Logic Grid PLN di sini DIHAPUS/DINONAKTIFKAN.
-         * **PERBAIKAN LOGIKA:** Saat discharge, Daya Baterai (DC) dihitung berdasarkan Beban AC (V14) untuk visual yang benar.
+         * **PERBAIKAN LOGIKA:** Menghitung Defisit AC (Beban - PV) untuk menentukan
+         * Daya Baterai (DC) yang BENAR untuk visual diagram saat discharge.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3203,15 +3204,24 @@
             let calculatedBatP;
 
             if (rawCurrent < -minimumPowerThreshold) {
-                // Saat DISCHARGE (rawCurrent negatif), BATERAI HARUS MENGELUARKAN DC > AC
-                // Gunakan Beban AC (loadP) sebagai referensi, lalu inversi koreksi efisiensi (dibagi 0.98)
-                // Daya DC yang DIBUTUHKAN = Daya Beban AC / Efisiensi Inverter.
-                // Nilai harus NEGATIF karena discharge.
-                calculatedBatP = -(loadP / INVERTER_DISCHARGE_EFFICIENCY);
+                // LOGIKA KOREKSI BARU: Hitung defisit AC (Beban - PV) untuk menentukan P_DC Baterai
+                
+                const solarP_AC_Equivalent = solarP; // Asumsi PV DC -> AC Inverter Loss diabaikan untuk simplifikasi alur
+                const deficitAC = loadP - solarP_AC_Equivalent; 
+                
+                if (deficitAC > minimumPowerThreshold) {
+                    // Hanya paksa nilai DC Baterai (Input) jika ada defisit AC yang harus ditutupi.
+                    // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
+                    calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
+                } else {
+                    // Jika PV cukup/berlebih (deficitAC <= 10W), asumsikan baterai idle/charging ringan.
+                    calculatedBatP = rawBatP_DC;
+                }
             } else {
                 // Saat CHARGE atau IDLE, gunakan nilai DC murni dari BMS
                 calculatedBatP = rawBatP_DC;
             }
+
 
             // --- LOGIKA GRID DIHAPUS/DINONAKTIFKAN ---
             latestDiagramData.gridPower = 0.0; 
@@ -3239,6 +3249,7 @@
 
             let ratio = 0;
             if (totalEnergyToLoad > 10) { 
+                // Menggunakan sumber daya AC yang benar-benar digunakan beban (PV + AC dari Baterai)
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
                 ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
