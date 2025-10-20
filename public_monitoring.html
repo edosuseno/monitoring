@@ -1451,6 +1451,7 @@
             pvVoltage: DEFAULT_DISPLAY_STR + ' V',
             pvCurrent: DEFAULT_DISPLAY_STR + ' A',
             inverterStatus: DEFAULT_DISPLAY_STR,
+            autarkyPercentage: DEFAULT_DISPLAY, // BARU: Autarky
             ratioPercentage: DEFAULT_DISPLAY,
             totalSolarMWh: 0.0 
         };
@@ -3087,7 +3088,10 @@
             setText('inverter_current_164', data.inverterCurrent); 
             setText('load_frequency_192', data.loadFrequency); 
             
+            // --- PERBAIKAN AUTARKY & RATIO ---
+            setText('autarkyp_value', `${data.autarkyPercentage.toFixed(1)}%`); // Tampilkan nilai Autarky (SSR)
             setText('ratiop_value', `${data.ratioPercentage.toFixed(1)}%`); 
+            // ---------------------------------
             
             // Total Solar (V3 / V11) - Pembulatan ke 0 angka di belakang koma
             const dailySolarRounded = Math.round(tryParseFloat(data.dailySolar));
@@ -3203,18 +3207,21 @@
             
             let calculatedBatP;
 
+            // Logika Koreksi Discharge:
             if (rawCurrent < -minimumPowerThreshold) {
-                // LOGIKA KOREKSI BARU: Hitung defisit AC (Beban - PV) untuk menentukan P_DC Baterai
-                
+                // 1. Hitung Defisit AC (daya AC yang harus ditutup baterai)
                 const solarP_AC_Equivalent = solarP; // Asumsi PV DC -> AC Inverter Loss diabaikan untuk simplifikasi alur
-                const deficitAC = loadP - solarP_AC_Equivalent; 
-                
-                if (deficitAC > minimumPowerThreshold) {
-                    // Hanya paksa nilai DC Baterai (Input) jika ada defisit AC yang harus ditutupi.
+                let deficitAC = loadP - solarP_AC_Equivalent; 
+
+                // 2. Hanya jalankan koreksi jika ada defisit AC yang harus ditutup
+                if (deficitAC > 0) {
                     // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
                     calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
                 } else {
-                    // Jika PV cukup/berlebih (deficitAC <= 10W), asumsikan baterai idle/charging ringan.
+                    // Jika Baterai Discharge, tetapi PV menutupi/melebihi beban (deficitAC <= 0),
+                    // kita tetap gunakan nilai rawBatP_DC (DC murni dari BMS).
+                    // Ini menangani kasus di mana ada arus discharge sangat kecil untuk internal
+                    // atau saat PV baru mulai/berakhir.
                     calculatedBatP = rawBatP_DC;
                 }
             } else {
@@ -3222,11 +3229,16 @@
                 calculatedBatP = rawBatP_DC;
             }
 
-
             // --- LOGIKA GRID DIHAPUS/DINONAKTIFKAN ---
             latestDiagramData.gridPower = 0.0; 
             // ----------------------------------------------
             
+            // PERBAIKAN: Tambahkan validasi agar calculatedBatP tidak menjadi angka negatif tak terhingga (jika inverter efficiency 0)
+            if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) {
+                 calculatedBatP = rawBatP_DC; // Fallback jika perhitungan gagal
+            }
+
+
             latestDiagramData.batteryPower = calculatedBatP; 
             
             let eff = 0;
@@ -3238,25 +3250,36 @@
 
             const batP = latestDiagramData.batteryPower; 
             
-            // Rasio Autarky
-            // Saat discharge, kita harus menggunakan nilai batP yang *sudah dikoreksi* (seharusnya < 0)
+            // Rasio Autarky (SSR) & Ratio (SCR)
             const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
             
-            // Disini kita gunakan nilai BMS yang sudah dikalikan efisiensi 0.98 untuk kalkulasi rasio,
-            // untuk tujuan realistis: Daya AC yang disediakan baterai = Abs(Raw DC) * 0.98
+            // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
             const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0; 
 
             let ratio = 0;
-            if (totalEnergyToLoad > 10) { 
-                // Menggunakan sumber daya AC yang benar-benar digunakan beban (PV + AC dari Baterai)
+            let autarky_ssr = 0; 
+            
+            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
+            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
-                ratio = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                
+                // AUTARKY (SSR): Energi Sendiri / Total Beban
+                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                
+                // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
+                const totalProduction = providedBySolar + providedByBat_AC_Equivalent; 
+                ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
             } else {
-                ratio = (solarP > 10 || providedByBat_AC_Equivalent > 10) ? 100 : 0;
+                // Jika semua nol atau sangat kecil, asumsikan 100% untuk Autarky (Off-Grid)
+                autarky_ssr = 100; 
+                ratio = 100;
             }
-            latestDiagramData.ratioPercentage = ratio;
+            
+            // Batasi nilai agar tidak lebih dari 100%
+            latestDiagramData.ratioPercentage = Math.min(100, ratio);
+            latestDiagramData.autarkyPercentage = Math.min(100, autarky_ssr); 
             
             // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
             latestDiagramData.batterySOC = bmsData.soc; 
