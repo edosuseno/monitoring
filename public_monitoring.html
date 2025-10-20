@@ -1383,7 +1383,7 @@
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
         // ** BARU: Efisiensi Inverter saat Discharging (98%) **
-        const INVERTER_DISCHARGE_EFFICIENCY = 0.98; 
+        const INVERTER_DISCHARGE_EFFICIENCY = 0.92; 
         // --------------------------
 
         // PLTS (Blynk) Konstan
@@ -3502,5 +3502,16 @@
             initApp();
         };
     </script>
+    <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/monitoring/sw.js')
+    .then(function(reg) {
+      console.log('Service worker registered.', reg);
+    })
+    .catch(function(err) {
+      console.error('Service worker registration failed:', err);
+    });
+}
+</script>
 </body>
 </html>
