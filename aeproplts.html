@@ -605,7 +605,7 @@
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
                                         -- kWh / -- kWh
                                     </text>
-                                </a>
+                                </a >
 
                                 <!-- PV Module (Simulated data) -->
                                 <svg width="70" height="30" viewBox="0 0 70 30" overflow="visible" id="pv1" x="204" y="90">
@@ -1118,7 +1118,7 @@
                                     <span id="v11-total-pv-unit" class="text-sm ml-1"></span>
                                 </div>
                             </div>
-                       </div>
+                        </div>
                     </div>
                     <!-- Kolom 2: Baterai & Total Energi -->
                     <div class="solar-card">
@@ -1387,6 +1387,8 @@
         // ** BARU: Efisiensi Pengisian Baterai (98%) **
         const INVERTER_CHARGE_EFFICIENCY = 0.98;
         // --------------------------
+        // Auto-refresh rate (5 menit)
+        const AUTO_REFRESH_MS = 5 * 60 * 1000; 
 
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
@@ -3220,9 +3222,7 @@
 
             // Logika Koreksi Daya Baterai (CHARGE vs DISCHARGE):
             
-            // Hitung Surplus Daya PV (AC Equivalent)
-            // Asumsi kerugian inverter/MPPT pada DC/AC konversi adalah 0.98, tapi kita pakai 1 untuk surplus sederhana
-            // Kita harus mengasumsikan efisiensi dari PV ke Load (misalnya 95%)
+            // Asumsi efisiensi konversi DC/AC dari PV ke Load (misalnya 95%)
             const efficiency_PV_to_Load = 0.95; 
             const solarP_AC_Equivalent = solarP * efficiency_PV_to_Load;
             
@@ -3231,14 +3231,17 @@
             if (rawCurrent > minimumPowerThreshold) {
                 // KASUS CHARGE: PV Surplus harus mengisi Baterai (Surplus Forcing)
                 
-                if (surplusAC > minimumPowerThreshold) {
-                    // Surplus harus masuk ke baterai
+                if (surplusAC > minimumPowerThreshold && bmsData.soc < 99) { // Hanya Force jika ada surplus dan baterai belum penuh
                     // Hitung daya DC yang dihasilkan surplus AC
-                    const surplusDC_forced = surplusAC / INVERTER_CHARGE_EFFICIENCY;
-                    calculatedBatP = surplusDC_forced;
+                    // Diasumsikan surplus DC setara dengan surplus AC
+                    const surplusDC_forced = Math.max(minimumPowerThreshold, surplusAC / INVERTER_CHARGE_EFFICIENCY);
+                    
+                    // Kita FORCE calculatedBatP menjadi Surplus DC yang tersedia.
+                    // Ini mengabaikan pembatasan charging dari BMS/MPPT untuk tujuan visual yang logis.
+                    calculatedBatP = surplusDC_forced; 
                     
                 } else {
-                    // Jika PV tidak surplus (atau surplus kecil), gunakan nilai DC murni BMS
+                    // Jika PV tidak surplus (atau baterai hampir penuh), gunakan nilai DC murni BMS (yang harusnya kecil/nol)
                     calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
                 }
 
@@ -3516,6 +3519,12 @@
             updateDashboard(); 
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             
+            // Skrip Refresh Otomatis ditambahkan di sini
+            console.log(`Auto-refresh halaman diaktifkan setiap ${AUTO_REFRESH_MS / 60000} menit.`);
+            setTimeout(() => {
+                window.location.reload();
+            }, AUTO_REFRESH_MS);
+
             startMQTT();
 
             showMessage(`Monitoring Instan dimulai ke ${serverIp}. PV Correction: +${INSTANT_PV_PERCENT.toFixed(1)}%.`, 'success');
