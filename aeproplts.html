@@ -100,7 +100,16 @@
             --color-bar-empty: #444444; 
         }
         
+        /* ATURAN TAMBAHAN UNTUK MENYEMBUNYIKAN SCROLLBAR */
+        body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, dan Opera */
+        }
+
         body {
+            /* Aturan umum untuk menyembunyikan scrollbar */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;     /* Firefox */
+            
             background-color: var(--solar-dark); 
             font-family: 'Inter', sans-serif;
             color: #F8FAFC; 
@@ -619,7 +628,7 @@
                                         <text id="pv1_power_186" x="35" y="15" dominant-baseline="central" text-anchor="middle" class="st4" fill="var(--color-solar)">
                                             -- W
                                         </text>
-                                    </a >
+                                    </a>
                                 </svg>
                                 
                                 <!-- NILAI PARAMETER TAMBAHAN (Di bawah PV Module) - TATA LETAK 3X2 -->
@@ -713,7 +722,7 @@
                                     <text id="load_frequency_192" x="315" y="189" display="" class="st3 left-align" fill="var(--color-inverter)">
                                         -- Hz
                                     </text>
-                                </a >
+                                </a>
 
                                 <!-- Autarky / Ratio (LHS of Inverter Icon) -->
                                 <text id="autarkyp_value" x="110" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
@@ -885,7 +894,7 @@
                                             <svg id="bat_inner" y="342" width="78.75" height="68.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="211.0">
                                                 <!-- Bar level akan diisi ulang oleh JS -->
                                             </svg>
-                                        </a >
+                                        </a>
                                     </svg>
 
                                     <!-- Data KWH dan SOC (di kanan baterai) -->
