@@ -1319,6 +1319,7 @@
                               </div>
                           </div>
                           <p class="text-sm font-medium text-gray-400">Daya Baterai</p>
+                          <!-- ID UNTUK STATUS DAYA -->
                           <p class="text-xs text-gray-500 mt-1" id="power-status-text">Total Daya Sistem</p>
                       </div>
 
@@ -2070,9 +2071,6 @@
             // Kami hanya perlu memastikan totalPower di sini mencerminkan BMS + Koreksi Inverter
             const bmsAggregatedData = getAggregatedBmsData(); 
             
-            // Sekarang, koreksi 98% akan dilakukan di calculateAndRenderDiagram untuk tujuan visual diagram.
-            // Tapi untuk ringkasan di sini, kita akan menggunakan P_DC murni, atau P_AC setara (untuk ringkasan)
-            
             // Untuk ringkasan, kita pakai logika lama (DC * V_AVG), lalu koreksi untuk discharge
             let displayPower = bmsAggregatedData.totalPower;
             const currentThreshold = 0.1;
@@ -2091,20 +2089,25 @@
             // Tentukan Status (Charging/Discharging/Standby)
             let currentStatusText = 'Standby';
             let statusClass = 'text-standby';
+            let powerStatusText = 'Total Daya Sistem (Idle)'; // Default untuk Daya
 
             if (validBatteryCount > 0) {
                 if (totalCurrent > currentThreshold) {
                     statusClass = 'text-charging'; 
                     currentStatusText = 'Charging';
+                    powerStatusText = 'Total Daya Sistem (Charging)';
                 } else if (totalCurrent < -currentThreshold) {
                     statusClass = 'text-discharging'; 
                     currentStatusText = 'Discharging';
+                    powerStatusText = 'Total Daya Sistem (Discharging)';
                 } else {
                     statusClass = 'text-standby';
                     currentStatusText = 'Idle';
+                    powerStatusText = 'Total Daya Sistem (Idle)';
                 }
             } else {
                 currentStatusText = 'N/A';
+                powerStatusText = 'Total Daya Sistem (N/A)';
             }
             
             // --- PEWARNAAN ARUS (AMPER) RINGKASAN ---
@@ -2140,6 +2143,8 @@
             }
 
             safeUpdate('summary-power', isNaN(displayPower) ? 'N/A' : totalPowerVal);
+            // UPDATE TEXT STATUS DAYA DI SINI
+            safeUpdate('power-status-text', powerStatusText);
             
             if (powerSummaryEl) {
                 removePowerColorClasses(powerSummaryEl);
@@ -2353,8 +2358,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="minus-circle" class="lucide w-4 h-4 text-red-500 mr-2"></i>
                                 <div>
-                                    <div class="text-gray-500">Sel Min</div>
-                                    <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div>
+                                    <div class=\"text-gray-500\">Sel Min</div>
+                                    <div id=\"cellmin-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold text-red-400\">${batt.cell_vmin} V</div>
                                 </div>
                             </div>
                             
@@ -2362,8 +2367,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500 mr-2"></i>
                                 <div>
-                                    <div class="text-gray-500">Sel Max</div>
-                                    <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div>
+                                    <div class=\"text-gray-500\">Sel Max</div>
+                                    <div id=\"cellmax-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold text-green-400\">${batt.cell_vmax} V</div>
                                 </div>
                             </div>
                             
