@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
     
-    <!-- PWA METADATA - Dihapus/Dipotong yang tidak relevan.
-         Perbaikan: Menghapus meta tag yang sudah deprecated (apple-mobile-web-app-capable)
-         karena tidak bisa diperbaiki tanpa file manifest/ikon yang hilang. -->
     <link rel="manifest" href="/monitoring/manifest.json">
-    <meta name="theme-color" content="#05050D">
+<meta name="theme-color" content="#05050D">
+
+<!-- iOS / Apple specific -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<link rel="apple-touch-icon" href="/monitoring/icons/icon-192.png">
+    <!-- END PWA METADATA -->
     
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
@@ -120,14 +125,14 @@
         .diagram-section-container {
             width: 100%;
             background: rgba(20, 20, 48, 0.8); /* Mirip solar-card */
-            padding: 10px;
+            padding: 20px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             border: 1px solid rgba(71, 85, 105, 0.2);
         }
         .svg-container {
             width: 100%;
-            padding-bottom: 72%; /* (430/490) */
+            padding-bottom: 87.75%; /* (430/490) */
             position: relative;
         }
         .svg-content {
@@ -711,13 +716,13 @@
                                 </a >
 
                                 <!-- Autarky / Ratio (LHS of Inverter Icon) -->
-                                <text id="autarkyp_value" x="110" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarkyp_value" x="120" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
-                                <text id="autarky" x="110" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarky" x="113" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Autarky
                                 </text>
-                                <text id="ratiop_value" x="165" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="ratiop_value" x="160" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
                                 <text id="ratio" x="166" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
@@ -753,15 +758,13 @@
 
                                     <!-- Titik Animasi 1 (Flow Icon <-> Kotak) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-grid)">
-                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
-                                        <animateMotion id="grid_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
+                                        <animateMotion id="grid_flow_anim_1" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
                                             <mpath href="#grid-line-1"></path>
                                         </animateMotion>
                                     </circle>
                                     <!-- Titik Animasi 2 (Flow Kotak <-> Inverter) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-grid)">
-                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
-                                        <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
+                                        <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
                                             <mpath href="#grid-line-2"></path>
                                         </animateMotion>
                                     </circle>
@@ -800,14 +803,12 @@
                                     
                                     <!-- Titik Animasi 1 (Flow Inverter -> Kotak) -->
                                     <circle cx="0" cy="0" id="es-dot-1" r="3.5" fill="var(--color-load)">
-                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                         <animateMotion id="load_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#es-line-1"></path>
                                         </animateMotion>
                                     </circle>
                                     <!-- Titik Animasi 2 (Flow Kotak -> Icon) -->
                                     <circle cx="0" cy="0" id="es-dot-2" r="3.5" fill="var(--color-load)">
-                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                         <animateMotion id="load_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#es-line-2"></path>
                                         </animateMotion>
@@ -857,7 +858,6 @@
 
                                         <!-- Titik Animasi 1 (Flow Inverter <-> Kotak) -->
                                         <circle cx="0" cy="0" id="power-dot-discharge" r="3.5" fill="var(--color-battery)">
-                                             <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                              <animateMotion id="bat_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                                 <mpath href="#bat-line"></path>
                                             </animateMotion>
@@ -865,9 +865,8 @@
                                         
                                         <!-- Titik Animasi 2 (Flow Kotak <-> Ikon) -->
                                         <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)">
-                                             <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                              <animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
-                                                <mpath href="#bat-line-to-icon"></mpath>
+                                                <mpath href="#bat-line-to-icon"></path>
                                             </animateMotion>
                                         </circle>
 
@@ -1383,8 +1382,10 @@
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
-        // ** BARU: Efisiensi Inverter saat Discharging (92%) **
+        // ** Efisiensi Inverter saat Discharging (92%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.92; 
+        // ** BARU: Efisiensi Pengisian Baterai (98%) **
+        const INVERTER_CHARGE_EFFICIENCY = 0.98;
         // --------------------------
 
         // PLTS (Blynk) Konstan
@@ -1452,7 +1453,7 @@
             pvVoltage: DEFAULT_DISPLAY_STR + ' V',
             pvCurrent: DEFAULT_DISPLAY_STR + ' A',
             inverterStatus: DEFAULT_DISPLAY_STR,
-            autarkyPercentage: DEFAULT_DISPLAY, // BARU: Autarky
+            autarkyPercentage: DEFAULT_DISPLAY, 
             ratioPercentage: DEFAULT_DISPLAY,
             totalSolarMWh: 0.0 
         };
@@ -2218,7 +2219,7 @@
                 const addrB = parseInt(b.addr);
                 if (isNaN(addrA)) return 1;
                 if (isNaN(addrB)) return -1;
-                return addrA - addrB;
+                return addrA - b.addr;
             });
 
             if (batteries.length === 0) {
@@ -2863,16 +2864,18 @@
          * powerValue > 0: Aliran Normal (0;1)
          * powerValue < 0: Aliran Terbalik (1;0)
          * powerValue == 0: Stop
-         * * PERBAIKAN KRITIS: Mengatur attribute `keyPoints` dan `keyTimes` 
-         * tanpa koma, yang menyebabkan error di konsol.
          */
         function controlFlow(animIds, powerValue, absPower) { 
             const flowSpeed = getFlowDuration(absPower);
             const isFlowing = absPower > 10;
             
-            // KeyTimes harus berupa daftar angka terpisah semikolon atau spasi, 
-            // dan keyPoints harus berupa daftar koordinat terpisah semikolon atau spasi
-            let keyTimes = "0;1"; 
+            // Tentukan keyPoints yang eksplisit
+            let keyPoints;
+            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
+                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
+            } else { // Discharging / Grid Buy (Aliran masuk)
+                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
+            }
             
             animIds.forEach(id => {
                 const animElement = document.getElementById(id);
@@ -2888,43 +2891,11 @@
                     // Set opasitas ke 1 untuk menampilkan titik
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
-                    animElement.setAttribute('keyTimes', keyTimes); 
+                    animElement.setAttribute('keyTimes', '0;1'); 
                     animElement.setAttribute('dur', flowSpeed);
-                    
-                    // Hapus atribut keyPoints jika ada, karena animateMotion menggunakan mpath
-                    // dan keyTimes sudah cukup untuk mengontrol arah jika diubah dari JS (walau di sini tetap 0;1)
-                    // Jika ingin membalikkan, harus membalikkan path atau nilai keyTimes/keyPoints.
-                    // Karena ini animasi sederhana (0;1), biarkan saja.
+                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
                 }
             });
-            
-            // LOGIKA PENGENDALIAN ARAH BARU:
-            // Karena error terjadi saat keyTimes dan keyPoints disalahgunakan (keyPoints dihapus, keyTimes disalahgunakan), 
-            // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengontrol durasi dan opacity.
-            // Untuk flow terbalik (DISCHARGE / Grid Buy), kita akan MENGHAPUS dot yang normal dan membuat dot REVERSE yang baru
-            // atau membalikkan path secara virtual.
-            
-            // UNTUK SEMENTARA, fokus pada perbaikan sintaks error di SVG (baris 761, 767)
-            // Error ini disebabkan oleh:
-            // 1. Tag <circle> tidak boleh memiliki atribut `cx="0" cy="0"` yang di-override oleh <animateMotion>.
-            // 2. keyTimes="1;0" / keyTimes="0;1" seharusnya tidak memiliki koma (tapi kode SVG Anda sudah benar)
-            // Error ini tampaknya terjadi karena *browser* menginterpretasikan `keyTimes="1;0"` sebagai `keyTimes="1; 0"` atau sebaliknya,
-            // atau karena keyPoints tidak didefinisikan secara eksplisit.
-            
-            // Karena ini bug SVG, cara termudah adalah:
-            // - Pastikan keyTimes hanya berisi angka (sudah benar: "0;1" dan "1;0")
-            // - Hilangkan atribut `calcMode="linear"` jika menimbulkan masalah, namun di kode aslinya sudah ada.
-            
-            // KODE ASLI YANG MUNGKIN MENYEBABKAN ERROR (LOKASI LINE 761 & 767 di file yang diunggah):
-            // 1. Grid Dot 1: <animateMotion id="grid_flow_anim_1" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
-            // 2. Grid Dot 2: <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
-            
-            // KODE BARU DI controlFlow: Kita biarkan keyTimes="0;1" di HTML dan hanya mengontrol durasi/opacity.
-            // Perubahan ini seharusnya menghilangkan error sintaks karena kode HTML di atas sudah diperbaiki ke "0;1"
-            
-            // Perlu dicatat: kode asli Anda di HTML untuk Grid Flow memiliki keyTimes="1;0", 
-            // yang di konsol disebut sebagai "Invalid value, "1;0"". Ini sangat aneh. 
-            // Saya telah mengubah *semua* animasi aliran di HTML menjadi `keyTimes="0;1"` dan akan mengandalkan JavaScript untuk mengontrol arah flow.
         }
         
         /**
@@ -3073,11 +3044,10 @@
                 batteryInner.appendChild(rect);
             }
         }
-
+        
         /**
          * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
          * Ditingkatkan untuk penanganan Ah yang lebih aman.
-         * DIPINDAHKAN KE SINI AGAR DAPAT DIAKSES OLEH calculateAndRenderDiagram
          */
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
@@ -3231,12 +3201,11 @@
                 }
             }
         }
-
+        
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
-         * Logic Grid PLN di sini DIHAPUS/DINONAKTIFKAN.
-         * **PERBAIKAN LOGIKA:** Menghitung Defisit AC (Beban - PV) untuk menentukan
-         * Daya Baterai (DC) yang BENAR untuk visual diagram saat discharge.
+         * **PERBAIKAN LOGIKA KRITIS:** Menggunakan Surplus PV untuk Forcing Daya Baterai saat Charging,
+         * dan menggunakan Defisit AC untuk Forcing Daya Baterai saat Discharging.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3249,25 +3218,44 @@
             
             let calculatedBatP;
 
-            // Logika Koreksi Discharge:
-            if (rawCurrent < -minimumPowerThreshold) {
-                // 1. Hitung Defisit AC (daya AC yang harus ditutup baterai)
-                const solarP_AC_Equivalent = solarP; // Asumsi PV DC -> AC Inverter Loss diabaikan untuk simplifikasi alur
+            // Logika Koreksi Daya Baterai (CHARGE vs DISCHARGE):
+            
+            // Hitung Surplus Daya PV (AC Equivalent)
+            // Asumsi kerugian inverter/MPPT pada DC/AC konversi adalah 0.98, tapi kita pakai 1 untuk surplus sederhana
+            // Kita harus mengasumsikan efisiensi dari PV ke Load (misalnya 95%)
+            const efficiency_PV_to_Load = 0.95; 
+            const solarP_AC_Equivalent = solarP * efficiency_PV_to_Load;
+            
+            const surplusAC = solarP_AC_Equivalent - loadP; 
+
+            if (rawCurrent > minimumPowerThreshold) {
+                // KASUS CHARGE: PV Surplus harus mengisi Baterai (Surplus Forcing)
+                
+                if (surplusAC > minimumPowerThreshold) {
+                    // Surplus harus masuk ke baterai
+                    // Hitung daya DC yang dihasilkan surplus AC
+                    const surplusDC_forced = surplusAC / INVERTER_CHARGE_EFFICIENCY;
+                    calculatedBatP = surplusDC_forced;
+                    
+                } else {
+                    // Jika PV tidak surplus (atau surplus kecil), gunakan nilai DC murni BMS
+                    calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
+                }
+
+            } else if (rawCurrent < -minimumPowerThreshold) {
+                // KASUS DISCHARGE: Baterai harus menutupi Defisit AC (Defisit Forcing)
+                
                 let deficitAC = loadP - solarP_AC_Equivalent; 
 
-                // 2. Hanya jalankan koreksi jika ada defisit AC yang harus ditutup
-                if (deficitAC > 0) {
+                if (deficitAC > minimumPowerThreshold) {
                     // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
                     calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
                 } else {
-                    // Jika Baterai Discharge, tetapi PV menutupi/melebihi beban (deficitAC <= 0),
-                    // kita tetap gunakan nilai rawBatP_DC (DC murni dari BMS).
-                    // Ini menangani kasus di mana ada arus discharge sangat kecil untuk internal
-                    // atau saat PV baru mulai/berakhir.
+                    // Jika PV sudah menutupi/melebihi beban, gunakan nilai rawBatP_DC (arus kecil discharge internal)
                     calculatedBatP = rawBatP_DC;
                 }
             } else {
-                // Saat CHARGE atau IDLE, gunakan nilai DC murni dari BMS
+                // Saat IDLE, gunakan nilai DC murni dari BMS (sekitar nol)
                 calculatedBatP = rawBatP_DC;
             }
 
@@ -3275,9 +3263,9 @@
             latestDiagramData.gridPower = 0.0; 
             // ----------------------------------------------
             
-            // PERBAIKAN: Tambahkan validasi agar calculatedBatP tidak menjadi angka negatif tak terhingga (jika inverter efficiency 0)
-            if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) {
-                 calculatedBatP = rawBatP_DC; // Fallback jika perhitungan gagal
+            // Final check agar calculatedBatP valid
+            if (calculatedBatP === undefined || isNaN(calculatedBatP) || !isFinite(calculatedBatP)) {
+                 calculatedBatP = rawBatP_DC; // Fallback
             }
 
 
@@ -3293,7 +3281,6 @@
             const batP = latestDiagramData.batteryPower; 
             
             // Rasio Autarky (SSR) & Ratio (SCR)
-            const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
             
             // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
@@ -3302,20 +3289,18 @@
             let ratio = 0;
             let autarky_ssr = 0; 
             
-            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
-            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
+            if (loadP > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
-                const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
+                const usedSelfGeneratedPower = Math.min(selfSupply, loadP); // Menggunakan loadP (beban)
                 
                 // AUTARKY (SSR): Energi Sendiri / Total Beban
-                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                autarky_ssr = (usedSelfGeneratedPower / loadP) * 100;
                 
                 // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
                 const totalProduction = providedBySolar + providedByBat_AC_Equivalent; 
                 ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
             } else {
                 // Jika semua nol atau sangat kecil (mode Off-Grid 24 Jam Penuh), asumsikan 100%
-                // Asumsi: Beban kecil dan PV/Baterai mati/idle.
                 autarky_ssr = 100; 
                 ratio = 100;
             }
@@ -3327,13 +3312,10 @@
             // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
             latestDiagramData.batterySOC = bmsData.soc; 
             latestDiagramData.batterySOH = bmsData.soh;
-            // Menggunakan nilai remainingAh yang sudah dihitung fallback
             latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh; 
 
 
             // Memperbarui teks dengan data BMS (voltage, current)
-            // *PENTING*: Di sini kita gunakan raw current dari BMS (rawBatteryI) untuk menentukan status dan tampilan A, 
-            // tetapi kita gunakan calculatedBatP untuk tampilan W di diagram.
             updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
             
             // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
@@ -3342,21 +3324,18 @@
             // 3. Kontrol Animasi Aliran
             
             // 1. Solar Flow 
-            // PV Power selalu positif (Aliran Normal 0;1: Atas ke Bawah)
-            controlFlow(['solar_flow_anim_1'], solarP, Math.abs(solarP));
-            // Catatan: solar_flow_anim_2 tidak ada di HTML, saya ganti ke solar_flow_anim_1.
+            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP));
 
             // 2. Load Flow 
-            // Load Power selalu positif (Aliran Normal 0;1: Kiri ke Kanan)
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
-            const batAbsPower = Math.abs(batP); // Menggunakan P_AC setara (visual)
+            const batAbsPower = Math.abs(batP); 
             
             if (batAbsPower > minimumPowerThreshold) { 
-                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah) -> powerValue positif
+                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
-                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas) -> powerValue negatif
+                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower); 
                 }
             } else {
@@ -3364,7 +3343,6 @@
             }
 
             // 4. Grid Flow (DIPAKSA OFF)
-            // Karena Grid non-aktif, panggil controlFlow dengan power 0 untuk mematikan animasi
             controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
             
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
@@ -3579,22 +3557,17 @@
         window.onload = function() {
             initApp();
         };
-        
-        // Menghapus service worker yang error (sw.js) agar tidak ada Uncaught (in promise) TypeError
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-              // Jika registrasi ditemukan, batalkan pendaftaran
-              if (registration.scope.includes('/monitoring/')) { 
-                 registration.unregister().then(function(success) {
-                    console.log('Unregistered service worker to fix: sw.js error:', success);
-                 }).catch(function(error) {
-                    console.error('Failed to unregister service worker:', error);
-                 });
-              }
-            }
-          });
-        }
     </script>
+    <script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/monitoring/sw.js')
+    .then(function(reg) {
+      console.log('Service worker registered.', reg);
+    })
+    .catch(function(err) {
+      console.error('Service worker registration failed:', err);
+    });
+}
+</script>
 </body>
 </html>
