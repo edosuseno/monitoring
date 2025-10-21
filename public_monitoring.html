@@ -125,14 +125,14 @@
         .diagram-section-container {
             width: 100%;
             background: rgba(20, 20, 48, 0.8); /* Mirip solar-card */
-            padding: 20px;
+            padding: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             border: 1px solid rgba(71, 85, 105, 0.2);
         }
         .svg-container {
             width: 100%;
-            padding-bottom: 87.75%; /* (430/490) */
+            padding-bottom: 80.75%; /* (430/490) */
             position: relative;
         }
         .svg-content {
@@ -658,7 +658,7 @@
 
 
                                     <!-- BARIS 3: Matahari Efektif dan Placeholder (SOC Bat) -->
-                                    <text id="effective_sun_hours_text" x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
+                                    <text x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
                                         Matahari Efektif:
                                     </text>
                                     <text id="effective_sun_hours" x="201" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
@@ -716,13 +716,13 @@
                                 </a >
 
                                 <!-- Autarky / Ratio (LHS of Inverter Icon) -->
-                                <text id="autarkyp_value" x="120" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarkyp_value" x="110" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
-                                <text id="autarky" x="113" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarky" x="110" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Autarky
                                 </text>
-                                <text id="ratiop_value" x="160" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="ratiop_value" x="165" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
                                 <text id="ratio" x="166" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
@@ -2897,7 +2897,7 @@
         }
         
         /**
-         * FUNGSI PERBAIKAN #1: Memastikan SOC adalah nilai numerik yang aman (0-100) untuk digambar.
+         * FUNGSI PERBAIKAN: Memastikan animasi gradien berjalan di mobile.
          */
         function updateBatteryLevel(soc, batPower) {
             const batteryInner = document.getElementById('bat_inner');
@@ -2918,7 +2918,7 @@
             let numericSoc = parseInt(soc);
             if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
             if (numericSoc > 100) numericSoc = 100;
-            soc = numericSoc; // Gunakan nilai yang aman ini untuk menggambar
+            soc = numericSoc; 
 
             let overallColorStop;
             
@@ -2942,7 +2942,7 @@
             gradient.setAttribute('x1', '0%');
             gradient.setAttribute('y1', '0%'); 
             gradient.setAttribute('x2', '0%');
-            gradient.setAttribute('y2', '30%');
+            gradient.setAttribute('y2', '20%'); // Ukuran pattern
             gradient.setAttribute('spreadMethod', 'repeat');
             gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
 
@@ -2950,43 +2950,49 @@
             let flowBaseColor = overallColorStop;
             
             const absPower = Math.abs(batPower);
-            if (absPower > 10) {
+            const isFlowing = absPower > 10;
+            
+            if (isFlowing) {
                 if (batPower > 0) { // CHARGING (Positif = Charge)
                     flowHighlightColor = 'var(--color-load)';
-                    flowBaseColor = '#388E3C';
+                    flowBaseColor = '#388E3C'; 
                 } else { // DISCHARGING (Negatif = Discharge)
                     flowHighlightColor = 'var(--color-battery)';
-                    flowBaseColor = '#8D0000';
+                    flowBaseColor = '#8D0000'; 
                 }
             } else {
                 flowHighlightColor = overallColorStop;
                 flowBaseColor = overallColorStop;
             }
-
+            
+            // --- DEFINISI STOP UNTUK ANIMASI FLOW ---
             let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
             stop1.setAttribute('offset', '0%');
             stop1.setAttribute('stop-color', flowBaseColor); 
             stop1.setAttribute('stop-opacity', '1.0');
-            
-            let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            stop2.setAttribute('offset', '20%');
-            stop2.setAttribute('stop-color', flowHighlightColor); 
-            stop2.setAttribute('stop-opacity', '1.0'); 
-
-            let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            stop3.setAttribute('offset', '30%');
-            stop3.setAttribute('stop-color', flowBaseColor);
-            stop3.setAttribute('stop-opacity', '1.0'); 
-            
-            let stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            stop4.setAttribute('offset', '100%');
-            stop4.setAttribute('stop-color', overallColorStop);
-            stop4.setAttribute('stop-opacity', '1.0');
-
             gradient.appendChild(stop1);
-            gradient.appendChild(stop2);
-            gradient.appendChild(stop3);
-            gradient.appendChild(stop4);
+            
+            if(isFlowing) {
+                let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                stop2.setAttribute('offset', '10%'); 
+                stop2.setAttribute('stop-color', flowHighlightColor); 
+                stop2.setAttribute('stop-opacity', '1.0'); 
+                gradient.appendChild(stop2);
+
+                let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                stop3.setAttribute('offset', '20%');
+                stop3.setAttribute('stop-color', flowBaseColor);
+                stop3.setAttribute('stop-opacity', '1.0'); 
+                gradient.appendChild(stop3);
+
+            } else {
+                 let stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                 stop4.setAttribute('offset', '100%');
+                 stop4.setAttribute('stop-color', overallColorStop);
+                 stop4.setAttribute('stop-opacity', '1.0');
+                 gradient.appendChild(stop4);
+            }
+
 
             let animMotion = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
             animMotion.setAttribute('attributeName', 'gradientTransform');
@@ -2994,16 +3000,20 @@
             
             const animDuration = getFlowDuration(absPower);
             
-            if (absPower > 10) {
+            if (isFlowing) {
                  if (batPower > 0) { // CHARGING
-                    animMotion.setAttribute('from', '0 20');
-                    animMotion.setAttribute('to', '0 0'); 
+                    // Gradien bergerak ke atas (nilai y negatif)
+                    animMotion.setAttribute('from', '0 0');
+                    animMotion.setAttribute('to', '0 -20'); 
                 } else { // DISCHARGING
+                    // Gradien bergerak ke bawah (nilai y positif)
                     animMotion.setAttribute('from', '0 0');
                     animMotion.setAttribute('to', '0 20'); 
                 }
+                
                 animMotion.setAttribute('dur', animDuration); 
                 animMotion.setAttribute('repeatCount', 'indefinite');
+                
                 gradient.appendChild(animMotion);
             }
             
@@ -3032,7 +3042,7 @@
                 batteryInner.appendChild(rect);
             }
         }
-
+        
         /**
          * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
          * Ditingkatkan untuk penanganan Ah yang lebih aman.
@@ -3272,7 +3282,8 @@
                 const totalProduction = providedBySolar + providedByBat_AC_Equivalent; 
                 ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
             } else {
-                // Jika semua nol atau sangat kecil, asumsikan 100% untuk Autarky (Off-Grid)
+                // Jika semua nol atau sangat kecil (mode Off-Grid 24 Jam Penuh), asumsikan 100%
+                // Asumsi: Beban kecil dan PV/Baterai mati/idle.
                 autarky_ssr = 100; 
                 ratio = 100;
             }
