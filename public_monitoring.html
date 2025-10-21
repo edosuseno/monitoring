@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<link rel="apple-touch-icon" href="/monitoring/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/monitoring/icon-192.png">
     <!-- END PWA METADATA -->
     
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
@@ -125,14 +125,14 @@
         .diagram-section-container {
             width: 100%;
             background: rgba(20, 20, 48, 0.8); /* Mirip solar-card */
-            padding: 10px;
+            padding: 20px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             border: 1px solid rgba(71, 85, 105, 0.2);
         }
         .svg-container {
             width: 100%;
-            padding-bottom: 80.75%; /* (430/490) */
+            padding-bottom: 87.75%; /* (430/490) */
             position: relative;
         }
         .svg-content {
@@ -605,7 +605,7 @@
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
                                         -- kWh / -- kWh
                                     </text>
-                                </a>
+                                </a >
 
                                 <!-- PV Module (Simulated data) -->
                                 <svg width="70" height="30" viewBox="0 0 70 30" overflow="visible" id="pv1" x="204" y="90">
@@ -716,13 +716,13 @@
                                 </a >
 
                                 <!-- Autarky / Ratio (LHS of Inverter Icon) -->
-                                <text id="autarkyp_value" x="110" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarkyp_value" x="120" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
-                                <text id="autarky" x="110" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarky" x="113" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Autarky
                                 </text>
-                                <text id="ratiop_value" x="165" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="ratiop_value" x="160" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
                                 <text id="ratio" x="166" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
@@ -1118,7 +1118,7 @@
                                     <span id="v11-total-pv-unit" class="text-sm ml-1"></span>
                                 </div>
                             </div>
-                       </div>
+                        </div>
                     </div>
                     <!-- Kolom 2: Baterai & Total Energi -->
                     <div class="solar-card">
@@ -1382,9 +1382,13 @@
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
-        // ** BARU: Efisiensi Inverter saat Discharging (92%) **
+        // ** Efisiensi Inverter saat Discharging (92%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.92; 
+        // ** BARU: Efisiensi Pengisian Baterai (98%) **
+        const INVERTER_CHARGE_EFFICIENCY = 0.98;
         // --------------------------
+        // Auto-refresh rate (5 menit)
+        const AUTO_REFRESH_MS = 5 * 60 * 1000; 
 
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
@@ -1451,7 +1455,7 @@
             pvVoltage: DEFAULT_DISPLAY_STR + ' V',
             pvCurrent: DEFAULT_DISPLAY_STR + ' A',
             inverterStatus: DEFAULT_DISPLAY_STR,
-            autarkyPercentage: DEFAULT_DISPLAY, // BARU: Autarky
+            autarkyPercentage: DEFAULT_DISPLAY, 
             ratioPercentage: DEFAULT_DISPLAY,
             totalSolarMWh: 0.0 
         };
@@ -2217,7 +2221,7 @@
                 const addrB = parseInt(b.addr);
                 if (isNaN(addrA)) return 1;
                 if (isNaN(addrB)) return -1;
-                return addrA - addrB;
+                return addrA - b.addr;
             });
 
             if (batteries.length === 0) {
@@ -3202,9 +3206,8 @@
         
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
-         * Logic Grid PLN di sini DIHAPUS/DINONAKTIFKAN.
-         * **PERBAIKAN LOGIKA:** Menghitung Defisit AC (Beban - PV) untuk menentukan
-         * Daya Baterai (DC) yang BENAR untuk visual diagram saat discharge.
+         * **PERBAIKAN LOGIKA KRITIS:** Menggunakan Surplus PV untuk Forcing Daya Baterai saat Charging,
+         * dan menggunakan Defisit AC untuk Forcing Daya Baterai saat Discharging.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3217,25 +3220,45 @@
             
             let calculatedBatP;
 
-            // Logika Koreksi Discharge:
-            if (rawCurrent < -minimumPowerThreshold) {
-                // 1. Hitung Defisit AC (daya AC yang harus ditutup baterai)
-                const solarP_AC_Equivalent = solarP; // Asumsi PV DC -> AC Inverter Loss diabaikan untuk simplifikasi alur
+            // Logika Koreksi Daya Baterai (CHARGE vs DISCHARGE):
+            
+            // Asumsi efisiensi konversi DC/AC dari PV ke Load (misalnya 95%)
+            const efficiency_PV_to_Load = 0.95; 
+            const solarP_AC_Equivalent = solarP * efficiency_PV_to_Load;
+            
+            const surplusAC = solarP_AC_Equivalent - loadP; 
+
+            if (rawCurrent > minimumPowerThreshold) {
+                // KASUS CHARGE: PV Surplus harus mengisi Baterai (Surplus Forcing)
+                
+                if (surplusAC > minimumPowerThreshold && bmsData.soc < 99) { // Hanya Force jika ada surplus dan baterai belum penuh
+                    // Hitung daya DC yang dihasilkan surplus AC
+                    // Diasumsikan surplus DC setara dengan surplus AC
+                    const surplusDC_forced = Math.max(minimumPowerThreshold, surplusAC / INVERTER_CHARGE_EFFICIENCY);
+                    
+                    // Kita FORCE calculatedBatP menjadi Surplus DC yang tersedia.
+                    // Ini mengabaikan pembatasan charging dari BMS/MPPT untuk tujuan visual yang logis.
+                    calculatedBatP = surplusDC_forced; 
+                    
+                } else {
+                    // Jika PV tidak surplus (atau baterai hampir penuh), gunakan nilai DC murni BMS (yang harusnya kecil/nol)
+                    calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
+                }
+
+            } else if (rawCurrent < -minimumPowerThreshold) {
+                // KASUS DISCHARGE: Baterai harus menutupi Defisit AC (Defisit Forcing)
+                
                 let deficitAC = loadP - solarP_AC_Equivalent; 
 
-                // 2. Hanya jalankan koreksi jika ada defisit AC yang harus ditutup
-                if (deficitAC > 0) {
+                if (deficitAC > minimumPowerThreshold) {
                     // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
                     calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
                 } else {
-                    // Jika Baterai Discharge, tetapi PV menutupi/melebihi beban (deficitAC <= 0),
-                    // kita tetap gunakan nilai rawBatP_DC (DC murni dari BMS).
-                    // Ini menangani kasus di mana ada arus discharge sangat kecil untuk internal
-                    // atau saat PV baru mulai/berakhir.
+                    // Jika PV sudah menutupi/melebihi beban, gunakan nilai rawBatP_DC (arus kecil discharge internal)
                     calculatedBatP = rawBatP_DC;
                 }
             } else {
-                // Saat CHARGE atau IDLE, gunakan nilai DC murni dari BMS
+                // Saat IDLE, gunakan nilai DC murni dari BMS (sekitar nol)
                 calculatedBatP = rawBatP_DC;
             }
 
@@ -3243,9 +3266,9 @@
             latestDiagramData.gridPower = 0.0; 
             // ----------------------------------------------
             
-            // PERBAIKAN: Tambahkan validasi agar calculatedBatP tidak menjadi angka negatif tak terhingga (jika inverter efficiency 0)
-            if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) {
-                 calculatedBatP = rawBatP_DC; // Fallback jika perhitungan gagal
+            // Final check agar calculatedBatP valid
+            if (calculatedBatP === undefined || isNaN(calculatedBatP) || !isFinite(calculatedBatP)) {
+                 calculatedBatP = rawBatP_DC; // Fallback
             }
 
 
@@ -3261,7 +3284,6 @@
             const batP = latestDiagramData.batteryPower; 
             
             // Rasio Autarky (SSR) & Ratio (SCR)
-            const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
             
             // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
@@ -3270,20 +3292,18 @@
             let ratio = 0;
             let autarky_ssr = 0; 
             
-            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
-            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
+            if (loadP > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
-                const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
+                const usedSelfGeneratedPower = Math.min(selfSupply, loadP); // Menggunakan loadP (beban)
                 
                 // AUTARKY (SSR): Energi Sendiri / Total Beban
-                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                autarky_ssr = (usedSelfGeneratedPower / loadP) * 100;
                 
                 // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
                 const totalProduction = providedBySolar + providedByBat_AC_Equivalent; 
                 ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
             } else {
                 // Jika semua nol atau sangat kecil (mode Off-Grid 24 Jam Penuh), asumsikan 100%
-                // Asumsi: Beban kecil dan PV/Baterai mati/idle.
                 autarky_ssr = 100; 
                 ratio = 100;
             }
@@ -3295,13 +3315,10 @@
             // PERBAIKAN #4: Pastikan SOC, SOH, dan Remaining Energy diisi dari bmsData (number)
             latestDiagramData.batterySOC = bmsData.soc; 
             latestDiagramData.batterySOH = bmsData.soh;
-            // Menggunakan nilai remainingAh yang sudah dihitung fallback
             latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh; 
 
 
             // Memperbarui teks dengan data BMS (voltage, current)
-            // *PENTING*: Di sini kita gunakan raw current dari BMS (rawBatteryI) untuk menentukan status dan tampilan A, 
-            // tetapi kita gunakan calculatedBatP untuk tampilan W di diagram.
             updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
             
             // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
@@ -3310,20 +3327,18 @@
             // 3. Kontrol Animasi Aliran
             
             // 1. Solar Flow 
-            // PV Power selalu positif (Aliran Normal 0;1: Atas ke Bawah)
             controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP));
 
             // 2. Load Flow 
-            // Load Power selalu positif (Aliran Normal 0;1: Kiri ke Kanan)
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
-            const batAbsPower = Math.abs(batP); // Menggunakan P_AC setara (visual)
+            const batAbsPower = Math.abs(batP); 
             
             if (batAbsPower > minimumPowerThreshold) { 
-                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah) -> powerValue positif
+                if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
-                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas) -> powerValue negatif
+                } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower); 
                 }
             } else {
@@ -3331,7 +3346,6 @@
             }
 
             // 4. Grid Flow (DIPAKSA OFF)
-            // Karena Grid non-aktif, panggil controlFlow dengan power 0 untuk mematikan animasi
             controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
             
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
@@ -3505,6 +3519,12 @@
             updateDashboard(); 
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             
+            // Skrip Refresh Otomatis ditambahkan di sini
+            console.log(`Auto-refresh halaman diaktifkan setiap ${AUTO_REFRESH_MS / 60000} menit.`);
+            setTimeout(() => {
+                window.location.reload();
+            }, AUTO_REFRESH_MS);
+
             startMQTT();
 
             showMessage(`Monitoring Instan dimulai ke ${serverIp}. PV Correction: +${INSTANT_PV_PERCENT.toFixed(1)}%.`, 'success');
