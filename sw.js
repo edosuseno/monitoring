@@ -5,7 +5,7 @@ self.addEventListener('install', function(event) {
         '/monitoring/aeproplts.html',
         '/monitoring/manifest.json',
         '/monitoring/icon-192.png',
-        '/monitoring/icons/icon-512.png'
+        '/monitoring/icon-512.png'
         // tambah file lain yang penting (CSS, JS, asset) jika kamu mau
       ]);
     })
