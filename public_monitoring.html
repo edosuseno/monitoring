@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
-<link rel="apple-touch-icon" href="/monitoring/icon-192.png">
+<link rel="apple-touch-icon" href="/monitoring/icons/icon-192.png">
     <!-- END PWA METADATA -->
     
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
@@ -605,7 +605,7 @@
                                     <text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">
                                         -- kWh / -- kWh
                                     </text>
-                                </a >
+                                </a>
 
                                 <!-- PV Module (Simulated data) -->
                                 <svg width="70" height="30" viewBox="0 0 70 30" overflow="visible" id="pv1" x="204" y="90">
@@ -716,13 +716,13 @@
                                 </a >
 
                                 <!-- Autarky / Ratio (LHS of Inverter Icon) -->
-                                <text id="autarkyp_value" x="120" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarkyp_value" x="110" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
-                                <text id="autarky" x="113" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="autarky" x="110" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Autarky
                                 </text>
-                                <text id="ratiop_value" x="160" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="ratiop_value" x="163" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
                                 <text id="ratio" x="166" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
@@ -1383,12 +1383,15 @@
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
         // ** Efisiensi Inverter saat Discharging (92%) **
-        const INVERTER_DISCHARGE_EFFICIENCY = 0.92; 
+        const INVERTER_DISCHARGE_EFFICIENCY = 0.98; 
         // ** BARU: Efisiensi Pengisian Baterai (98%) **
         const INVERTER_CHARGE_EFFICIENCY = 0.98;
-        // --------------------------
         // Auto-refresh rate (5 menit)
         const AUTO_REFRESH_MS = 5 * 60 * 1000; 
+        
+        // Ambang batas daya minimum untuk menganggap aliran signifikan (50W ~ 1A @ 48V)
+        const MINIMUM_POWER_THRESHOLD = 50;
+        // --------------------------
 
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
@@ -2855,7 +2858,7 @@
             const maxPower = 5000;
             let duration = maxDuration - (power / maxPower) * (maxDuration - minDuration);
             
-            if (power < 10) duration = maxDuration;
+            if (power < MINIMUM_POWER_THRESHOLD) duration = maxDuration; // Menggunakan MINIMUM_POWER_THRESHOLD
             if (power > maxPower) duration = minDuration; 
             
             return `${duration.toFixed(1)}s`;
@@ -2869,7 +2872,7 @@
          */
         function controlFlow(animIds, powerValue, absPower) { 
             const flowSpeed = getFlowDuration(absPower);
-            const isFlowing = absPower > 10;
+            const isFlowing = absPower > MINIMUM_POWER_THRESHOLD; // Menggunakan MINIMUM_POWER_THRESHOLD
             
             // Tentukan keyPoints yang eksplisit
             let keyPoints;
@@ -2954,7 +2957,7 @@
             let flowBaseColor = overallColorStop;
             
             const absPower = Math.abs(batPower);
-            const isFlowing = absPower > 10;
+            const isFlowing = absPower > MINIMUM_POWER_THRESHOLD; // Menggunakan MINIMUM_POWER_THRESHOLD
             
             if (isFlowing) {
                 if (batPower > 0) { // CHARGING (Positif = Charge)
@@ -3212,7 +3215,9 @@
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower;
-            const minimumPowerThreshold = 10;
+            
+            // Ambang batas daya minimum (50W) untuk menganggap aliran signifikan
+            const minimumPowerThreshold = MINIMUM_POWER_THRESHOLD; 
             
             // Daya DC murni dari BMS
             const rawBatP_DC = bmsData.totalPower;
@@ -3228,37 +3233,37 @@
             
             const surplusAC = solarP_AC_Equivalent - loadP; 
 
-            if (rawCurrent > minimumPowerThreshold) {
+            if (rawCurrent > 0) {
                 // KASUS CHARGE: PV Surplus harus mengisi Baterai (Surplus Forcing)
                 
-                if (surplusAC > minimumPowerThreshold && bmsData.soc < 99) { // Hanya Force jika ada surplus dan baterai belum penuh
+                if (surplusAC > minimumPowerThreshold) {
+                    // Ada Surplus signifikan, dan Baterai aktif charging (rawCurrent > 0)
                     // Hitung daya DC yang dihasilkan surplus AC
-                    // Diasumsikan surplus DC setara dengan surplus AC
+                    // Daya Baterai ditampilkan = Surplus AC / Efisiensi Charge (Konversi DC)
                     const surplusDC_forced = Math.max(minimumPowerThreshold, surplusAC / INVERTER_CHARGE_EFFICIENCY);
                     
                     // Kita FORCE calculatedBatP menjadi Surplus DC yang tersedia.
-                    // Ini mengabaikan pembatasan charging dari BMS/MPPT untuk tujuan visual yang logis.
                     calculatedBatP = surplusDC_forced; 
                     
                 } else {
-                    // Jika PV tidak surplus (atau baterai hampir penuh), gunakan nilai DC murni BMS (yang harusnya kecil/nol)
+                    // Jika PV tidak surplus signifikan, gunakan nilai DC murni BMS (yang sudah dikoreksi)
                     calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
                 }
 
-            } else if (rawCurrent < -minimumPowerThreshold) {
+            } else if (rawCurrent < 0) {
                 // KASUS DISCHARGE: Baterai harus menutupi Defisit AC (Defisit Forcing)
                 
                 let deficitAC = loadP - solarP_AC_Equivalent; 
 
                 if (deficitAC > minimumPowerThreshold) {
-                    // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
+                    // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Discharging. Nilai harus NEGATIF.
                     calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
                 } else {
                     // Jika PV sudah menutupi/melebihi beban, gunakan nilai rawBatP_DC (arus kecil discharge internal)
                     calculatedBatP = rawBatP_DC;
                 }
             } else {
-                // Saat IDLE, gunakan nilai DC murni dari BMS (sekitar nol)
+                // Saat IDLE (rawCurrent ~ 0), gunakan nilai DC murni dari BMS (sekitar nol)
                 calculatedBatP = rawBatP_DC;
             }
 
