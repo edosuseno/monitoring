@@ -820,7 +820,7 @@
                                     <!-- Titik Animasi 2 (Flow Kotak -> Icon) -->
                                     <circle cx="0" cy="0" id="es-dot-2" r="3.5" fill="var(--color-load)">
                                         <animateMotion id="load_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
-                                            <mpath href="#es-line-2"></mpath>
+                                            <mpath href="#es-line-2"></path>
                                         </animateMotion>
                                     </circle>
                                 </svg>
@@ -876,7 +876,7 @@
                                         <!-- Titik Animasi 2 (Flow Kotak <-> Ikon) -->
                                         <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)">
                                              <animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
-                                                <mpath href="#bat-line-to-icon"></mpath>
+                                                <mpath href="#bat-line-to-icon"></path>
                                             </animateMotion>
                                         </circle>
 
@@ -1413,6 +1413,11 @@
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant'; 
+        // --- KONSTANTA BARU UNTUK PERSISTENSI DAILY ENERGY ---
+        const STORAGE_KEY_DAILY_CHARGE = 'aepro_bms_daily_charge';
+        const STORAGE_KEY_DAILY_DISCHARGE = 'aepro_bms_daily_discharge';
+        const STORAGE_KEY_LAST_DAY = 'aepro_bms_last_day';
+        // ----------------------------------------------------
         const UPDATE_INTERVAL = 5000; // 5 detik
         const MS_PER_HOUR = 1000 * 60 * 60; // 3,600,000 ms
         const UPDATE_INTERVAL_WH_FACTOR = UPDATE_INTERVAL / MS_PER_HOUR; // Faktor untuk mengubah Watt ke Watt-hour
@@ -1425,12 +1430,12 @@
         let LOAD_CALIBRATION_PERCENT = INSTANT_LOAD_PERCENT; 
         let energyChartInstance = null;
 
-        // --- VARIABEL AKUMULASI BMS (NON-PERSISTEN) ---
-        let dailyChargeEnergyWh = 0.0; 
-        let dailyDischargeEnergyWh = 0.0;
+        // --- VARIABEL AKUMULASI BMS (NON-PERSISTEN SEMENTARA) ---
+        let dailyChargeEnergyWh = 0.0; // AKAN DIISI DARI localStorage
+        let dailyDischargeEnergyWh = 0.0; // AKAN DIISI DARI localStorage
         
-        // --- Variabel Waktu untuk Reset Harian (NON-PERSISTEN) ---
-        let lastDay = new Date().getDate(); 
+        // --- Variabel Waktu untuk Reset Harian (NON-PERSISTEN SEMENTARA) ---
+        let lastDay = new Date().getDate(); // AKAN DIISI DARI localStorage
 
         window.realtimeData = { 
             labels: [], pvPower: [], acLoad: []
@@ -1463,8 +1468,8 @@
             dailyLoad: DEFAULT_DISPLAY_STR,
             dailyGridBuy: DEFAULT_DISPLAY_STR,
             dailyGridSell: DEFAULT_DISPLAY_STR, 
-            dailyBatCharge: DEFAULT_DISPLAY_STR,
-            dailyBatDischarge: DEFAULT_DISPLAY_STR, 
+            dailyBatCharge: DEFAULT_DISPLAY_STR, // Nilai tampilan (format kWh)
+            dailyBatDischarge: DEFAULT_DISPLAY_STR, // Nilai tampilan (format kWh)
             pvPeakPower: CONFIG_PV_PEAK_WATT_DEFAULT,
             pvEfficiency: DEFAULT_DISPLAY, 
             effectiveSunHours: CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT,
@@ -1560,7 +1565,36 @@
         }
 
         /**
-         * Menampilkan jam real-time dan menjalankan logika reset harian
+         * FUNGSI BARU: Memuat data Daily Energy dari LocalStorage.
+         */
+        function loadDailyEnergy() {
+            const savedCharge = localStorage.getItem(STORAGE_KEY_DAILY_CHARGE);
+            const savedDischarge = localStorage.getItem(STORAGE_KEY_DAILY_DISCHARGE);
+            const savedDay = localStorage.getItem(STORAGE_KEY_LAST_DAY);
+            
+            const now = new Date();
+            const today = now.getDate();
+            
+            // Cek apakah data yang disimpan berasal dari hari ini (persistent check)
+            if (savedDay && parseInt(savedDay) === today) {
+                dailyChargeEnergyWh = tryParseFloat(savedCharge) || 0.0;
+                dailyDischargeEnergyWh = tryParseFloat(savedDischarge) || 0.0;
+                lastDay = today;
+                console.log(`[PERSISTENCE] Loaded daily energy. Charge: ${dailyChargeEnergyWh.toFixed(0)} Wh, Discharge: ${dailyDischargeEnergyWh.toFixed(0)} Wh.`);
+            } else {
+                 // Reset jika hari berganti atau tidak ada data
+                dailyChargeEnergyWh = 0.0;
+                dailyDischargeEnergyWh = 0.0;
+                lastDay = today;
+                localStorage.setItem(STORAGE_KEY_LAST_DAY, today.toString());
+                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, '0.0');
+                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, '0.0');
+                console.log("[PERSISTENCE] Daily energy reset for a new day or first load.");
+            }
+        }
+        
+        /**
+         * Menampilkan jam real-time dan menjalankan logika reset harian (kini persisten)
          */
         function updateTime() {
             const now = new Date();
@@ -1576,14 +1610,20 @@
             safeUpdate('v2-status-time', `Status ${timeStr}`);
             safeUpdate('v14-status-time', `Status ${timeStr}`);
             
-            // --- LOGIKA RESET HARIAN (NON-PERSISTEN) ---
+            // --- LOGIKA RESET HARIAN (PERSISTEN) ---
             const today = now.getDate();
             if (today !== lastDay) {
                 // Reset akumulasi harian saat hari berganti (jam 00:00)
                 dailyChargeEnergyWh = 0.0;
                 dailyDischargeEnergyWh = 0.0;
                 lastDay = today;
-                console.log("Daily Energy (non-persistent) reset for the new day.");
+                
+                // Simpan ke localStorage
+                localStorage.setItem(STORAGE_KEY_LAST_DAY, today.toString());
+                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, '0.0');
+                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, '0.0');
+                
+                console.log("[PERSISTENCE] Daily Energy (persistent) reset for the new day.");
             }
             // ------------------------------------------
         }
@@ -3120,7 +3160,7 @@
 
             setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`); 
             
-            // --- DAILY CHARGE/DISCHARGE (AKUMULASI LOKAL) ---
+            // --- DAILY CHARGE/DISCHARGE (AKUMULASI LOKAL PERSISTEN) ---
             
             // Konversi Wh ke kWh
             const chargeKwh = dailyChargeEnergyWh / 1000;
@@ -3207,6 +3247,7 @@
         
         /**
          * FUNGSI KRITIS: Akumulasi Daily Charge/Discharge dan Logika Guardrail PV.
+         * MODIFIKASI: Menambahkan penyimpanan ke localStorage
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
@@ -3222,6 +3263,7 @@
 
             // Logika Koreksi Daya Baterai (CHARGE vs DISCHARGE):
             const currentThreshold = 0.1;
+            let energyUpdated = false;
 
             if (rawCurrent > currentThreshold) {
                 // KASUS CHARGE
@@ -3239,6 +3281,7 @@
                 const chargePowerW = calculatedBatP; 
                 const chargedEnergyWh = chargePowerW * UPDATE_INTERVAL_WH_FACTOR;
                 dailyChargeEnergyWh += chargedEnergyWh; 
+                energyUpdated = true;
 
 
             } else if (rawCurrent < -currentThreshold) {
@@ -3251,11 +3294,19 @@
                 const dischargePowerW = Math.abs(calculatedBatP); // Gunakan abs(P_DC) yang sudah dikoreksi
                 const dischargedEnergyWh = dischargePowerW * UPDATE_INTERVAL_WH_FACTOR;
                 dailyDischargeEnergyWh += dischargedEnergyWh; 
+                energyUpdated = true;
                 
             } else {
                 // Saat IDLE (rawCurrent ~ 0)
                 calculatedBatP = rawBatP_DC;
             }
+
+            // Simpan Data Daily Energy ke LocalStorage jika ada perubahan
+            if (energyUpdated) {
+                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, dailyChargeEnergyWh.toFixed(2));
+                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, dailyDischargeEnergyWh.toFixed(2));
+            }
+
 
             // Final check agar calculatedBatP valid
             if (calculatedBatP === undefined || isNaN(calculatedBatP) || !isFinite(calculatedBatP)) {
@@ -3534,6 +3585,9 @@
                 });
             }
 
+            // --- PERBAIKAN: Muat energi harian dari LocalStorage sebelum memulai timer ---
+            loadDailyEnergy();
+            
             updateTime();
             setInterval(updateTime, 1000); 
 
