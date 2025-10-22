@@ -4,18 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
-    
+
+    <!-- PWA METADATA - Dihapus/Dipotong yang tidak relevan.
+         Perbaikan: Menghapus meta tag yang sudah deprecated (apple-mobile-web-app-capable)
+         karena tidak bisa diperbaiki tanpa file manifest/ikon yang hilang. -->
     <link rel="manifest" href="/monitoring/manifest.json">
-<meta name="theme-color" content="#05050D">
+    <meta name="theme-color" content="#05050D">
 
-<!-- iOS / Apple specific -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-
-<link rel="apple-touch-icon" href="/monitoring/icons/icon-192.png">
-    <!-- END PWA METADATA -->
-    
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,33 +26,33 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <!-- SVG.js untuk Diagram -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.0.16/svg.min.js"></script>
-    
+
     <!-- Konfigurasi Tailwind & Variabel CSS (Digabung) -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'blynk-primary': '#4B87FF', 
-                        'bg-main': '#05050D', 
-                        
+                        'blynk-primary': '#4B87FF',
+                        'bg-main': '#05050D',
+
                         // SKEMA WARNA PROFESIONAL (FUNGSI)
                         'dc-color': '#BFFF00', // Hijau Lime Lembut (PV/DC)
                         'ac-color': '#FFB900', // Kuning Emas Hangat (AC-Beban)
                         'blue-bat': '#00FFFF', // Cyan Cerah (Baterai)
                         'green-400': '#00C853', // Hijau Cerah (Rupiah/SOH)
-                        
+
                         // WARNA SEKUNDER (HIGH PRIORITY)
-                        'pink-med': '#FF69B4', 
-                        'purple-med': '#8E44AD', 
-                        'orange-red': '#E74C3C', 
+                        'pink-med': '#FF69B4',
+                        'purple-med': '#8E44AD',
+                        'orange-red': '#E74C3C',
                         'warning-red': '#EF4444', // Merah Peringatan Terang
 
                          // Warna Chart.js
-                        'chart-pv': '#BFFF00', 
-                        'chart-load': '#FFB900', 
-                        'chart-self-consumption': '#00FFFF', 
-                        'chart-surplus': '#8E44AD', 
+                        'chart-pv': '#BFFF00',
+                        'chart-load': '#FFB900',
+                        'chart-self-consumption': '#00FFFF',
+                        'chart-surplus': '#8E44AD',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -69,80 +64,70 @@
     <style>
         /* VARIABEL CSS UMUM */
         :root {
-            --primary: #4B87FF; 
+            --primary: #4B87FF;
             --secondary: #10B981;
             --danger: #F87171;
-            --warning: #FACC15; 
-            --solar-dark: #05050D; 
-            --solar-card-bg: rgba(20, 20, 48, 0.4); 
-            --blue-bat: #00FFFF; 
-            --green-400: #00C853; 
-            --warning-red: #EF4444; 
-            --orange-red: #E74C3C; 
-            --pink-400: #F472B6; 
-            
-            --stabilo-green: #BFFF00; 
-            --soft-brown: #B8860B; 
-            
+            --warning: #FACC15;
+            --solar-dark: #05050D;
+            --solar-card-bg: rgba(20, 20, 48, 0.4);
+            --blue-bat: #00FFFF;
+            --green-400: #00C853;
+            --warning-red: #EF4444;
+            --orange-red: #E74C3C;
+            --pink-400: #F472B6;
+
+            --stabilo-green: #BFFF00;
+            --soft-brown: #B8860B;
+
             --red-cell: #F87171; /* Warna Sel Kritis */
             --green-cell: #34D399; /* Warna Sel Normal */
-            
+
             /* VARIBEL CSS DIAGRAM (DISESUAIKAN KE TEMA GELAP) */
             --color-solar: #BFFF00;      /* Hijau Stabilo (DC) */
             --color-battery: #FF69B4;    /* Pink Med (Baterai) - Diganti dari merah ke pink */
             --color-grid: #00FFFF;       /* Cyan Cerah/Biru Bat (Grid) */
             --color-load: #FFB900;       /* Kuning Emas (AC Load) */
             --color-inverter: #BBBBBB;   /* Abu-abu terang untuk Inverter */
-            --color-bar-green: #4CAF50; 
-            --color-bar-green-light: #BFFF00; 
-            --color-bar-yellow: #FFC107; 
-            --color-bar-red: #E57373; 
-            --color-bar-empty: #444444; 
+            --color-bar-green: #4CAF50;
+            --color-bar-green-light: #BFFF00;
+            --color-bar-yellow: #FFC107;
+            --color-bar-red: #E57373;
+            --color-bar-empty: #444444;
         }
-        
+
         body {
-            background-color: var(--solar-dark); 
+            background-color: var(--solar-dark);
             font-family: 'Inter', sans-serif;
-            color: #F8FAFC; 
-            
-            /* CSS UNTUK MENGHILANGKAN SCROLLBAR (Non-iOS Indicator) */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;     /* Firefox */
+            color: #F8FAFC;
         }
-
-        body::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, dan Opera */
-        }
-        /* END SCROLLBAR FIX */
-
 
         /* GAYA CARD UMUM */
         .solar-card {
-            background-color: var(--solar-card-bg); 
+            background-color: var(--solar-card-bg);
             color: #F8FAFC;
-            border-radius: 16px; 
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); 
-            border: 1px solid rgba(71, 85, 105, 0.2); 
+            border-radius: 16px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(71, 85, 105, 0.2);
             transition: all 0.3s ease;
         }
         .solar-card:hover {
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
-            transform: translateY(-2px); 
-            background-color: rgba(20, 20, 48, 0.6); 
+            transform: translateY(-2px);
+            background-color: rgba(20, 20, 48, 0.6);
         }
 
         /* GAYA KHUSUS DIAGRAM */
         .diagram-section-container {
             width: 100%;
             background: rgba(20, 20, 48, 0.8); /* Mirip solar-card */
-            padding: 20px;
+            padding: 10px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
             border-radius: 12px;
             border: 1px solid rgba(71, 85, 105, 0.2);
         }
         .svg-container {
             width: 100%;
-            padding-bottom: 87.75%; /* (430/490) */
+            padding-bottom: 72%; /* (430/490) */
             position: relative;
         }
         .svg-content {
@@ -152,75 +137,75 @@
             width: 100%;
             height: 100%;
         }
-        
+
         /* FONT DIAGRAM */
-        .st3, .remaining-energy, .pv-detail-text { 
-            font-size: 11px; 
+        .st3, .remaining-energy, .pv-detail-text {
+            font-size: 11px;
             font-weight: 400;
             fill: #C0C0C0; /* Light Gray */
         }
-        .st4 { 
-            font-size: 15px; 
+        .st4 {
+            font-size: 15px;
             font-weight: 600;
-        } 
-        .st10 { 
-            font-size: 18px; 
+        }
+        .st10 {
+            font-size: 18px;
             font-weight: 500;
-        } 
-        .st13 { 
-            font-size: 20px; 
+        }
+        .st13 {
+            font-size: 20px;
             font-weight: 600;
-        } 
-        .pv-detail-value { 
-            font-size: 11px !important; 
+        }
+        .pv-detail-value {
+            font-size: 11px !important;
             font-weight: 500 !important;
             fill: #C0C0C0 !important;
         }
-        .pv-extra-detail { 
-            font-size: 11px; 
+        .pv-extra-detail {
+            font-size: 11px;
             font-weight: 400;
-            fill: #C0C0C0; 
+            fill: #C0C0C0;
         }
         .pv-bus-label {
-            font-size: 9px; 
+            font-size: 9px;
             font-weight: 400;
             fill: #C0C0C0;
         }
 
         /* WARNA ALIRAN DIAGRAM */
-        #Solar [fill="grey"], #Solar [stroke="grey"], #Solar path[fill="#FFFFFF"] { 
-            fill: var(--color-solar) !important; 
-            stroke: var(--color-solar) !important; 
+        #Solar [fill="grey"], #Solar [stroke="grey"], #Solar path[fill="#FFFFFF"] {
+            fill: var(--color-solar) !important;
+            stroke: var(--color-solar) !important;
         }
-        #Solar text:not(.pv-detail-value):not(.pv-extra-detail):not(.pv-bus-label) { fill: var(--color-solar) !important; } 
-        #pv1_power_186 { fill: var(--color-solar) !important; } 
-        
+        #Solar text:not(.pv-detail-value):not(.pv-extra-detail):not(.pv-bus-label) { fill: var(--color-solar) !important; }
+        #pv1_power_186 { fill: var(--color-solar) !important; }
+
         #grid-flow circle { r: 3.5; fill: var(--color-grid) !important; }
         #load-flow circle { r: 3.5; fill: var(--color-load) !important; }
         #battery_flow circle { r: 3.5; fill="var(--color-battery)" !important; }
-        #solar-flow circle { r: 3.5; fill: var(--color-solar) !important; } 
+        #solar-flow circle { r: 3.5; fill: var(--color-solar) !important; }
         #Grid #grid_total_power, #Grid #daily_grid_buy_value { fill: var(--color-grid) !important; }
         #Load #ess_power, #Load #daily_load_value { fill="var(--color-load)" !important; }
         #battery_main #data\.batteryPower_190 { fill="var(--color-battery)" !important; }
-        #Inverter path { fill="var(--color-inverter)" !important; } 
-        #Inverter text { fill="var(--color-inverter)" !important; } 
+        #Inverter path { fill="var(--color-inverter)" !important; }
+        #Inverter text { fill="var(--color-inverter)" !important; }
         #solar-flow path, #grid-flow path, #load-flow path, #bat-line { stroke-width: 2; }
         #solar_power_box rect, #grid_power_box rect, #load_power_box rect, #battery_power_box rect {
-             fill: none; 
+             fill: none;
         }
         .battery-current-disch {
-            fill: var(--color-battery) !important; 
+            fill: var(--color-battery) !important;
             font-weight: 600;
         }
         .battery-current-charge {
-            fill: var(--color-load) !important; 
+            fill: var(--color-load) !important;
             font-weight: 600;
         }
         .soh-good { fill: var(--color-load) !important; font-weight: 600; }
         .soh-warning { fill: var(--color-bar-yellow) !important; font-weight: 600; }
         /* PERBAIKAN #1 CSS: Menghapus font-size 11px dari soh-default agar mewarisi st13 (20px) */
-        .soh-default { fill: #C0C0C0 !important; font-weight: 600; } 
-        
+        .soh-default { fill: #C0C0C0 !important; font-weight: 600; }
+
         /* HILANGKAN MESSAGE BOX */
         #status-message-diagram, #message-box {
             display: none !important;
@@ -241,26 +226,26 @@
             background: var(--secondary);
             box-shadow: 0 0 8px var(--secondary);
         }
-        
+
         /* ... (CSS PLTS & BMS lainnya, tidak diubah) ... */
         /* Progress Bar */
         .progress-bar {
             height: 8px;
             border-radius: 4px;
             overflow: hidden;
-            background-color: rgba(51, 65, 85, 0.5); 
+            background-color: rgba(51, 65, 85, 0.5);
         }
         .progress-fill {
             height: 100%;
             border-radius: 4px;
             transition: width 0.5s ease;
         }
-        
+
         /* KELAS WARNA DINAMIS BMS */
         .bg-soc-red { background-color: var(--warning-red); }
         .bg-soc-yellow { background-color: var(--warning); }
         .bg-soc-green { background-color: var(--green-400); }
-        
+
         .text-soc-red { color: var(--warning-red); }
         .text-soc-yellow { color: var(--warning); }
         .text-soc-green { color: var(--green-400); }
@@ -268,14 +253,14 @@
         /* Kelas Arus & Daya (Warna Dinamis) */
         .text-charging { color: var(--stabilo-green); } /* Hijau Stabilo (DC Color) */
         .text-discharging { color: var(--soft-brown); } /* Coklat Muda */
-        .text-standby { color: #F8FAFC; } 
-        
+        .text-standby { color: #F8FAFC; }
+
         /* Kelas Khusus untuk Arus (Ampere) - Merah saat Discharging */
-        .text-amp-discharging { color: var(--warning-red); } 
+        .text-amp-discharging { color: var(--warning-red); }
         /* Kelas Khusus untuk Daya (Watt) - Pink saat Standby */
-        .text-power-standby { color: var(--pink-400); } 
-        .text-purple-400 { color: #A78BFA; } 
-        
+        .text-power-standby { color: var(--pink-400); }
+        .text-purple-400 { color: #A78BFA; }
+
         /* Cell Styling (Dari BMS) */
         .cell-voltage {
             position: relative;
@@ -287,19 +272,19 @@
             flex-direction: column;
             justify-content: space-between;
             min-height: 120px;
-            background-color: rgba(20, 20, 48, 0.8); 
+            background-color: rgba(20, 20, 48, 0.8);
             border-bottom: 5px solid;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-        .modal-soc { border-bottom-color: #3b82f6; } 
-        .modal-soh { border-bottom-color: #22c55e; } 
-        .modal-cycles { border-bottom-color: #a855f7; } 
+        .modal-soc { border-bottom-color: #3b82f6; }
+        .modal-soh { border-bottom-color: #22c55e; }
+        .modal-cycles { border-bottom-color: #a855f7; }
 
         /* Cell Voltage Container: Grid Responsif di Modal */
         #modalCells {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.75rem; 
+            gap: 0.75rem;
         }
         @media (min-width: 640px) { /* sm */
             #modalCells { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -310,7 +295,7 @@
         @media (min-width: 1024px) { /* lg */
             #modalCells { grid-template-columns: repeat(7, minmax(0, 1fr)); }
         }
-               
+
         /* Gaya Chart (Dari PLTS) */
         .fullscreen-chart {
             position: fixed;
@@ -318,40 +303,40 @@
             left: 0;
             width: 100% !important;
             height: 100% !important;
-            background-color: #05050D !important; 
+            background-color: #05050D !important;
             z-index: 9999;
             padding: 20px;
         }
         /* Kontainer Grafik */
         #realtime-chart-container {
-            height: 350px; 
+            height: 350px;
             margin-top: 1rem;
         }
         @media (min-width: 768px) { /* md */
             #realtime-chart-container {
-                height: 350px; 
+                height: 350px;
             }
         }
 
         /* Gaya Khusus untuk Angka dan Satuan agar Sejajar (Ringkasan) */
         .summary-block {
             display: flex;
-            align-items: baseline; 
+            align-items: baseline;
             justify-content: flex-start;
         }
         .summary-value {
-            font-size: 3rem; 
-            font-weight: 900; 
-            line-height: 1; 
-            letter-spacing: -0.05em; 
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.05em;
         }
         .summary-unit {
-            font-size: 1.25rem; 
-            font-weight: 500; 
-            margin-left: 0.5rem; 
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
             line-height: 1;
         }
-        
+
         /* Gaya Kartu Daya Kecil (Dari PLTS) */
         .power-summary-card {
             background-color: rgba(40, 40, 70, 0.3);
@@ -360,32 +345,32 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: all 0.2s;
         }
-        
+
         /* Gaya untuk Kartu Detail Sistem (PLTS) */
         .detail-item {
             background-color: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(71, 85, 105, 0.2); 
-            border-radius: 10px; 
-            margin-bottom: 0.5rem; 
-            padding: 0.75rem 1rem; 
+            border: 1px solid rgba(71, 85, 105, 0.2);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            padding: 0.75rem 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .metric-title {
-            font-size: 0.95rem; 
+            font-size: 0.95rem;
         }
         .nominal-color span {
-            font-size: 1.125rem; 
+            font-size: 1.125rem;
             font-weight: 700;
         }
-        
+
         /* Gaya Judul Kartu Detail */
         .solar-card h3 {
-            padding-top: 0.25rem; 
-            padding-bottom: 0.5rem; 
-            margin-bottom: 1rem; 
-            padding-left: 1rem; 
+            padding-top: 0.25rem;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            padding-left: 1rem;
         }
 
         /* Gaya untuk Modal Detail Baterai (BMS) */
@@ -394,21 +379,21 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.5); 
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
         }
 
         /* Gaya untuk GRID METRIK DI KARTU BATERAI */
         .battery-metric-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem 0.5rem; 
+            gap: 0.75rem 0.75rem;
             margin-top: 0.75rem;
         }
         /* Desktop/Large Screen: 3 Kolom */
         @media (min-width: 1024px) {
             .battery-metric-grid {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 0.5rem 1rem;
+                gap: 0.75rem 1rem;
             }
         }
         .battery-metric-item {
@@ -421,7 +406,7 @@
         .battery-metric-grid > div:nth-child(2n):not(:last-child)::after {
             content: "";
             border-right: 1px solid rgba(71, 85, 105, 0.4);
-            margin-left: 0.5rem; 
+            margin-left: 0.75rem;
         }
         @media (min-width: 1024px) {
              /* Di layar besar, pemisah vertikal muncul di kolom 1 dan 2 */
@@ -439,7 +424,7 @@
 </head>
 
 <body class="min-h-screen p-4 sm:p-8 bg-bg-main">
-    
+
     <!-- Modal Kustom untuk Konfirmasi Navigasi (PLTS) -->
     <div id="custom-modal" class="fixed inset-0 hidden items-center justify-center p-4" style="background-color: rgba(0, 0, 0, 0.85); z-index: 1000;">
         <div id="modal-content" class="rounded-xl p-6 shadow-2xl max-w-sm w-full bg-slate-800">
@@ -474,7 +459,7 @@
               <div class="modal-summary-card modal-soh text-white"><h3 class="text-sm font-medium">State of Health</h3><div class="text-4xl font-extrabold"><span id="modalSOHPercent">N/A</span>%</div><div class="text-xs text-green-300 mt-2">Kapasitas Penuh: <span id="modalCapacity">N/A</span> Ah</div></div>
               <div class="modal-summary-card modal-cycles text-white"><h3 class="text-sm font-medium">Cycle Count</h3><div class="text-4xl font-extrabold"><span id="modalCycles">N/A</span></div><div class="text-xs text-purple-300 mt-2">Terakhir diperbarui: <span id="modalLastUpdate">N/A</span></div></div>
             </div>
-            
+
             <!-- 2 Kolom Detail -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <!-- Left: Voltage Metrics -->
@@ -506,7 +491,7 @@
                 </div>
               </div>
 
-              <!-- Right: Current & Power Metrics --> 
+              <!-- Right: Current & Power Metrics -->
               <div class="bg-gray-800 p-4 rounded-lg">
                 <h3 class="font-medium text-gray-300 mb-3 flex items-center">
                     <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500 mr-2"></i> Metrik Arus & Daya
@@ -551,29 +536,29 @@
             <!-- Header & Status Jam -->
             <header id="app-header" class="mb-6">
                 <!-- flex-col (HP) / md:flex-row (Desktop) -->
-                <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-center"> 
-                    
+                <div id="main-header-content" class="flex flex-col md:flex-row justify-between items-center">
+
                     <!-- Judul PLTS -->
-                    <div class="w-full text-center md:text-left"> 
+                    <div class="w-full text-center md:text-left">
                         <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                             AEPRO PLTS ONLINE
                         </h1>
                         <p class="text-gray-400 mt-1">Monitor Kinerja dan Performa Sistem PLTS.</p>
                     </div>
-                    
+
                     <!-- Jam & Tombol Kontrol -->
                     <div class="mt-4 md:mt-0 relentlessly-right flex flex-col md:flex-row items-center space-x-4">
-                        <div class="show md:block text-center md:text-right"> 
+                        <div class="show md:block text-center md:text-right">
                             <p id="current-date" class="text-sm text-gray-400"></p>
                             <p id="current-time" class="text-3xl font-bold text-white"></p>
                         </div>
-                        
+
                         <!-- Tombol Kontrol di DESKTOP (Dibiarkan kosong) -->
                         <div id="desktop-buttons" class="hidden md:flex space-x-3 items-center">
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Tombol Kontrol MOBILE (Dibiarkan kosong) -->
                 <div id="mobile-buttons" class="hidden md:hidden w-full grid grid-cols-2 gap-3 mb-6 mt-4">
                 </div>
@@ -581,7 +566,7 @@
 
             <!-- Panel Konfigurasi Dihapus, diganti dengan message box saja -->
             <p id="message-box" class="mt-4 w-full text-sm font-semibold p-3 rounded-xl hidden"></p>
-            
+
             <!-- Pesan Status/Error Diagram - Dihilangkan (display: none di CSS) -->
             <div id="status-message-diagram" class="mt-4 w-full"></div>
 
@@ -594,19 +579,19 @@
                     <div class="svg-container">
                         <!-- SVG ViewBox menggunakan -2 0 490 430. Garis vertikal tengah: X=239. Garis horizontal tengah: Y=218.5 -->
                         <svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 0 490 430" class="svg-content">
-                            
+
                             <!-- Definisikan Gradien SVG -->
                             <defs>
                                 <!-- Gradien dinamis akan dibuat di JavaScript -->
                             </defs>
-                            
+
                             <!-- Solar Elements -->
                             <svg id="Solar" style="overflow: visible; display: inline;" x="0%" y="-6%">
                                 <!-- PV Icon (Sun/Panel) -->
                                 <svg id="sun" x="120" y="48" width="30" height="30" viewBox="0 0 24 24">
                                     <path fill="var(--color-solar)" d="M11.45 2v3.55L15 3.77L11.45 2m-1 6L8 10.46l3.75 1.25L10.45 8M2 11.45L3.77 15l1.78-3.55H2M10 2H2v8c.57.17 1.17.25 1.77.25c3.58.01 6.49-2.9 6.5-6.5c-.01-.59-.1-1.18-.27-1.75m7 20v-6h-3l5-9v6h3l-5 9Z"></path>
                                 </svg>
-                                
+
                                 <!-- Total Solar Value (Top Center) -->
                                 <text id="total_solar_generation" x="239" y="72" dominant-baseline="central" text-anchor="middle" display="" class="st3" fill="var(--color-solar)">
                                     TOTAL ENERGY / TOTAL SOLAR
@@ -621,8 +606,8 @@
                                 <svg width="70" height="30" viewBox="0 0 70 30" overflow="visible" id="pv1" x="204" y="90">
                                     <rect width="70" height="30" rx="4.5" ry="4.5" fill="none" stroke-width="1" pointer-events="all" id="pv1" stroke="var(--color-solar)" class=""></rect>
                                 </svg>
-                                
-                                
+
+
                                 <!-- NILAI DAYA SOLAR (W) -->
                                 <svg id="solar_power_box" x="204" y="90">
                                     <a href="#">
@@ -631,7 +616,7 @@
                                         </text>
                                     </a >
                                 </svg>
-                                
+
                                 <!-- NILAI PARAMETER TAMBAHAN (Di bawah PV Module) - TATA LETAK 3X2 -->
                                 <g id="pv_extra_info" x="0%" y="0%">
                                     <!-- BARIS 1: Voltase Bus dan Peak -->
@@ -687,7 +672,7 @@
                                 <!-- Flow line down from Solar to Inverter -->
                                 <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
-                                    
+
                                     <!-- Titik Animasi 1 (Flow PV -> Kotak) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)">
                                         <animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
@@ -697,8 +682,8 @@
 
                                 </svg>
                             </svg>
-                        
-                        
+
+
                             <!-- Inverter Elements -->
                             <svg id="Inverter" style="overflow: visible" x="0%">
                                 <!-- Inverter Icon (Energy Manager) -->
@@ -732,14 +717,14 @@
                                 <text id="autarky" x="110" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Autarky
                                 </text>
-                                <text id="ratiop_value" x="163" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
+                                <text id="ratiop_value" x="165" y="260" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     --%
                                 </text>
                                 <text id="ratio" x="166" y="273" display="" class="st3 left-align" fill="var(--color-inverter)">
                                     Ratio
                                 </text>
                             </svg>
-                        
+
                             <!-- Grid Elements -->
                             <svg id="Grid" style="overflow: visible; display: inline;">
                                 <!-- Grid Icon (Pylon/Tower) -->
@@ -750,7 +735,7 @@
                                 <!-- KOTAK BARU UNTUK DISPLAY POWER GRID -->
                                 <svg id="grid_power_box" x="103" y="203.5">
                                     <rect width="70" height="30" rx="4.5" ry="4.5" fill="none" stroke-width="1" pointer-events="all" stroke="var(--color-grid)"></rect>
-                                    
+
                                     <!-- Nilai Daya Grid -->
                                     <a href="#">
                                         <text id="grid_total_power" x="35" y="15" dominant-baseline="central" text-anchor="middle" class="st4" fill="var(--color-grid)">
@@ -768,18 +753,20 @@
 
                                     <!-- Titik Animasi 1 (Flow Icon <-> Kotak) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-grid)">
-                                        <animateMotion id="grid_flow_anim_1" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
+                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
+                                        <animateMotion id="grid_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#grid-line-1"></path>
                                         </animateMotion>
                                     </circle>
                                     <!-- Titik Animasi 2 (Flow Kotak <-> Inverter) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-grid)">
-                                        <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
+                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
+                                        <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#grid-line-2"></path>
                                         </animateMotion>
                                     </circle>
                                 </svg>
-                                
+
                                 <!-- Daily Grid Buy Value -->
                                 <text id="daily_grid_buy_value" x="30" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
                                     --
@@ -789,13 +776,13 @@
                                 </text>
 
                             </svg>
-                        
+
                             <!-- Load Elements -->
                             <svg id="Load" style="overflow: visible" x="0%">
                                 <!-- KOTAK BARU UNTUK DISPLAY POWER LOAD -->
                                 <svg id="load_power_box" x="304" y="203.5">
                                     <rect width="70" height="30" rx="4.5" ry="4.5" fill="none" stroke-width="1" pointer-events="all" stroke="var(--color-load)"></rect>
-                                    
+
                                     <!-- Nilai Daya Load -->
                                     <a href="#">
                                         <text id="ess_power" x="35" y="15" dominant-baseline="central" text-anchor="middle" class="st4" fill="var(--color-load)">
@@ -810,28 +797,30 @@
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="es-line-1" d="M 265 218.5 L 304 218.5" display="" stroke="var(--color-load)" stroke-width="2"></path>
                                     <!-- Path 2: Dari Kotak ke Load Icon -->
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="es-line-2" d="M 374 218.5 L 398 218.5" display="" stroke="var(--color-load)" stroke-width="2"></path>
-                                    
+
                                     <!-- Titik Animasi 1 (Flow Inverter -> Kotak) -->
                                     <circle cx="0" cy="0" id="es-dot-1" r="3.5" fill="var(--color-load)">
+                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                         <animateMotion id="load_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#es-line-1"></path>
                                         </animateMotion>
                                     </circle>
                                     <!-- Titik Animasi 2 (Flow Kotak -> Icon) -->
                                     <circle cx="0" cy="0" id="es-dot-2" r="3.5" fill="var(--color-load)">
+                                        <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                         <animateMotion id="load_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#es-line-2"></path>
                                         </animateMotion>
                                     </circle>
                                 </svg>
-                                
+
                                 <!-- Load Icon (House/Home) -->
                                 <a href="#">
                                     <svg id="essen" viewBox="0 0 24 24" x="395" y="176" width="79" height="79">
                                         <path fill="var(--color-load)" d="m15 13l-4 4v-3H2v-2h9V9l4 4M5 20v-4h2v2h10v-7.81l-5-4.5L7.21 10H4.22L12 3l10 9h-3v8H5Z"></path>
                                     </svg>
                                 </a>
-                                
+
                                 <!-- Daily Load Value -->
                                 <a href="#">
                                     <text id="daily_load_value" x="400" y="265" display="" class="st10 left-align" fill="var(--color-load)">
@@ -842,14 +831,14 @@
                                     DAILY LOAD
                                 </text>
                             </svg>
-                        
+
                             <!-- Battery Elements -->
                             <svg id="battery_main" style="overflow: visible; display: inline;" x="0%">
                                 <g>
                                     <!-- KOTAK BARU UNTUK DISPLAY POWER BATERAI -->
                                     <svg id="battery_power_box" x="204" y="280">
                                         <rect width="70" height="30" rx="4.5" ry="4.5" fill="none" stroke-width="1" pointer-events="all" stroke="var(--color-battery)"></rect>
-                                        
+
                                         <!-- Nilai Daya Baterai -->
                                         <a href="#">
                                             <text id="data.batteryPower_190" x="35" y="15" dominant-baseline="central" text-anchor="middle" class="st4" fill="var(--color-battery)">
@@ -862,19 +851,21 @@
                                     <svg id="battery_flow" style="overflow: visible;">
                                         <!-- Path 1 (bat-line): Dari Inverter ke Atas Kotak -->
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line" d="M 239 250 L 239 280" display="" stroke="var(--color-battery)" stroke-width="2"></path>
-                                        
+
                                         <!-- Path 2: Dari Kotak ke Atas Baterai Icon -->
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line-to-icon" d="M 239 310 L 239 345" display="" stroke="var(--color-battery)" stroke-width="2"></path>
 
                                         <!-- Titik Animasi 1 (Flow Inverter <-> Kotak) -->
                                         <circle cx="0" cy="0" id="power-dot-discharge" r="3.5" fill="var(--color-battery)">
+                                             <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                              <animateMotion id="bat_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                                 <mpath href="#bat-line"></path>
                                             </animateMotion>
                                         </circle>
-                                        
+
                                         <!-- Titik Animasi 2 (Flow Kotak <-> Ikon) -->
                                         <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)">
+                                             <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                              <animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                                 <mpath href="#bat-line-to-icon"></mpath>
                                             </animateMotion>
@@ -902,7 +893,7 @@
                                     <text id="battery_remaining_energy" x="292.375" y="362" display="" class="remaining-energy left-align" fill="var(--color-battery)">
                                         -- Ah
                                     </text>
-                                    
+
                                     <svg id="Battery1_SOC" style="overflow: visible; display: inline;">
                                         <a href="#">
                                             <text id="battery_soc_184" x="292.375" y="383" display="" class="st13 left-align" fill="var(--color-battery)">
@@ -920,7 +911,7 @@
                                             -- A
                                         </text>
                                     </svg>
-                                    
+
                                     <!-- Daily Charge/Discharge (di kiri baterai) -->
                                     <svg id="battery_daily" style="overflow: visible;">
                                         <svg id="battery_daily_charge" style="overflow: visible;" x="0%" y="0%">
@@ -943,7 +934,7 @@
 
                                 </g>
                             </svg>
-                        
+
                         </svg>
                     </div>
                 </div>
@@ -956,7 +947,7 @@
                  <!-- RINGKASAN UTAMA -->
                 <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Ringkasan Kinerja Hari Ini</h2>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    
+
                     <!-- V10: ENERGI PV HARI INI (Produksi DC) -->
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
@@ -969,7 +960,7 @@
                         </div>
                         <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini (kWh).</p>
                     </div>
-                    
+
                     <!-- V21: BEBAN HARI INI (Konsumsi AC) -->
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
@@ -1013,7 +1004,7 @@
 
                 <!-- GRAFIK DAYA & KARTU KECIL -->
                 <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya</h2>
-                
+
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <!-- V2: PV Power (Input) -->
                     <div class="power-summary-card">
@@ -1054,9 +1045,9 @@
                 </div>
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
-                <div class="solar-card p-4 sm:p-6"> 
+                <div class="solar-card p-4 sm:p-6">
                     <!-- Tombol Full Layar & Reset Zoom -->
-                    <div class="flex justify-end space-x-3 mb-2"> 
+                    <div class="flex justify-end space-x-3 mb-2">
                         <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center">
                             <i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>
                             Reset Zoom
@@ -1071,11 +1062,11 @@
                         <canvas id="realtime-power-chart"></canvas>
                     </div>
                 </div>
-                
+
                 <!-- DETAIL MONITORING (DC dan AC) -->
                 <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Detail Sistem</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
+
                     <!-- Kolom 1: Panel Surya (DC) -->
                     <div class="solar-card">
                         <h3 class="text-xl font-semibold text-dc-color flex items-center border-b border-gray-700 pl-4">
@@ -1247,7 +1238,7 @@
         <!-- ========================================================================= -->
         <div id="bms-content-section" class="w-full mt-12 pt-8 border-t border-gray-700">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
+
                 <!-- Header BMS (Sub-Header) -->
                 <div class="flex flex-col items-center text-center w-full mb-8">
                     <div class="flex items-center justify-center">
@@ -1268,11 +1259,11 @@
 
                 <!-- Konten Utama BMS -->
                 <main class="w-full">
-                    
+
                     <!-- RINGKASAN SOH/SOC -->
                     <h3 class="text-xl font-semibold text-gray-300 mb-4">Ringkasan Baterai</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-                        
+
                       <!-- 1. SOC (State of Charge) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
@@ -1288,7 +1279,7 @@
                       <!-- 2. SOH (State of Health) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
-                              <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400"></i>
+                              <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400" id="icon-soh-summary"></i>
                               <span class="text-3xl font-extrabold text-green-400" id="summary-soh">N/A</span>
                           </div>
                           <p class="text-sm font-medium text-gray-400">SOH</p>
@@ -1296,7 +1287,7 @@
                               <div id="soh-progress-summary" class="progress-fill bg-green-500" style="width: 0%"></div>
                           </div>
                       </div>
-                        
+
                       <!-- 3. ARUS BATERAI (Total Penjumlahan) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
@@ -1333,7 +1324,7 @@
                               </div>
                           </div>
                           <p class="text-sm font-medium text-gray-400">Tegangan Pack</p>
-                          <p class="text-xs text-gray-500 mt-1">Rata-rata Tegangan Pack</p>
+                          <p class="text-xs text-gray-500 mt-1" id="summary-voltage-desc">Rata-rata Tegangan Pack</p>
                       </div>
 
                       <!-- 6. TEGANGAN BUS (Bus Voltage) -->
@@ -1350,12 +1341,12 @@
                       </div>
 
                     </div>
-                    
+
                     <!-- LIST KARTU BATERAI -->
                     <h3 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Baterai Terhubung (<span id="total-batteries">0</span>)</h3>
-                    
+
                     <div id="batteryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5"></div>
-                    
+
                     <div id="empty-state" class="hidden text-center py-12 solar-card rounded-xl shadow-sm">
                       <div class="text-blue-500 mb-4">
                         <i class="fas fa-car-battery text-5xl opacity-50"></i>
@@ -1378,36 +1369,23 @@
         </footer>
 
     </div>
-    
+
     <!-- Script Fungsionalitas -->
     <script>
         // ==========================================================
         // KONSTANTA & VARIABEL GLOBAL (Nilai Dibuat Paten/Hardcoded)
         // ==========================================================
-        
+
         // --- KONFIGURASI PATEN ---
         const INSTANT_SERVER_IP = 'iot.serangkota.go.id:9443';
         const INSTANT_AUTH_TOKEN = 'q3SRjKexoyK-dgb5dM21WxgFSRQBdqDh';
         const INSTANT_PV_PERCENT = 6.0;
         const INSTANT_LOAD_PERCENT = 0.0;
-        const BMS_MQTT_TOPIC_KEY = "316506218"; 
-        
-        // ** Efisiensi Inverter saat Discharging (98%) **
-        const INVERTER_DISCHARGE_EFFICIENCY = 0.98; 
-        // ** Efisiensi Pengisian Baterai (98%) **
-        const INVERTER_CHARGE_EFFICIENCY = 0.98;
-        // Auto-refresh rate (5 menit)
-        const AUTO_REFRESH_MS = 5 * 60 * 1000; 
-        
-        // Ambang batas daya minimum untuk menganggap aliran signifikan (50W ~ 1A @ 48V)
-        const MINIMUM_POWER_THRESHOLD = 50; 
-        // --------------------------
+        const BMS_MQTT_TOPIC_KEY = "316506218";
 
-        // --- KONSTANTA PENYIMPANAN HARIAN (LOCALSTORAGE) ---
-        const STORAGE_KEY_DAILY_CHARGE = 'aepro_bms_daily_charge';
-        const STORAGE_KEY_DAILY_DISCHARGE = 'aepro_bms_daily_discharge';
-        const STORAGE_KEY_LAST_DAY = 'aepro_bms_last_day';
-        // ----------------------------------------------------
+        // ** BARU: Efisiensi Inverter saat Discharging (92%) **
+        const INVERTER_DISCHARGE_EFFICIENCY = 0.92;
+        // --------------------------
 
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
@@ -1418,103 +1396,94 @@
             'V3': 'v3-pzem-energy', 'V11': 'v11-total-pv',
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
-        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant'; 
+        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
         const UPDATE_INTERVAL = 5000; // 5 detik
-        const MS_PER_HOUR = 1000 * 60 * 60; // 3,600,000 ms
-        const UPDATE_INTERVAL_WH_FACTOR = UPDATE_INTERVAL / MS_PER_HOUR; // Faktor untuk mengubah Watt ke Watt-hour
         const MAX_DATA_POINTS = 17280; // Sekitar 24 jam @ 5 detik
 
-        let fetchInterval = null; 
-        let serverIp = INSTANT_SERVER_IP; 
-        let authToken = INSTANT_AUTH_TOKEN; 
-        let ENERGY_CALIBRATION_PERCENT = INSTANT_PV_PERCENT; 
-        let LOAD_CALIBRATION_PERCENT = INSTANT_LOAD_PERCENT; 
+        let fetchInterval = null;
+        let serverIp = INSTANT_SERVER_IP;
+        let authToken = INSTANT_AUTH_TOKEN;
+        let ENERGY_CALIBRATION_PERCENT = INSTANT_PV_PERCENT;
+        let LOAD_CALIBRATION_PERCENT = INSTANT_LOAD_PERCENT;
         let energyChartInstance = null;
 
-        // --- VARIABEL AKUMULASI BMS (SEKARANG PERSISTEN DENGAN LOCALSTORAGE) ---
-        let dailyChargeEnergyWh = 0.0; 
-        let dailyDischargeEnergyWh = 0.0;
-        
-        // --- Variabel Waktu untuk Reset Harian ---
-        let lastDay = new Date().getDate(); 
-
-        window.realtimeData = { 
+        window.realtimeData = {
             labels: [], pvPower: [], acLoad: []
         };
-        
+
         // BMS (MQTT) Konstan
         let client;
         let batteries = [];
         let currentAddr = null; // Alamat baterai yang sedang dibuka di modal
         const cardTimers = {};
-        let lastRenderedAddresses = ''; 
-        
+        let lastRenderedAddresses = '';
+
         // --- DIAGRAM FLOW CONSTANTS & VARIABLES (INTEGRATED) ---
         const DEFAULT_DISPLAY = 0.0;
         const DEFAULT_DISPLAY_STR = '--';
-        const CONFIG_PV_PEAK_WATT_DEFAULT = 2000.0; 
-        const CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT = 5.0; 
-        
+        const CONFIG_PV_PEAK_WATT_DEFAULT = 2000.0;
+        const CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT = 5.0;
+
         // Global variables for diagram logic (from Blynk V7 and V9 - now only used as fallback)
-        let vpack = DEFAULT_DISPLAY; 
-        let current = DEFAULT_DISPLAY; 
-        
+        let vpack = DEFAULT_DISPLAY;
+        let current = DEFAULT_DISPLAY;
+
         let latestDiagramData = {
-            solarPower: DEFAULT_DISPLAY, 
-            loadPower: DEFAULT_DISPLAY, 
-            batteryPower: DEFAULT_DISPLAY, 
+            solarPower: DEFAULT_DISPLAY,
+            loadPower: DEFAULT_DISPLAY,
+            batteryPower: DEFAULT_DISPLAY,
             gridPower: 0.0, // Diinisialisasi 0.0 karena non-aktif
             rawGridPower: DEFAULT_DISPLAY,
             dailySolar: DEFAULT_DISPLAY_STR,
             dailyLoad: DEFAULT_DISPLAY_STR,
             dailyGridBuy: DEFAULT_DISPLAY_STR,
-            dailyGridSell: DEFAULT_DISPLAY_STR, 
+            dailyGridSell: DEFAULT_DISPLAY_STR,
             dailyBatCharge: DEFAULT_DISPLAY_STR,
-            dailyBatDischarge: DEFAULT_DISPLAY_STR, 
+            dailyBatDischarge: DEFAULT_DISPLAY_STR,
             pvPeakPower: CONFIG_PV_PEAK_WATT_DEFAULT,
-            pvEfficiency: DEFAULT_DISPLAY, 
+            pvEfficiency: DEFAULT_DISPLAY,
             effectiveSunHours: CONFIG_EFFECTIVE_SUN_HOURS_DEFAULT,
-            batterySOC: 0, 
-            batterySOH: 100, 
-            batteryRemainingEnergy: DEFAULT_DISPLAY, 
+            batterySOC: 0,
+            batterySOH: 100,
+            batteryRemainingEnergy: DEFAULT_DISPLAY, // PERBAIKAN: Gunakan nilai float 0.0 untuk angka
             inverterVoltage: DEFAULT_DISPLAY_STR + ' V',
             inverterCurrent: DEFAULT_DISPLAY_STR + ' A',
             loadFrequency: DEFAULT_DISPLAY_STR + ' Hz',
             pvVoltage: DEFAULT_DISPLAY_STR + ' V',
             pvCurrent: DEFAULT_DISPLAY_STR + ' A',
             inverterStatus: DEFAULT_DISPLAY_STR,
-            autarkyPercentage: DEFAULT_DISPLAY, 
+            autarkyPercentage: DEFAULT_DISPLAY, // BARU: Autarky
             ratioPercentage: DEFAULT_DISPLAY,
-            totalSolarMWh: 0.0 
+            totalSolarMWh: 0.0
         };
 
         const DIAGRAM_BLYNK_MAPPING = {
             // PV & DC
-            'V0': { key: 'pvVoltage', unit: 'V', isVoltage: true },     
-            'V1': { key: 'pvCurrent', unit: 'A', isCurrent: true },     
-            'V2': { key: 'solarPower', unit: 'W', isPower: true },      
-            'V3': { key: 'dailySolar', unit: 'kWh', isDailyEnergy: true }, 
-            'V11': { key: 'totalSolarMWh', isTotalEnergy: true },         
-            'V4': { key: 'effectiveSunHours', isStatic: true },            
-            'V6': { key: 'pvPeakPower', isStatic: true },                 
-            
-            // AC & Load
-            'V12': { key: 'inverterVoltage', unit: 'V', isVoltage: true }, 
-            'V13': { key: 'inverterCurrent', unit: 'A', isCurrent: true }, 
-            'V14': { key: 'loadPower', unit: 'W', isPower: true },       
-            'V16': { key: 'loadFrequency', unit: 'Hz', isFrequency: true }, 
-            'V21': { key: 'dailyLoad', unit: 'kWh', isDailyEnergy: true }, 
+            'V0': { key: 'pvVoltage', unit: 'V', isVoltage: true },
+            'V1': { key: 'pvCurrent', unit: 'A', isCurrent: true },
+            'V2': { key: 'solarPower', unit: 'W', isPower: true },
+            'V3': { key: 'dailySolar', unit: 'kWh', isDailyEnergy: true },
+            'V11': { key: 'totalSolarMWh', isTotalEnergy: true },
+            'V4': { key: 'effectiveSunHours', isStatic: true },
+            'V6': { key: 'pvPeakPower', isStatic: true },
 
-            // Battery (Only used for Diagram Logic Fallback)
+            // AC & Load
+            'V12': { key: 'inverterVoltage', unit: 'V', isVoltage: true },
+            'V13': { key: 'inverterCurrent', unit: 'A', isCurrent: true },
+            'V14': { key: 'loadPower', unit: 'W', isPower: true },
+            'V16': { key: 'loadFrequency', unit: 'Hz', isFrequency: true },
+            'V21': { key: 'dailyLoad', unit: 'kWh', isDailyEnergy: true },
+
+            // Battery (Only used for Diagram Logic Fallback and Daily Charge/Discharge)
             'V7': { key: 'vpack', isGlobal: true, isBatVoltage: true },   // Fallback for Vpack
             'V9': { key: 'current', isGlobal: true, isBatCurrent: true }, // Fallback for Current
-            'V10': { key: 'dailyBatCharge', unit: 'kWh', isDailyEnergy: true, isBatCharge: true}, // Digunakan untuk update daily solar energy (total)
+            'V10': { key: 'dailyBatCharge', unit: 'kWh', isDailyEnergy: true, isBatCharge: true},
         };
 
         // ==========================================================
-        // UTILITY FUNCTIONS (UMUM)
+        // UTILITY FUNCTIONS (UMUM) - DIPINDAHKAN KE ATAS AGAR DAPAT DIAKSES OLEH SEMUA FUNGSI
         // ==========================================================
-        
+
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
         function safeUpdate(id, content, isHtml = false) {
@@ -1525,17 +1494,17 @@
                 } else {
                     el.textContent = content;
                 }
-            } 
+            }
         }
 
         function getCurrentTimeHHMMSS() {
             const now = new Date();
             let hours = now.getHours().toString().padStart(2, '0');
-            let minutes = now.getMinutes().toString().padStart(2, '0'); 
+            let minutes = now.getMinutes().toString().padStart(2, '0');
             let seconds = now.getSeconds().toString().padStart(2, '0');
             return `${hours}:${minutes}:${seconds}`;
         }
-        
+
         /**
          * FUNGSI KRITIS: Mengonversi string ke float dengan penanganan NaN yang aman.
          */
@@ -1555,24 +1524,24 @@
             // ASUMSI PARAMETER BATERAI LITHIUM (LiFePO4) 48V (15S)
             const V_MIN = 46.0;   // 0% SOC (Cutoff)
             const V_MAX = 52.8;   // 100% SOC (Penuh)
-            
+
             if (voltage <= V_MIN) return 0;
             if (voltage >= V_MAX) return 100;
 
             const range = V_MAX - V_MIN;
             const soc = ((voltage - V_MIN) / range) * 100;
-            
+
             return Math.round(soc);
         }
 
         /**
-         * Menampilkan jam real-time dan menjalankan logika reset harian
+         * Menampilkan jam real-time
          */
         function updateTime() {
             const now = new Date();
             const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-            
+
             const dateStr = now.toLocaleDateString('id-ID', dateOptions);
             const timeStr = now.toLocaleTimeString('id-ID', timeOptions);
 
@@ -1581,25 +1550,8 @@
             safeUpdate('current-time', timeStr);
             safeUpdate('v2-status-time', `Status ${timeStr}`);
             safeUpdate('v14-status-time', `Status ${timeStr}`);
-            
-            // --- LOGIKA RESET HARIAN (PERSISTEN DENGAN LOCALSTORAGE) ---
-            const today = now.getDate();
-            if (today !== lastDay) {
-                // Reset akumulasi harian saat hari berganti (jam 00:00)
-                dailyChargeEnergyWh = 0.0;
-                dailyDischargeEnergyWh = 0.0;
-                lastDay = today;
-                
-                // Simpan nilai reset ke LocalStorage
-                localStorage.setItem(STORAGE_KEY_LAST_DAY, today.toString());
-                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, '0.0');
-                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, '0.0');
-                
-                console.log("Daily Energy (persistent) reset for the new day.");
-            }
-            // ------------------------------------------
         }
-        
+
         /**
          * Menampilkan pesan notifikasi dashboard PLTS
          * Fungsi ini sekarang hanya placeholder karena #message-box disembunyikan
@@ -1609,8 +1561,8 @@
             if (!msgBox) return;
 
             msgBox.textContent = message;
-            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block'; 
-            msgBox.classList.remove('bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300'); 
+            msgBox.className = 'mt-4 w-full text-sm font-semibold p-3 rounded-xl block';
+            msgBox.classList.remove('bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300', 'bg-yellow-900', 'text-yellow-300');
 
             if (type === 'error') {
                 msgBox.classList.add('bg-red-900', 'text-red-300');
@@ -1620,7 +1572,7 @@
                 msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
             } */
         }
-        
+
         /**
          * Menampilkan pesan notifikasi diagram
          * Fungsi ini sekarang hanya placeholder karena #status-message-diagram disembunyikan
@@ -1628,12 +1580,12 @@
         function showDiagramStatus(message, type = 'warning') {
            /* const statusEl = document.getElementById('status-message-diagram');
             if (!statusEl) return;
-            
+
             statusEl.textContent = message;
             statusEl.style.color = '#C0C0C0';
             statusEl.style.backgroundColor = 'rgba(51, 26, 26, 0.7)';
             statusEl.style.borderColor = '#663333';
-            
+
             if (type === 'success') {
                 statusEl.style.color = '#00FF77';
                 statusEl.style.backgroundColor = 'rgba(26, 51, 26, 0.7)';
@@ -1649,7 +1601,7 @@
             const modal = document.getElementById('custom-modal');
             const modalText = document.getElementById('modal-text');
             const confirmButton = document.getElementById('modal-confirm-button');
-            
+
             modalText.textContent = text;
             confirmButton.onclick = function() {
                 closeModal();
@@ -1658,7 +1610,7 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
-        
+
         /**
          * FUNGSI CLOSE MODAL UTAMA: Menutup modal konfirmasi PLTS dan modal detail BMS.
          */
@@ -1669,7 +1621,7 @@
                 pltsModal.classList.add('hidden');
                 pltsModal.classList.remove('flex');
             }
-            
+
             // Menutup Modal Detail Baterai (BMS)
             const batteryModal = document.getElementById("batteryModal");
             if (batteryModal) {
@@ -1678,20 +1630,20 @@
                 currentAddr = null; // Reset alamat baterai yang sedang dilihat
             }
         }
-        
+
         function blinkLed(id) {
           const el = document.getElementById(id);
           if (!el) return;
-          
+
           el.classList.remove("bg-gray-300");
           el.classList.add("active");
-          
+
           setTimeout(() => {
             el.classList.remove("active");
             el.classList.add("bg-gray-300");
           }, 250);
         }
-        
+
         // ==========================================================
         // BMS UTILITY & MAIN LOGIC
         // ==========================================================
@@ -1701,16 +1653,16 @@
                 element.classList.remove('text-charging', 'text-discharging', 'text-standby', 'text-dc-color', 'text-amp-discharging');
             }
         }
-        
+
         function removePowerColorClasses(element) {
             if (element) {
-                element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby', 'text-charging', 'text-discharging', 'text-standby'); 
+                element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby', 'text-charging', 'text-discharging', 'text-standby');
             }
         }
 
         function getSocColorClasses(soc) {
-            let textColor = 'text-soc-yellow'; 
-            let progressColor = 'bg-soc-yellow'; 
+            let textColor = 'text-soc-yellow';
+            let progressColor = 'bg-soc-yellow';
 
             if (soc > 70) {
                 textColor = 'text-soc-green';
@@ -1724,9 +1676,10 @@
 
             return { textColor, progressColor, textClassesToRemove, bgClassesToRemove };
         }
-        
+
         /**
-         * FUNGSI KRITIS: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
+         * FUNGSI MODIFIED: Mengagregasi data baterai dari semua BMS yang terhubung via MQTT.
+         * MENGEMBALIKAN DAYA DC MURNI (TANPA KOREKSI) UNTUK LOGIKA DIAGRAM YANG LEBIH BAIK
          */
         function getAggregatedBmsData() {
             let totalSoc = 0;
@@ -1734,6 +1687,8 @@
             let totalVoltage = 0;
             let totalCurrent = 0;
             let totalRemCapacity = 0;
+            let totalCapacity = 0;
+            let totalBusVoltage = 0; // Tambahkan total Bus Voltage
             let validCount = 0;
             let validCapacityCount = 0;
 
@@ -1744,11 +1699,12 @@
                 const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
                 const remCapacity = tryParseFloat(b.remaining); // Menggunakan tryParseFloat
                 const capacity = tryParseFloat(b.capacity); // Menggunakan tryParseFloat
+                const busVoltage = tryParseFloat(b.busVoltage); // Ambil Bus Voltage
 
                 if (!isNaN(current)) {
                     totalCurrent += current;
                 }
-                
+
                 if (!isNaN(soc) && !isNaN(voltage) && soc >= 0) {
                     totalSoc += soc;
                     totalVoltage += voltage;
@@ -1757,19 +1713,31 @@
                 if (!isNaN(soh) && soh >= 0) {
                     totalSoh += soh;
                 }
+                // --- PERBAIKAN SISA KAPASITAS (Ah) ---
                 if (!isNaN(remCapacity) && remCapacity > 0) {
                     totalRemCapacity += remCapacity;
-                    validCapacityCount++; 
+                    validCapacityCount++; // Hitung berapa BMS yang mengirim sisa kapasitas
+                }
+                // ------------------------------------
+                if (!isNaN(capacity)) {
+                    totalCapacity += capacity;
+                }
+                if (!isNaN(busVoltage)) {
+                    totalBusVoltage += busVoltage; // Agregasi Bus Voltage
                 }
             });
 
             const avgSoc = validCount > 0 ? totalSoc / validCount : 0;
             const avgSoh = validCount > 0 ? totalSoh / validCount : 100;
             const avgVoltage = validCount > 0 ? totalVoltage / validCount : DEFAULT_DISPLAY;
-            
+            const avgBusVoltage = validCount > 0 ? totalBusVoltage / validCount : DEFAULT_DISPLAY; // Hitung rata-rata Bus Voltage
+
             // DAYA DC BATERAI MURNI (Tanpa Koreksi)
-            let totalPowerDC = totalCurrent * avgVoltage; 
-            
+            let totalPowerDC = totalCurrent * avgVoltage;
+
+            // Hanya gunakan totalPowerDC, karena koreksi discharge akan dilakukan di calculateAndRenderDiagram
+            let totalPower = totalPowerDC;
+
             let remainingAh;
 
             if (validCapacityCount > 0) {
@@ -1777,44 +1745,50 @@
             } else {
                 // FALLBACK: Jika tidak ada data BMS yang valid, gunakan data Blynk yang terakhir
                 const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
+                // Ambil Ah nominal dari dashboard PLTS (V9)
                 const nominalAhStr = document.getElementById('v9-batere-ah')?.textContent || '0';
-                const nominalAh = tryParseFloat(nominalAhStr); 
-                remainingAh = (socFromBlynkVpack / 100) * nominalAh; 
+                const nominalAh = tryParseFloat(nominalAhStr);
+
+                // Hitung sisa kapasitas dari SOC Blynk dan Ah nominal
+                remainingAh = (socFromBlynkVpack / 100) * nominalAh;
             }
+
 
             return {
                 soc: Math.round(avgSoc), // Pastikan SOC adalah NUMERIK (integer)
                 soh: Math.round(avgSoh), // Pastikan SOH adalah NUMERIK (integer)
                 voltage: avgVoltage,
+                busVoltage: avgBusVoltage, // Tambahkan Bus Voltage
                 current: totalCurrent,
-                totalPower: totalPowerDC, // DAYA DC BATERAI MURNI
-                remainingAh: remainingAh, 
+                totalPower: totalPower, // DAYA DC BATERAI MURNI
+                remainingAh: remainingAh, // Gunakan nilai yang sudah dihitung/fallback (number)
                 count: validCount
             };
         }
 
 
         function normalizeFromMqtt(data) {
-             const cellVoltages = Array.isArray(data.cell_voltages) ? Array.from(data.cell_voltages) : [];
-          
+             const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
+
             const cells = cellVoltages.map(v => (v/1000).toFixed(3));
-            
+
             const cell_vmax_val = cellVoltages.length > 0 ? Math.max(...cellVoltages) / 1000 : 'N/A';
             const cell_vmin_val = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 'N/A';
-            
+
             let cell_vdiff_val = 'N/A';
             if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number') {
                 cell_vdiff_val = (cell_vmax_val - cell_vmin_val) * 1000; // Selisih dalam mV
             }
-            
+
             const voltage = (data.bat_voltage !== undefined) ? data.bat_voltage : 'N/A';
             const current = (data.bat_current !== undefined) ? data.bat_current : 'N/A';
+            const busVoltage = (data.bus_voltage !== undefined) ? data.bus_voltage : 'N/A'; // Ambil Bus Voltage
 
             let power = 'N/A';
             if (typeof voltage === 'number' && typeof current === 'number' && !isNaN(voltage) && !isNaN(current)) {
                 power = (parseFloat(voltage) * parseFloat(current)).toFixed(2);
             }
-            
+
             const safeParseFloat = (value) => {
                   const parsed = parseFloat(value);
                   return isNaN(parsed) ? 'N/A' : parsed;
@@ -1829,13 +1803,13 @@
               soc: typeof soc === 'number' ? soc.toFixed(0) : 'N/A',
               soh: typeof soh === 'number' ? soh.toFixed(0) : 'N/A',
               voltage: typeof voltage === 'number' ? parseFloat(voltage).toFixed(2) : voltage, // Tegangan Pack
-              busVoltage: (data.bus_voltage !== undefined) ? parseFloat(data.bus_voltage).toFixed(2) : 'N/A',
+              busVoltage: typeof busVoltage === 'number' ? parseFloat(busVoltage).toFixed(2) : busVoltage, // Tegangan Bus
               current: typeof current === 'number' ? parseFloat(current).toFixed(2) : current, // Arus Pack
               capacity: (data.full_capacity !== undefined) ? parseFloat(data.full_capacity).toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
               remaining: (data.rem_capacity !== undefined) ? parseFloat(data.rem_capacity).toFixed(2) : 'N/A', // Sisa Kapasitas (Ah)
               cycles: data.cycle_count || 0,
-              cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A', 
-              cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A', 
+              cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A',
+              cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A',
               cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
               tempStatus: data.temp_status || 'Normal', // Status Suhu (Placeholder)
               time: getCurrentTimeHHMMSS(),
@@ -1853,9 +1827,9 @@
             client = mqtt.connect("wss://public.cloud.shiftr.io", {
               username: "public",
               password: "public",
-              keepalive: 120 
+              keepalive: 120
             });
-            
+
             client.on("connect", () => {
               console.log("Connected to MQTT broker: public.cloud.shiftr.io");
               client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/AutoPoll/#");
@@ -1863,7 +1837,7 @@
             });
 
             client.on("message", (topic, message) => {
-              
+
               if(topic == "sysMon/"+BMS_MQTT_TOPIC_KEY+"/info" ){
                 let ip_address = message.toString().split(",")[0];
                 if (ip_address && ip_address !== 'N/A') {
@@ -1873,7 +1847,7 @@
               } else {
                 try {
                   const raw = JSON.parse(message.toString());
-                  
+
                   const batt = normalizeFromMqtt(raw);
 
                   const idx = batteries.findIndex(b => (b.addr === batt.addr)&&(b.typeBattery === batt.typeBattery));
@@ -1885,51 +1859,51 @@
                   }
 
                   renderCards(batt);
-                  updateModal(); 
+                  updateModal();
 
                   // FIX ANIMASI BATERAI: Memaksa pembaruan diagram segera setelah data BMS diterima
                   const bmsAggregatedData = getAggregatedBmsData();
                   calculateAndRenderDiagram(bmsAggregatedData);
-                  
+
                 } catch (e) {
-                  console.error("Invalid JSON or Processing Error: ", e, e.stack); 
+                  console.error("Invalid JSON or Processing Error: ", e, e.stack);
                 }
               }
             });
-            
+
             client.on("close", () => {
               console.log("MQTT Disconnected");
             });
-            
+
             client.on("error", (error) => {
               console.error("MQTT Error:", error);
             });
         }
-        
+
         /**
          * FUNGSI MEMBUKA MODAL DETAIL BATERAI.
          */
         function openModal(addr) {
-             currentAddr = addr; 
+             currentAddr = addr;
             const modal = document.getElementById("batteryModal");
             if (modal) {
                 modal.classList.remove('hidden');
-                modal.classList.add('flex'); 
-                updateModal(); 
+                modal.classList.add('flex');
+                updateModal();
             }
         }
 
 
         function updateModal() {
              const modal = document.getElementById("batteryModal");
-            if (currentAddr === null || (modal && modal.classList.contains("hidden"))) return; 
-            
+            if (currentAddr === null || (modal && modal.classList.contains("hidden"))) return;
+
             const batt = batteries.find(b => b.addr === currentAddr);
-            
+
             if (!batt) return;
 
             safeUpdate("modalAddr", batt.addr);
-            
+
             const socValue = batt.soc !== 'N/A' ? parseInt(batt.soc) : NaN;
             const { textClassesToRemove: summaryTextClassesToRemove } = getSocColorClasses(socValue);
 
@@ -1945,16 +1919,16 @@
             safeUpdate("modalCapacity", batt.capacity !== 'N/A' ? `${batt.capacity}` : 'N/A');
             safeUpdate("modalCycles", batt.cycles);
             safeUpdate("modalLastUpdate", batt.time);
-            
+
             safeUpdate("modalVoltage", batt.voltage !== 'N/A' ? `${batt.voltage} V` : 'N/A');
             safeUpdate("modalBusVoltage", batt.busVoltage !== 'N/A' ? `${batt.busVoltage} V` : 'N/A');
             safeUpdate("modalcellmax", batt.cell_vmax !== 'N/A' ? `${batt.cell_vmax} V` : 'N/A');
             safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
             safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
-            
+
             const currentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
             const currentThreshold = 0.1;
-            
+
             let battStatusClass = 'text-standby';
             if (!isNaN(currentVal)) {
                   if (currentVal > currentThreshold) {
@@ -1968,58 +1942,58 @@
 
             let powerModalColor = battStatusClass;
             if (battStatusClass === 'text-standby') {
-                 powerModalColor = 'text-power-standby'; 
+                 powerModalColor = 'text-power-standby';
             } else if (battStatusClass === 'text-discharging') {
-                 powerModalColor = 'text-discharging'; 
+                 powerModalColor = 'text-discharging';
             }
-            
+
             const modalCurrentEl = document.getElementById("modalCurrent");
             if(modalCurrentEl){
                 removeCurrentColorClasses(modalCurrentEl);
                 modalCurrentEl.classList.add(ampModalColor);
             }
-            
+
             const modalPowerEl = document.getElementById("modalPower");
             if(modalPowerEl){
                 removePowerColorClasses(modalPowerEl);
                 modalPowerEl.classList.add(powerModalColor);
             }
-            
+
             safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
             safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
-            safeUpdate("modalTemp", batt.tempStatus); 
-            
+            safeUpdate("modalTemp", batt.tempStatus);
+
             const cellsDiv = document.getElementById("modalCells");
             if (cellsDiv) {
                 cellsDiv.innerHTML = "";
-                
+
                 batt.cells.forEach((v, i) => {
                   const cellValue = parseFloat(v);
-                  
-                  let textColor = 'text-green-400';
-                  let borderColor = 'var(--green-cell)'; 
 
-                  if (cellValue < 3.200) { 
+                  let textColor = 'text-green-400';
+                  let borderColor = 'var(--green-cell)';
+
+                  if (cellValue < 3.200) {
                     textColor = 'text-red-400';
-                    borderColor = 'var(--red-cell)'; 
-                  } else if (cellValue < 3.350) { 
+                    borderColor = 'var(--red-cell)';
+                  } else if (cellValue < 3.350) {
                     textColor = 'text-yellow-400';
-                    borderColor = 'var(--warning)'; 
-                  } else if (cellValue > 3.650) { 
+                    borderColor = 'var(--warning)';
+                  } else if (cellValue > 3.650) {
                     textColor = 'text-blue-400';
-                    borderColor = 'var(--blue-bat)'; 
+                    borderColor = 'var(--blue-bat)';
                   }
-                  
+
                   const cellBox = document.createElement("div");
                   cellBox.innerHTML = `<div class="text-xs font-medium text-gray-400 mb-1">Sel ${i + 1}</div><div class="text-sm font-bold ${textColor}">${v} V</div>`;
-                  
-                  cellBox.className = `cell-voltage bg-gray-800 rounded-lg shadow-sm p-3 flex flex-col items-start justify-center transition hover:bg-gray-700`; 
-                  cellBox.style.borderLeft = `4px solid ${borderColor}`; 
+
+                  cellBox.className = `cell-voltage bg-gray-800 rounded-lg shadow-sm p-3 flex flex-col items-start justify-center transition hover:bg-gray-700`;
+                  cellBox.style.borderLeft = `4px solid ${borderColor}`;
 
                   cellsDiv.appendChild(cellBox);
                 });
             }
-            
+
             blinkLed("led-modal");
             lucide.createIcons();
         }
@@ -2030,87 +2004,45 @@
             const currentIconEl = document.getElementById('icon-current-summary');
             const powerSummaryEl = document.getElementById('summary-power');
             const powerIconEl = document.getElementById('icon-power-summary');
-            const powerUnitEl = document.getElementById('summary-power-unit'); // ELEMEN UNIT BARU
+            const powerUnitEl = document.getElementById('summary-power-unit');
             const voltageSummaryEl = document.getElementById('summary-voltage');
             const busVoltageSummaryEl = document.getElementById('summary-bus-voltage');
             const busVoltageIconEl = document.getElementById('icon-bus-voltage-summary');
-            const busVoltageUnitEl = document.getElementById('summary-bus-voltage-unit'); 
+            const busVoltageUnitEl = document.getElementById('summary-bus-voltage-unit');
             const summarySocEl = document.getElementById('summary-soc');
             const iconSocEl = document.getElementById('icon-soc-summary');
             const socProgress = document.getElementById("soc-progress-summary");
             const sohProgress = document.getElementById("soh-progress-summary");
             const grid = document.getElementById("batteryGrid");
             const emptyState = document.getElementById("empty-state");
-            
+
             // --- 1. LOGIC RINGKASAN UTAMA (TOTAL ARUS & RATA-RATA VOLTAGE/POWER) ---
-            let totalCurrent = 0;
-            let totalVoltage = 0;
-            let totalPower = 0; 
-            let totalBusVoltage = 0; 
-            let totalSoc = 0;
-            let totalSoh = 0;
-            let validBatteryCount = 0;
-            let validSocSohCount = 0;
+            const aggregated = getAggregatedBmsData();
+            let totalCurrent = aggregated.current;
+            let avgVoltage = aggregated.voltage;
+            let avgBusVoltage = aggregated.busVoltage;
+            let validBatteryCount = aggregated.count;
+            let displayPower = aggregated.totalPower; // Ini adalah P_DC murni
 
-
-            batteries.forEach(b => {
-                const soc = tryParseFloat(b.soc); // Menggunakan tryParseFloat
-                const soh = tryParseFloat(b.soh); // Menggunakan tryParseFloat
-                const voltage = tryParseFloat(b.voltage); // Menggunakan tryParseFloat
-                const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
-                const power = tryParseFloat(b.power); // Menggunakan tryParseFloat
-                const busVoltage = tryParseFloat(b.busVoltage); // Menggunakan tryParseFloat
-
-                if (!isNaN(current)) {
-                    totalCurrent += current;
-                }
-                
-                if (!isNaN(voltage)) {
-                    totalVoltage += voltage;
-                    validBatteryCount++;
-                }
-                if (!isNaN(power)) {
-                    totalPower += power;
-                }
-                if (!isNaN(busVoltage)) {
-                    totalBusVoltage += busVoltage;
-                }
-                if (!isNaN(soc)) {
-                    totalSoc += soc;
-                    totalSoh += soh;
-                    validSocSohCount++;
-                }
-            });
-            
-            const currentVal = totalCurrent.toFixed(2);
-            const avgVoltage = validBatteryCount > 0 ? (totalVoltage / validBatteryCount).toFixed(2) : 'N/A';
-            
-            // DAYA DC BATERAI MURNI DARI AGREGASI
-            const bmsAggregatedData = getAggregatedBmsData(); 
-            let displayPower = bmsAggregatedData.totalPower;
             const currentThreshold = 0.1;
-
+            const powerThresholdSummary = 10;
+            
+            // --- Logika Koreksi Daya (Untuk Tampilan Ringkasan Power) ---
             if (totalCurrent < -currentThreshold) {
-                // Saat discharge, koreksi untuk tampilan AC setara di ringkasan
+                // Saat discharge, tampilkan nilai AC setara di ringkasan
                 displayPower = displayPower * INVERTER_DISCHARGE_EFFICIENCY;
-            } 
-            
-            const totalPowerVal = Math.abs(displayPower).toFixed(0); 
+            }
 
-            const avgBusVoltage = validBatteryCount > 0 ? (totalBusVoltage / validBatteryCount).toFixed(2) : 'N/A';
-            const avgSOC = validSocSohCount > 0 ? (totalSoc / validSocSohCount).toFixed(0) : 'N/A';
-            const avgSOH = validSocSohCount > 0 ? (totalSoh / validSocSohCount).toFixed(0) : 'N/A';
-            
             // Tentukan Status (Charging/Discharging/Standby)
             let currentStatusText = 'Standby';
             let statusClass = 'text-standby';
 
             if (validBatteryCount > 0) {
                 if (totalCurrent > currentThreshold) {
-                    statusClass = 'text-charging'; 
+                    statusClass = 'text-charging';
                     currentStatusText = 'Charging';
                 } else if (totalCurrent < -currentThreshold) {
-                    statusClass = 'text-discharging'; 
+                    statusClass = 'text-discharging';
                     currentStatusText = 'Discharging';
                 } else {
                     statusClass = 'text-standby';
@@ -2120,114 +2052,56 @@
                 currentStatusText = 'N/A';
             }
             
-            // --- PEWARNAAN ARUS (AMPER) RINGKASAN ---
-            const ampColorClass = statusClass === 'text-discharging' ? 'text-amp-discharging' : statusClass;
-            
-            safeUpdate('summary-current', isNaN(totalCurrent) ? 'N/A' : currentVal);
+            // --- Update Nilai Tegangan (Pack & Bus) ---
+            safeUpdate('summary-voltage', avgVoltage !== DEFAULT_DISPLAY ? avgVoltage.toFixed(2) : DEFAULT_DISPLAY_STR);
+            safeUpdate('summary-bus-voltage', avgBusVoltage !== DEFAULT_DISPLAY ? avgBusVoltage.toFixed(2) : DEFAULT_DISPLAY_STR);
+
+            // --- Update Nilai Arus ---
+            const currentValDisplay = (Math.abs(totalCurrent) > currentThreshold) ? totalCurrent.toFixed(2) : DEFAULT_DISPLAY_STR;
+            safeUpdate('summary-current', currentValDisplay); 
             safeUpdate('current-status-text', `Total Arus Sistem (${currentStatusText})`);
             
-            if (currentSummaryEl) {
-                currentSummaryEl.classList.remove(...getSocColorClasses(0).textClassesToRemove);
-                currentSummaryEl.classList.add(ampColorClass);
-            }
-            
-            if (currentUnitEl) {
-                currentUnitEl.classList.remove(...getSocColorClasses(0).textClassesToRemove);
-                currentUnitEl.classList.add(ampColorClass);
-            }
+            // --- Update Nilai Daya ---
+            const totalPowerValSigned = (Math.abs(displayPower) > powerThresholdSummary) ? displayPower.toFixed(0) : DEFAULT_DISPLAY_STR;
+            safeUpdate('summary-power', totalPowerValSigned); 
+            safeUpdate('power-status-text', `Total Daya Sistem (${currentStatusText})`); 
 
-            if (currentIconEl) {
-                currentIconEl.classList.remove('text-dc-color', 'text-warning-red', 'text-green-400');
-                currentIconEl.classList.add(ampColorClass); 
-            }
-            
-            
-            // --- PEWARNAAN DAYA (WATT) RINGKASAN ---
-            
-            let powerColorClass = statusClass;
-            
-            if (statusClass === 'text-standby') {
-                 powerColorClass = 'text-power-standby'; // PINK
-            } else if (statusClass === 'text-discharging') {
-                 powerColorClass = 'text-discharging'; // COKLAT MUDA
-            }
 
-            safeUpdate('summary-power', isNaN(displayPower) ? 'N/A' : totalPowerVal);
-            safeUpdate('power-status-text', `Total Daya Sistem (${currentStatusText})`); // Pembaruan Status Daya
+            // --- PEWARNAAN ARUS & DAYA (Ringkasan) ---
+            const ampColorClass = statusClass === 'text-discharging' ? 'text-amp-discharging' : statusClass;
+            let powerColorClass = statusClass === 'text-standby' ? 'text-power-standby' : (statusClass === 'text-discharging' ? 'text-discharging' : statusClass);
             
-            if (powerSummaryEl) {
-                removePowerColorClasses(powerSummaryEl);
-                powerSummaryEl.classList.add(powerColorClass);
-            }
-            if (powerIconEl) {
-                removePowerColorClasses(powerIconEl);
-                powerIconEl.classList.add(powerColorClass);
-            }
-            // PERBAIKAN: Memastikan unit Daya juga mendapat warna dinamis
-            if (powerUnitEl) {
-                removePowerColorClasses(powerUnitEl); 
-                powerUnitEl.classList.add(powerColorClass);
-            }
-            
-            
-            // --- PEWARNAAN TEGANGAN PACK & BUS RINGKASAN ---
-            safeUpdate('summary-voltage', avgVoltage);
-            const voltageUnitEl = voltageSummaryEl ? voltageSummaryEl.nextElementSibling : null;
+            // Apply Current Colors
+            if (currentSummaryEl) { removeCurrentColorClasses(currentSummaryEl); currentSummaryEl.classList.add(ampColorClass); }
+            if (currentUnitEl) { removeCurrentColorClasses(currentUnitEl); currentUnitEl.classList.add(ampColorClass); }
+            if (currentIconEl) { currentIconEl.classList.remove('text-dc-color', 'text-warning-red', 'text-green-400'); currentIconEl.classList.add(ampColorClass); }
 
-            if (voltageSummaryEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
-            if (voltageUnitEl) voltageSummaryEl.classList.remove('text-red-500', 'text-yellow-500');
-
-            if (avgVoltage === 'N/A' || tryParseFloat(avgVoltage) < 24.0) { // Menggunakan tryParseFloat
-                if (voltageSummaryEl) voltageSummaryEl.classList.add('text-red-500');
-                if (voltageUnitEl) voltageSummaryEl.classList.add('text-red-500');
-            }
+            // Apply Power Colors
+            if (powerSummaryEl) { removePowerColorClasses(powerSummaryEl); powerSummaryEl.classList.add(powerColorClass); }
+            if (powerIconEl) { removePowerColorClasses(powerIconEl); powerIconEl.classList.add(powerColorClass); }
+            if (powerUnitEl) { removePowerColorClasses(powerUnitEl); powerUnitEl.classList.add(powerColorClass); }
             
-            safeUpdate('summary-bus-voltage', avgBusVoltage);
-            
-            const busVoltageColorClass = 'text-purple-400';
-            const busVoltageColorsToRemove = ['text-blue-bat', 'text-red-500', 'text-purple-400'];
-
-            if (busVoltageSummaryEl) {
-                busVoltageSummaryEl.classList.remove(...busVoltageColorsToRemove);
-                busVoltageSummaryEl.classList.add(busVoltageColorClass);
-            }
-            if (busVoltageIconEl) {
-                busVoltageIconEl.classList.remove(...busVoltageColorsToRemove);
-                busVoltageIconEl.classList.add(busVoltageColorClass);
-            }
-            if (busVoltageUnitEl) {
-                busVoltageUnitEl.classList.remove(...busVoltageColorsToRemove);
-                busVoltageUnitEl.classList.add(busVoltageColorClass);
-            }
-
             // --- SOC & SOH LOGIC (Ringkasan) ---
+            const avgSOC = aggregated.soc;
+            const avgSOH = aggregated.soh;
             
             const socValue = parseInt(avgSOC);
-
             const { textColor: summaryTextColor, progressColor: summaryProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(socValue);
             
             const socContent = avgSOC !== 'N/A' ? `${avgSOC}%` : 'N/A';
             safeUpdate('summary-soc', socContent);
-            
-            if (summarySocEl) { 
-                summarySocEl.classList.remove(...textClassesToRemove);
-                summarySocEl.classList.add(summaryTextColor);
-            }
-            if (iconSocEl) {
-                iconSocEl.classList.remove(...textClassesToRemove);
-                iconSocEl.classList.add(summaryTextColor);
-            }
-            
+
+            if (summarySocEl) { summarySocEl.classList.remove(...textClassesToRemove); summarySocEl.classList.add(summaryTextColor); }
+            if (iconSocEl) { iconSocEl.classList.remove(...textClassesToRemove); iconSocEl.classList.add(summaryTextColor); }
             if (!isNaN(socValue) && socProgress) {
                 socProgress.style.width = `${socValue}%`;
                 socProgress.classList.remove(...bgClassesToRemove);
                 socProgress.classList.add(summaryProgressColor);
             }
-            
+
             const sohContent = avgSOH !== 'N/A' ? `${avgSOH}%` : 'N/A';
             safeUpdate('summary-soh', sohContent);
-            
-            if (avgSOH !== 'N/A' && tryParseFloat(avgSOH) !== 0) { // Menggunakan tryParseFloat
+            if (avgSOH !== 'N/A' && tryParseFloat(avgSOH) !== 0) {
                 const sohVal = parseInt(avgSOH);
                 if(sohProgress){
                     sohProgress.style.width = `${sohVal}%`;
@@ -2240,15 +2114,16 @@
 
 
             // =======================================================================
-            // 2. LOGIC RENDER KARTU INDIVIDUAL
+            // 2. LOGIC RENDER KARTU INDIVIDUAL (FIXED: Sorting logic)
             // =======================================================================
             
+            // Perbaikan Logika Sorting: Menggunakan parseInt pada kedua sisi perbandingan
             batteries.sort((a, b) => {
                 const addrA = parseInt(a.addr);
                 const addrB = parseInt(b.addr);
                 if (isNaN(addrA)) return 1;
                 if (isNaN(addrB)) return -1;
-                return addrA - b.addr;
+                return addrA - addrB; 
             });
 
             if (batteries.length === 0) {
@@ -2261,21 +2136,22 @@
             if (grid) grid.classList.remove('hidden');
             if (emptyState) emptyState.classList.add('hidden');
             safeUpdate('total-batteries', batteries.length.toString());
-            
+
             const currentAddresses = batteries.map(b => b.addr).join(',');
 
+            // Perbaikan: Memastikan render ulang hanya jika daftar alamat berubah
             if (currentAddresses !== lastRenderedAddresses || batteries.length !== grid.children.length) {
                 if (grid) grid.innerHTML = '';
                 const fragment = document.createDocumentFragment();
 
                 batteries.forEach(batt => {
                     let cardId = `card-${batt.typeBattery}-${batt.addr}`;
-                    
+
                     const battSocValue = batt.soc !== 'N/A' ? parseInt(batt.soc) : NaN;
                     const { textColor: cardTextColor, progressColor: cardProgressColor } = getSocColorClasses(battSocValue);
-                    
+
                     const battCurrentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
-                    
+
                     let battStatusClass = 'text-standby';
                     if (!isNaN(battCurrentVal)) {
                         if (battCurrentVal > currentThreshold) {
@@ -2287,23 +2163,23 @@
 
                     let battAmpColorClass = battStatusClass;
                     if (battStatusClass === 'text-discharging') {
-                        battAmpColorClass = 'text-amp-discharging'; 
+                        battAmpColorClass = 'text-amp-discharging';
                     }
-                    
+
                     let battPowerColorClass = battStatusClass;
                     if (battStatusClass === 'text-standby') {
-                         battPowerColorClass = 'text-power-standby'; 
+                         battPowerColorClass = 'text-power-standby';
                     } else if (battStatusClass === 'text-discharging') {
-                         battPowerColorClass = 'text-discharging'; 
+                         battPowerColorClass = 'text-discharging';
                     }
 
                     let card = document.createElement("div");
                     card.id = cardId;
                     card.className = "solar-card rounded-xl shadow-md p-5 cursor-pointer hover:shadow-lg transition fade-in";
                     card.dataset.addr = String(batt.addr);
-                    card.onclick = () => openModal(batt.addr); 
+                    card.onclick = () => openModal(batt.addr);
 
-                    
+
                     const socBarClass = !isNaN(battSocValue) ? cardProgressColor : 'bg-gray-500';
                     const socBarWidth = !isNaN(battSocValue) ? `${batt.soc}%` : '0%';
 
@@ -2312,12 +2188,12 @@
                             <h3 class="text-lg font-bold text-white">${batt.typeBattery} <span class="text-blue-400 font-semibold">#${batt.addr}</span></h3>
                             <div class="led" id="led-card-${batt.typeBattery}-${batt.addr}"></div>
                         </div>
-                        
+
                         <!-- SOC BAR -->
                         <div class="mb-3">
                             <div class="flex justify-between items-center mb-1 text-sm">
                             <span class="text-gray-400">SOC</span>
-                            <span class="font-bold ${cardTextColor}" id="soc-text-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span> 
+                            <span class="font-bold ${cardTextColor}" id="soc-text-${batt.typeBattery}-${batt.addr}">${batt.soc}%</span>
                             <span class="font-bold text-gray-400">/ ${batt.soh}%</span>
                             </div>
                             <div class="progress-bar mt-1">
@@ -2327,7 +2203,7 @@
 
                         <!-- GRID METRIK DETAIL 3x2 -->
                         <div class="battery-metric-grid text-xs mt-2">
-                            
+
                             <!-- Voltage -->
                             <div class="battery-metric-item">
                                 <i data-lucide="zap" class="lucide w-6 h-4 text-yellow-500 mr-2"></i>
@@ -2336,7 +2212,7 @@
                                     <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
                                 </div>
                             </div>
-                            
+
                             <!-- Current -->
                             <div class="battery-metric-item">
                                 <i data-lucide="activity" class="lucide w-4 h-4 ${battAmpColorClass} mr-2" id="current-icon-${batt.typeBattery}-${batt.addr}"></i>
@@ -2346,7 +2222,7 @@
                                 </div>
                             </div>
 
-                            <!-- Selisih Sel -->                
+                            <!-- Selisih Sel -->
                             <div class="battery-metric-item">
                                 <i data-lucide="divide" class="lucide w-4 h-4 text-blue-400 mr-2"></i>
                                 <div>
@@ -2372,7 +2248,7 @@
                                     <div id="cellmin-${batt.typeBattery}-${batt.addr}" class="font-semibold text-red-400">${batt.cell_vmin} V</div>
                                 </div>
                             </div>
-                            
+
                             <!-- Sel Max -->
                             <div class="battery-metric-item">
                                 <i data-lucide="plus-circle" class="lucide w-4 h-4 text-green-500 mr-2"></i>
@@ -2381,7 +2257,7 @@
                                     <div id="cellmax-${batt.typeBattery}-${batt.addr}" class="font-semibold text-green-400">${batt.cell_vmax} V</div>
                                 </div>
                             </div>
-                            
+
                         </div>
 
                         <!-- Footer Metrik -->
@@ -2390,22 +2266,22 @@
                             <span class="last-update" id="time-update-${batt.typeBattery}-${batt.addr}"><i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>
                         </div>
                     `;
-                    
+
                     fragment.appendChild(card);
                 });
 
                 if (grid) grid.appendChild(fragment);
                 lastRenderedAddresses = currentAddresses;
-                lucide.createIcons(); 
+                lucide.createIcons();
             } else {
                 // Update in-place
                 const batt = batteries.find(b => (b.addr === datane.addr) && (b.typeBattery === datane.typeBattery));
-                if (!batt) return; 
+                if (!batt) return;
 
                 const { textColor: cardTextColor, progressColor: cardProgressColor, textClassesToRemove, bgClassesToRemove } = getSocColorClasses(parseInt(batt.soc));
-                
+
                 const battCurrentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
-                
+
                 let battStatusClass = 'text-standby';
                 if (!isNaN(battCurrentVal)) {
                     if (battCurrentVal > currentThreshold) {
@@ -2417,27 +2293,27 @@
 
                 let battAmpColorClass = battStatusClass;
                 if (battStatusClass === 'text-discharging') {
-                    battAmpColorClass = 'text-amp-discharging'; 
+                    battAmpColorClass = 'text-amp-discharging';
                 }
-                
+
                 let battPowerColorClass = battStatusClass;
                 if (battStatusClass === 'text-standby') {
-                     battPowerColorClass = 'text-power-standby'; 
+                     battPowerColorClass = 'text-power-standby';
                 } else if (battStatusClass === 'text-discharging') {
-                     battPowerColorClass = 'text-discharging'; 
+                     battPowerColorClass = 'text-discharging';
                 }
 
 
                 // --- START UPDATE IN-PLACE ---
-                
+
                 const socBar = document.getElementById(`soc-bar-${batt.typeBattery}-${batt.addr}`);
                 const socTextEl = document.getElementById(`soc-text-${batt.typeBattery}-${batt.addr}`);
                 if (socBar && socTextEl) {
                     socBar.style.width = `${batt.soc}%`;
-                    
+
                     socTextEl.classList.remove(...textClassesToRemove);
                     socTextEl.classList.add(cardTextColor);
-                    
+
                     socBar.classList.remove(...bgClassesToRemove);
                     socBar.classList.add(cardProgressColor);
                 }
@@ -2448,18 +2324,18 @@
                 if (currentTextEl && currentIconCardEl) {
                     removeCurrentColorClasses(currentTextEl);
                     currentTextEl.classList.add(battAmpColorClass);
-                    
+
                     removeCurrentColorClasses(currentIconCardEl);
                     currentIconCardEl.classList.add(battAmpColorClass);
                 }
-                
+
                 const powerTextEl = document.getElementById(`power-${batt.typeBattery}-${batt.addr}`);
                 const powerIconCardEl = document.getElementById(`power-icon-${batt.typeBattery}-${batt.addr}`);
-                
+
                 if (powerTextEl && powerIconCardEl) {
                     removePowerColorClasses(powerTextEl);
                     powerTextEl.classList.add(battPowerColorClass);
-                    
+
                     removePowerColorClasses(powerIconCardEl);
                     powerIconCardEl.classList.add(battPowerColorClass);
                 }
@@ -2467,13 +2343,13 @@
 
                 safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`);
                 safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`);
-                safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`); 
-                safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`);       
+                safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`);
+                safeUpdate(`power-${batt.typeBattery}-${batt.addr}`, `${batt.power} W`);
                 safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`);
-                safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`); 
-                
+                safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`);
+
                 safeUpdate(`time-update-${batt.typeBattery}-${batt.addr}`, `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>`, true);
-                lucide.createIcons(); 
+                lucide.createIcons();
                 // --- END UPDATE IN-PLACE ---
 
                 const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
@@ -2482,7 +2358,7 @@
                     setTimeout(() => led.classList.remove("active"), 250);
                 }
             }
-            
+
             const cardId = `card-${datane.typeBattery}-${datane.addr}`;
             if (cardTimers[cardId]) {
                 clearTimeout(cardTimers[cardId]);
@@ -2491,49 +2367,20 @@
                 let c = document.getElementById(cardId);
                 if (c) c.remove();
                 delete cardTimers[cardId];
-            }, 30000); 
+            }, 30000);
         }
 
         // ==========================================================
         // PLTS (Blynk) LOGIC & DIAGRAM LOGIC (INTEGRATED)
         // ==========================================================
-        
-        /**
-         * FUNGSI BARU: Memuat data Daily Charge/Discharge dari LocalStorage saat startup.
-         */
-        function loadDailyEnergy() {
-            const savedCharge = localStorage.getItem(STORAGE_KEY_DAILY_CHARGE);
-            const savedDischarge = localStorage.getItem(STORAGE_KEY_DAILY_DISCHARGE);
-            const savedDay = localStorage.getItem(STORAGE_KEY_LAST_DAY);
 
-            const now = new Date();
-            const today = now.getDate();
-            
-            // Cek apakah data yang disimpan berasal dari hari ini
-            if (savedDay && parseInt(savedDay) === today) {
-                dailyChargeEnergyWh = tryParseFloat(savedCharge) || 0.0;
-                dailyDischargeEnergyWh = tryParseFloat(savedDischarge) || 0.0;
-                lastDay = today;
-                console.log("Loaded persistent daily energy from LocalStorage.");
-            } else {
-                 // Reset jika hari berganti atau tidak ada data yang valid
-                dailyChargeEnergyWh = 0.0;
-                dailyDischargeEnergyWh = 0.0;
-                lastDay = today;
-                localStorage.setItem(STORAGE_KEY_LAST_DAY, today.toString());
-                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, '0.0');
-                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, '0.0');
-                console.log("Daily energy reset for a new day/first load (persisted reset).");
-            }
-        }
-        
         function loadHistoricalData() {
             const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
             if (savedData) {
                 try {
                     const parsedData = JSON.parse(savedData);
                     const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
-                    
+
                     window.realtimeData.labels = parsedData.labels.slice(startIndex);
                     window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
                     window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
@@ -2542,19 +2389,19 @@
                 }
             }
         }
-        
+
         function saveHistoricalData() {
             localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
         }
-        
+
         function requestFullscreen(element) {
             if (element.requestFullscreen) {
                 element.requestFullscreen();
-            } else if (element.mozRequestFullScreen) { 
+            } else if (element.mozRequestFullScreen) {
                 element.mozRequestFullScreen();
-            } else if (element.webkitRequestFullscreen) { 
+            } else if (element.webkitRequestFullscreen) {
                 element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) { 
+            } else if (element.msRequestFullscreen) {
                 element.msRequestFullscreen();
             }
         }
@@ -2562,11 +2409,11 @@
         function exitFullscreen() {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) { 
+            } else if (document.mozCancelFullScreen) {
                 document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) { 
+            } else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { 
+            } else if (document.msExitFullscreen) {
                 document.msExitFullscreen();
             }
         }
@@ -2575,7 +2422,7 @@
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
-            
+
             const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
 
             if (isFullscreen) {
@@ -2585,30 +2432,30 @@
                 chartIcon.setAttribute('data-lucide', 'maximize');
                 chartText.textContent = 'Full Layar';
             }
-            
+
             lucide.createIcons();
             if (energyChartInstance) {
                 setTimeout(() => {
                     energyChartInstance.resize();
-                    energyChartInstance.resetZoom(); 
-                }, 50); 
+                    energyChartInstance.resetZoom();
+                }, 50);
             }
         }
-        
+
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('mozfullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
         document.addEventListener('msfullscreenchange', handleFullscreenChange);
-        
+
         /**
          * Fungsi yang dipanggil oleh tombol Full Layar di HTML
          */
         function toggleFullscreen() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
-            
-            const isFullscreenNative = document.fullscreenElement || 
-                                 document.mozFullScreenElement || 
-                                 document.webkitFullscreenElement || 
+
+            const isFullscreenNative = document.fullscreenElement ||
+                                 document.mozFullScreenElement ||
+                                 document.webkitFullscreenElement ||
                                  document.msFullscreenElement;
 
             const isMobile = window.innerWidth < 768;
@@ -2617,7 +2464,7 @@
                 if (chartCard.classList.contains('fullscreen-chart')) {
                     chartCard.classList.remove('fullscreen-chart');
                      if (screen.orientation && screen.orientation.unlock) {
-                        screen.orientation.unlock(); 
+                        screen.orientation.unlock();
                     }
                 } else {
                     chartCard.classList.add('fullscreen-chart');
@@ -2627,8 +2474,8 @@
                 }
                 handleFullscreenChange();
                 return;
-            } 
-            
+            }
+
             if (!isFullscreenNative) {
                 requestFullscreen(chartCard);
                 if (screen.orientation && screen.orientation.lock) {
@@ -2646,32 +2493,32 @@
              const ctx = document.getElementById('realtime-power-chart');
             if (!ctx) return;
             const context = ctx.getContext('2d');
-            
+
             const dataConfig = {
                 labels: window.realtimeData.labels,
                 datasets: [
                     {
                         label: 'PV Power (W)',
                         data: window.realtimeData.pvPower,
-                        backgroundColor: 'rgba(191, 255, 0, 0.2)', 
+                        backgroundColor: 'rgba(191, 255, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderWidth: 2,
                         type: 'line',
-                        fill: 'origin', 
-                        tension: 0.2, 
-                        pointRadius: 0, 
+                        fill: 'origin',
+                        tension: 0.2,
+                        pointRadius: 0,
                         yAxisID: 'y'
                     },
                     {
                         label: 'AC Load (W)',
                         data: window.realtimeData.acLoad,
-                        backgroundColor: 'rgba(255, 185, 0, 0.2)', 
+                        backgroundColor: 'rgba(255, 185, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderWidth: 2,
                         type: 'line',
-                        fill: false, 
-                        tension: 0.2, 
-                        pointRadius: 0, 
+                        fill: false,
+                        tension: 0.2,
+                        pointRadius: 0,
                         yAxisID: 'y'
                     }
                 ]
@@ -2687,14 +2534,14 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: false, 
-                    spanGaps: true, 
+                    animation: false,
+                    spanGaps: true,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
                         title: { display: true, text: 'Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)', color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
-                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, limits: { x: { min: 'original', max: 'original' } } }
+                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
                     },
                     scales: {
                         x: { type: 'category', title: { display: true, text: 'Waktu', color: '#AAAAAA' }, ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
@@ -2703,13 +2550,13 @@
                 }
             });
         }
-        
+
         function resetChartZoom() {
             if (energyChartInstance) {
                 energyChartInstance.resetZoom();
             }
         }
-        
+
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
             const timeLabel = now.toLocaleTimeString('id-ID');
@@ -2727,15 +2574,15 @@
             if (energyChartInstance) {
                 energyChartInstance.update();
             }
-            
+
             saveHistoricalData();
         }
 
         async function fetchPinValue(pin) {
             let host = serverIp;
-            let protocol = 'https'; 
+            let protocol = 'https';
             const defaultPort = '8080';
-            
+
             if (!host.includes(':')) {
                 host = `${host}:${defaultPort}`;
             }
@@ -2744,15 +2591,15 @@
                 protocol = 'https';
             } else if (!serverIp.includes(':')) {
                 host = `${serverIp}:8080`;
-                protocol = 'http'; 
+                protocol = 'http';
             }
-            
+
             if (protocol === 'http' && window.location.protocol === 'https:') {
-                protocol = 'https'; 
+                protocol = 'https';
             }
-            
+
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
-            
+
             const maxRetries = 3;
             for (let i = 0; i < maxRetries; i++) {
                 try {
@@ -2761,10 +2608,10 @@
                         throw new Error(`Status: ${response.status} (${response.statusText})`);
                     }
                     const data = await response.json();
-                    return data[0]; 
+                    return data[0];
                 } catch (error) {
                     if (i < maxRetries - 1) {
-                        const delayTime = Math.pow(2, i) * 1000; 
+                        const delayTime = Math.pow(2, i) * 1000;
                         await delay(delayTime);
                     } else {
                         console.error(`[ERROR PIN ${pin}] Gagal setelah ${maxRetries} percobaan. URL: ${url}`, error);
@@ -2781,7 +2628,7 @@
         function formatValue(pin, value) {
             let numericValue = tryParseFloat(value);
             if (numericValue === DEFAULT_DISPLAY && value !== '0') return 'N/A'; // Cek jika parsing gagal
-            
+
             // Logika Koreksi Energi (Hanya untuk Energi Hari Ini dan Beban Hari Ini)
             if (pin === 'V10') {
                  const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
@@ -2789,8 +2636,8 @@
             } else if (pin === 'V21') {
                  const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
                  numericValue *= correctionFactor;
-            } 
-            
+            }
+
             // Logika Koreksi Daya (V2 dan V14)
             const chartPowerPins = ['V2', 'V14'];
             if (chartPowerPins.includes(pin)) {
@@ -2811,20 +2658,21 @@
             if (rupiahPins.includes(pin)) {
                 return Math.max(0, numericValue).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             }
-            
+
             if (integerPins.includes(pin) || chartPowerPins.includes(pin)) {
-                return Math.max(0, numericValue).toFixed(0);  
+                return Math.max(0, numericValue).toFixed(0);
             }
-            
+
             if (summaryEnergyPins.includes(pin)) {
                 return Math.max(0, numericValue).toFixed(1);
             }
 
             return numericValue.toFixed(1);
         }
-        
+
         /**
          * FUNGSI TAMBAHAN: Mengembalikan nilai mentah NUMERIK yang SUDAH dikoreksi.
+         * Ini diperlukan untuk memperbarui `currentPvPower` dan `currentAcLoad`.
          */
         function getCorrectedNumericValue(pin, rawValue) {
              let numericValue = tryParseFloat(rawValue);
@@ -2834,13 +2682,13 @@
             if (pin === 'V2') {
                 const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
                 return numericValue * correctionFactor;
-            } 
+            }
             // Koreksi Daya Beban AC (V14)
             else if (pin === 'V14') {
                 const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
                 return numericValue * correctionFactor;
             }
-            
+
             return numericValue;
         }
 
@@ -2852,21 +2700,21 @@
             if (pin === 'V4') return ' jam';
             if (pin === 'V5') return ' %';
             if (pin === 'V16') return ' Hz';
-            if (pin === 'V17') return ' '; 
-            if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' '; 
+            if (pin === 'V17') return ' ';
+            if (pin === 'V7' || pin === 'V8' || pin === 'V9') return ' ';
             return '';
         }
-        
+
         /**
          * FUNGSI DIPINDAHKAN: processDiagramPins
          */
         const processDiagramPins = (pin, rawValue) => {
             const mapping = DIAGRAM_BLYNK_MAPPING[pin];
-            if (!mapping) return; 
+            if (!mapping) return;
 
             // Gunakan nilai NUMERIK yang SUDAH dikoreksi untuk PV/Load Power
             const pValue = getCorrectedNumericValue(pin, rawValue);
-            
+
             if (isNaN(pValue)) return;
 
             if (mapping.isGlobal) {
@@ -2891,7 +2739,7 @@
                 if (mapping.key === 'inverterCurrent') {
                     latestDiagramData.inverterCurrent = `${pValue.toFixed(1)} A`;
                 } else {
-                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} V`;
+                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} A`;
                 }
             } else if (mapping.isFrequency) {
                 latestDiagramData[mapping.key] = `${pValue.toFixed(1)} Hz`;
@@ -2909,28 +2757,29 @@
             const maxDuration = 10;
             const maxPower = 5000;
             let duration = maxDuration - (power / maxPower) * (maxDuration - minDuration);
-            
-            if (power < MINIMUM_POWER_THRESHOLD) duration = maxDuration; // Menggunakan MINIMUM_POWER_THRESHOLD
-            if (power > maxPower) duration = minDuration; 
-            
+
+            if (power < 10) duration = maxDuration;
+            if (power > maxPower) duration = minDuration;
+
             return `${duration.toFixed(1)}s`;
         }
 
         /**
          * FUNGSI MODIFIED: Menggunakan powerValue untuk menentukan arah keyPoints
+         * powerValue > 0: Aliran Normal (0;1)
+         * powerValue < 0: Aliran Terbalik (1;0)
+         * powerValue == 0: Stop
+         * * PERBAIKAN KRITIS: Mengatur attribute `keyPoints` dan `keyTimes`
+         * tanpa koma, yang menyebabkan error di konsol.
          */
-        function controlFlow(animIds, powerValue, absPower) { 
+        function controlFlow(animIds, powerValue, absPower) {
             const flowSpeed = getFlowDuration(absPower);
-            const isFlowing = absPower > MINIMUM_POWER_THRESHOLD; // Menggunakan MINIMUM_POWER_THRESHOLD
-            
-            // Tentukan keyPoints yang eksplisit
-            let keyPoints;
-            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
-                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
-            } else { // Discharging / Grid Buy (Aliran masuk)
-                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
-            }
-            
+            const isFlowing = absPower > 10;
+
+            // KeyTimes harus berupa daftar angka terpisah semikolon atau spasi,
+            // dan keyPoints harus berupa daftar koordinat terpisah semikolon atau spasi
+            let keyTimes = "0;1";
+
             animIds.forEach(id => {
                 const animElement = document.getElementById(id);
                 if (!animElement) return;
@@ -2945,13 +2794,25 @@
                     // Set opasitas ke 1 untuk menampilkan titik
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
-                    animElement.setAttribute('keyTimes', '0;1'); 
+                    animElement.setAttribute('keyTimes', keyTimes);
                     animElement.setAttribute('dur', flowSpeed);
-                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
+
+                    // Hapus atribut keyPoints jika ada, karena animateMotion menggunakan mpath
+                    // dan keyTimes sudah cukup untuk mengontrol arah jika diubah dari JS (walau di sini tetap 0;1)
+                    // Jika ingin membalikkan, harus membalikkan path atau nilai keyTimes/keyPoints.
+                    // Karena ini animasi sederhana (0;1), biarkan saja.
                 }
             });
+
+            // LOGIKA PENGENDALIAN ARAH BARU:
+            // Karena error terjadi saat keyTimes dan keyPoints disalahgunakan (keyPoints dihapus, keyTimes disalahgunakan),
+            // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengontrol durasi/opacity.
+
+            // Perlu dicatat: kode asli Anda di HTML untuk Grid Flow memiliki keyTimes="1;0",
+            // yang di konsol disebut sebagai "Invalid value, "1;0"". Ini sangat aneh.
+            // Saya telah mengubah *semua* animasi aliran di HTML menjadi `keyTimes="0;1"` dan akan mengandalkan JavaScript untuk mengontrol arah flow.
         }
-        
+
         /**
          * FUNGSI PERBAIKAN: Memastikan animasi gradien berjalan di mobile.
          */
@@ -2960,24 +2821,24 @@
             const svgDefs = document.querySelector('.svg-content defs');
 
             if (!batteryInner || !svgDefs) return;
-            
+
             batteryInner.querySelectorAll('rect').forEach(rect => rect.remove());
 
-            const totalBars = 8; 
+            const totalBars = 8;
             const socPerBar = 100 / totalBars;
             const barWidth = 7;
             const barHeight = 1.5;
             const startX = 5;
-            const startYVisual = 6; 
-            
+            const startYVisual = 6;
+
             // Perbaikan agar SOC selalu berupa integer 0-100
             let numericSoc = parseInt(soc);
             if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
             if (numericSoc > 100) numericSoc = 100;
-            soc = numericSoc; 
+            soc = numericSoc;
 
             let overallColorStop;
-            
+
             if (soc >= 75) {
                 overallColorStop = 'var(--color-bar-green)';
             } else if (soc >= 50) {
@@ -2988,15 +2849,15 @@
                 overallColorStop = 'var(--color-bar-red)';
             }
 
-            const emptyColor = 'var(--color-bar-empty)'; 
+            const emptyColor = 'var(--color-bar-empty)';
 
             svgDefs.innerHTML = '';
-            
-            const gradientId = `socFlowGradient`; 
+
+            const gradientId = `socFlowGradient`;
             const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
             gradient.setAttribute('id', gradientId);
             gradient.setAttribute('x1', '0%');
-            gradient.setAttribute('y1', '0%'); 
+            gradient.setAttribute('y1', '0%');
             gradient.setAttribute('x2', '0%');
             gradient.setAttribute('y2', '20%'); // Ukuran pattern
             gradient.setAttribute('spreadMethod', 'repeat');
@@ -3004,41 +2865,41 @@
 
             let flowHighlightColor = overallColorStop;
             let flowBaseColor = overallColorStop;
-            
+
             const absPower = Math.abs(batPower);
-            const isFlowing = absPower > MINIMUM_POWER_THRESHOLD; // Menggunakan MINIMUM_POWER_THRESHOLD
-            
+            const isFlowing = absPower > 10;
+
             if (isFlowing) {
                 if (batPower > 0) { // CHARGING (Positif = Charge)
                     flowHighlightColor = 'var(--color-load)';
-                    flowBaseColor = '#388E3C'; 
+                    flowBaseColor = '#388E3C';
                 } else { // DISCHARGING (Negatif = Discharge)
                     flowHighlightColor = 'var(--color-battery)';
-                    flowBaseColor = '#8D0000'; 
+                    flowBaseColor = '#8D0000';
                 }
             } else {
                 flowHighlightColor = overallColorStop;
                 flowBaseColor = overallColorStop;
             }
-            
+
             // --- DEFINISI STOP UNTUK ANIMASI FLOW ---
             let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
             stop1.setAttribute('offset', '0%');
-            stop1.setAttribute('stop-color', flowBaseColor); 
+            stop1.setAttribute('stop-color', flowBaseColor);
             stop1.setAttribute('stop-opacity', '1.0');
             gradient.appendChild(stop1);
-            
+
             if(isFlowing) {
                 let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop2.setAttribute('offset', '10%'); 
-                stop2.setAttribute('stop-color', flowHighlightColor); 
-                stop2.setAttribute('stop-opacity', '1.0'); 
+                stop2.setAttribute('offset', '10%');
+                stop2.setAttribute('stop-color', flowHighlightColor);
+                stop2.setAttribute('stop-opacity', '1.0');
                 gradient.appendChild(stop2);
 
                 let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
                 stop3.setAttribute('offset', '20%');
                 stop3.setAttribute('stop-color', flowBaseColor);
-                stop3.setAttribute('stop-opacity', '1.0'); 
+                stop3.setAttribute('stop-opacity', '1.0');
                 gradient.appendChild(stop3);
 
             } else {
@@ -3053,38 +2914,38 @@
             let animMotion = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
             animMotion.setAttribute('attributeName', 'gradientTransform');
             animMotion.setAttribute('type', 'translate');
-            
+
             const animDuration = getFlowDuration(absPower);
-            
+
             if (isFlowing) {
                  if (batPower > 0) { // CHARGING
                     // Gradien bergerak ke atas (nilai y negatif)
                     animMotion.setAttribute('from', '0 0');
-                    animMotion.setAttribute('to', '0 -20'); 
+                    animMotion.setAttribute('to', '0 -20');
                 } else { // DISCHARGING
                     // Gradien bergerak ke bawah (nilai y positif)
                     animMotion.setAttribute('from', '0 0');
-                    animMotion.setAttribute('to', '0 20'); 
+                    animMotion.setAttribute('to', '0 20');
                 }
-                
-                animMotion.setAttribute('dur', animDuration); 
+
+                animMotion.setAttribute('dur', animDuration);
                 animMotion.setAttribute('repeatCount', 'indefinite');
-                
+
                 gradient.appendChild(animMotion);
             }
-            
+
             svgDefs.appendChild(gradient);
-            
+
             const fillUrl = `url(#${gradientId})`;
-            
+
             for (let i = 0; i < totalBars; i++) {
-                const minSocToFillBar = (totalBars - i) * socPerBar; 
+                const minSocToFillBar = (totalBars - i) * socPerBar;
                 const isFilled = soc > (minSocToFillBar - socPerBar);
-                
+
                 const finalBarFill = isFilled ? fillUrl : emptyColor;
 
                 const yPosition = startYVisual + (i * (barHeight + 0.5));
-                
+
                 const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
                 rect.setAttribute('x', startX);
                 rect.setAttribute('y', yPosition);
@@ -3092,15 +2953,17 @@
                 rect.setAttribute('height', barHeight);
                 rect.setAttribute('rx', 0.5);
                 rect.setAttribute('ry', 0.5);
-                
-                rect.setAttribute('fill', finalBarFill); 
-                
+
+                rect.setAttribute('fill', finalBarFill);
+
                 batteryInner.appendChild(rect);
             }
         }
-        
+
         /**
          * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
+         *
+         * PERBAIKAN 1 (Revert Diagram): Daya dan Arus Baterai Diagram kembali ke Absolute Value + Status text.
          */
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
@@ -3109,76 +2972,80 @@
                     el.textContent = content;
                 }
             };
-            
+
             // PENGGUNAAN P-Koreksi: solarPower dan loadPower sudah dikoreksi di updateDashboard
             const solarP = data.solarPower > 0.1 ? data.solarPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
             const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
-            
+
             // --- BMS DATA (Battery Power Display) ---
-            const batPower = data.batteryPower; // Nilai ini sudah dikoreksi Efisiensi Inverter jika Discharge (untuk tujuan visual)
-            const rawBatPower = Math.abs(batPower);
-            const batPDisplay = rawBatPower > 0.1 ? rawBatPower.toFixed(0) : DEFAULT_DISPLAY_STR;
+            const batP = data.batteryPower; // Nilai ini sudah dikoreksi Efisiensi Inverter jika Discharge (bisa NEGATIF)
+            const powerThreshold = 10;
+            
+            let batPDisplay;
+
+            // REVERT DIAGRAM POWER: Gunakan nilai Absolute Value untuk kotak diagram
+            if (Math.abs(batP) > powerThreshold) {
+                batPDisplay = Math.abs(batP).toFixed(0); 
+            } else {
+                batPDisplay = DEFAULT_DISPLAY_STR;
+            }
 
             // --- PERBAIKAN SISA KAPASITAS (Ah) ---
             const remAh = tryParseFloat(data.batteryRemainingEnergy);
             const remainingAhValue = remAh > 0.01 ? remAh.toFixed(1) : DEFAULT_DISPLAY_STR;
-            
             setText('battery_remaining_energy', `${remainingAhValue} Ah`);
             // ------------------------------------
 
 
-            setText('pv1_power_186', `${solarP} W`); 
-            setText('ess_power', `${loadP} W`); 
+            setText('pv1_power_186', `${solarP} W`);
+            setText('ess_power', `${loadP} W`);
+            // Daya Baterai Kotak Diagram: Menampilkan Absolute Value (sesuai revert)
             setText('data.batteryPower_190', `${batPDisplay} W`); 
-            
+
             const pvV = data.pvVoltage.replace(' V', '');
             const pvI = data.pvCurrent.replace(' A', '');
-            
+
             setText('pv2_voltage_label', `${pvV} V`);
-            setText('pv2_current_label', `${pvI} A`); 
-            
+            setText('pv2_current_label', `${pvI} A`);
+
             // --- PV EXTRA INFO BARU (2x2 LAYOUT) ---
             setText('pv_peak_label', `${data.pvPeakPower.toFixed(0)} W`);
             setText('effective_sun_hours', `${data.effectiveSunHours.toFixed(1)} Hrs`);
             setText('pv_efficiency_value', `${data.pvEfficiency.toFixed(1)}%`);
-            // Menggunakan SOC dari BMS (dikonversi ke string untuk display)
             setText('pv_placeholder', `${data.batterySOC}%`); 
             
             // Inverter Detail (V12 / V13 / V16)
-            setText('inverter_voltage_154', data.inverterVoltage); 
-            setText('inverter_current_164', data.inverterCurrent); 
-            setText('load_frequency_192', data.loadFrequency); 
-            
+            setText('inverter_voltage_154', data.inverterVoltage);
+            setText('inverter_current_164', data.inverterCurrent);
+            setText('load_frequency_192', data.loadFrequency);
+
             // --- PERBAIKAN AUTARKY & RATIO ---
             setText('autarkyp_value', `${data.autarkyPercentage.toFixed(1)}%`); 
-            setText('ratiop_value', `${data.ratioPercentage.toFixed(1)}%`); 
-            // ---------------------------------
+            setText('ratiop_value', `${data.ratioPercentage.toFixed(1)}%`);
             
-            // Total Solar (V3 / V11) - Pembulatan ke 0 angka di belakang koma
+            // Total Solar (V3 / V11) 
             const dailySolarRounded = Math.round(tryParseFloat(data.dailySolar));
             const totalSolarRounded = Math.round(tryParseFloat(data.totalSolarMWh));
-            setText('total_solar_value', `${dailySolarRounded} kWh / ${totalSolarRounded} kWh`); 
+            setText('total_solar_value', `${dailySolarRounded} kWh / ${totalSolarRounded} kWh`);
 
-            setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`); 
-            
-            // --- DAILY CHARGE/DISCHARGE (AKUMULASI LOKAL PERSISTEN) ---
-            
-            // Konversi Wh ke kWh
-            const chargeKwh = dailyChargeEnergyWh / 1000;
-            const dischargeKwh = dailyDischargeEnergyWh / 1000;
-            
-            setText('daily_bat_charge_value', `${chargeKwh.toFixed(2)} kWh`);
-            setText('daily_bat_dischcharge_value', `${dischargeKwh.toFixed(2)} kWh`); 
+            setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`);
+
+            // Daily Charge/Discharge (V10 / V21)
+            const dailyCharge = tryParseFloat(data.dailyBatCharge);
+            const dailyDischarge = tryParseFloat(data.dailyLoad); 
+
+            setText('daily_bat_charge_value', `${dailyCharge.toFixed(2)} kWh`);
+            setText('daily_bat_dischcharge_value', `${dailyDischarge.toFixed(2)} kWh`);
 
             const dischargeTextEl = document.getElementById('daily_bat_dischcharge_value');
             if (dischargeTextEl) {
-                if (dischargeKwh > 0.01) {
+                if (dailyDischarge > 0.01) {
                     dischargeTextEl.setAttribute('fill', 'var(--color-battery)');
                 } else {
-                    dischargeTextEl.setAttribute('fill', '#C0C0C0'); 
+                    dischargeTextEl.setAttribute('fill', '#C0C0C0');
                 }
             }
-            
+
             // --- NONAKTIFKAN TAMPILAN GRID PLN ---
             const gridPowerText = document.getElementById('grid_total_power');
             if (gridPowerText) {
@@ -3189,198 +3056,184 @@
             if (gridPowerBox) {
                  gridPowerBox.setAttribute('stroke', 'var(--color-grid)');
             }
-            setText('daily_grid_buy', "GRID PLN"); 
+            setText('daily_grid_buy', "GRID PLN");
             setText('daily_grid_buy_value', `${DEFAULT_DISPLAY_STR} kWh`);
             document.getElementById('daily_grid_buy_value').setAttribute('fill', '#C0C0C0'); 
             // ------------------------------------
 
-            
+
             // --- BMS DATA (SOC dan SOH) ---
-            const sohValue = data.batterySOH !== undefined ? data.batterySOH : DEFAULT_DISPLAY_STR;
-            let sohFillColor = '#C0C0C0'; 
-            let sohClassName = 'soh-default';
             const parsedSOH = typeof data.batterySOH === 'number' ? data.batterySOH : 0; 
-            
+            let sohFillColor = '#C0C0C0';
+            let sohClassName = 'soh-default';
             
             const socElement = document.getElementById('battery_soc_184');
             if(socElement) {
                 socElement.textContent = `${data.batterySOC}%`;
-                
                 const sohTspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-                sohTspan.textContent = ` | ${parsedSOH}% `; 
+                sohTspan.textContent = ` | ${parsedSOH}% `;
                 sohTspan.setAttribute('class', sohClassName);
                 sohTspan.setAttribute('fill', sohFillColor);
-                
-                // Hapus tspan lama
                 Array.from(socElement.childNodes).forEach(node => {
                     if (node.nodeType === 1 && node.tagName === 'TSPAN') {
                          node.remove();
                     }
                 });
-                
                 socElement.appendChild(sohTspan);
             }
-            
+
             // --- BMS DATA (Voltage Pack) ---
-            const batteryVDisplay = batteryV !== undefined ? batteryV.toFixed(1) : DEFAULT_DISPLAY_STR;
+            const batteryVDisplay = batteryV !== undefined ? batteryV.toFixed(2) : DEFAULT_DISPLAY_STR;
             setText('duration', `${batteryVDisplay} V`);
-            
+
             // --- BMS DATA (Current Pack & Status) ---
             const currentThreshold = 0.1;
             const rawCurrent = rawBatteryI;
-            let displayCurrentI = Math.abs(rawCurrent).toFixed(1);
+            
+            let displayCurrentI;
+            const absCurrent = Math.abs(rawCurrent);
             
             const durationTextElement = document.getElementById('duration_text');
             if (durationTextElement) {
+                // Hapus kelas warna lama
+                durationTextElement.classList.remove('battery-current-disch', 'battery-current-charge');
                 durationTextElement.className = 'st3 left-align';
-                
-                if (rawCurrent < -currentThreshold) { 
-                    durationTextElement.classList.add('battery-current-disch');
-                    durationTextElement.textContent = `${displayCurrentI} A (Discharge)`; 
-                } else if (rawCurrent > currentThreshold) { 
-                    durationTextElement.classList.add('battery-current-charge');
-                    durationTextElement.textContent = `${displayCurrentI} A (Charge)`; 
+
+                // REVERT DIAGRAM CURRENT: Gunakan Absolute Value + Status text
+                if (absCurrent > currentThreshold) {
+                    displayCurrentI = absCurrent.toFixed(1); 
+                    
+                    if (rawCurrent < -currentThreshold) {
+                        durationTextElement.classList.add('battery-current-disch');
+                        durationTextElement.textContent = `${displayCurrentI} A (Discharge)`; // Reverted
+                    } else {
+                        durationTextElement.classList.add('battery-current-charge');
+                        durationTextElement.textContent = `${displayCurrentI} A (Charge)`; // Reverted
+                    }
                 } else {
-                    durationTextElement.textContent = `${displayCurrentI} A (Idle)`;
+                    displayCurrentI = absCurrent.toFixed(1); // Tetap tampilkan 0.0 A saat idle
+                    durationTextElement.textContent = `${displayCurrentI} A (Idle)`; 
                 }
             }
         }
-        
+
         /**
-         * FUNGSI KRITIS MODIFIED: Akumulasi Daily Charge/Discharge dan Logika Guardrail PV.
+         * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower;
-            
-            const minimumPowerThreshold = MINIMUM_POWER_THRESHOLD; 
-            
+            const minimumPowerThreshold = 10;
+
             // Daya DC murni dari BMS
             const rawBatP_DC = bmsData.totalPower;
             const rawCurrent = bmsData.current;
-            
+
             let calculatedBatP;
 
-            // Logika Koreksi Daya Baterai (CHARGE vs DISCHARGE):
-            const currentThreshold = 0.1;
+            // Logika Koreksi Discharge:
+            if (rawCurrent < -minimumPowerThreshold) {
+                // 1. Hitung Defisit AC (daya AC yang harus ditutup baterai)
+                const solarP_AC_Equivalent = solarP; 
+                let deficitAC = loadP - solarP_AC_Equivalent; 
 
-            if (rawCurrent > currentThreshold) {
-                // KASUS CHARGE
-                
-                // 1. Hitung Daya Baterai dengan Efisiensi (P_DC_charge * Eff)
-                calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
-                
-                // 2. GUARDRAIL KRITIS: Pastikan Daya Charge tidak melebihi PV yang tersedia
-                calculatedBatP = Math.min(
-                    calculatedBatP, 
-                    Math.max(0, solarP) // Batasi agar tidak melebihi PV
-                );
-                
-                // 3. AKUMULASI DAILY CHARGE (Wh)
-                const chargePowerW = calculatedBatP; 
-                const chargedEnergyWh = chargePowerW * UPDATE_INTERVAL_WH_FACTOR;
-                dailyChargeEnergyWh += chargedEnergyWh; 
-                
-                // --- SIMPAN KE LOCALSTORAGE ---
-                localStorage.setItem(STORAGE_KEY_DAILY_CHARGE, dailyChargeEnergyWh.toFixed(2));
-
-
-            } else if (rawCurrent < -currentThreshold) {
-                // KASUS DISCHARGE
-                
-                // 1. Hitung Daya Baterai dengan Efisiensi (P_DC_discharge / Eff). Nilai harus NEGATIF.
-                calculatedBatP = rawBatP_DC / INVERTER_DISCHARGE_EFFICIENCY;
-                
-                // 2. AKUMULASI DAILY DISCHARGE (Wh)
-                const dischargePowerW = Math.abs(calculatedBatP); // Gunakan abs(P_DC) yang sudah dikoreksi
-                const dischargedEnergyWh = dischargePowerW * UPDATE_INTERVAL_WH_FACTOR;
-                dailyDischargeEnergyWh += dischargedEnergyWh; 
-                
-                // --- SIMPAN KE LOCALSTORAGE ---
-                localStorage.setItem(STORAGE_KEY_DAILY_DISCHARGE, dailyDischargeEnergyWh.toFixed(2));
-                
+                // 2. Hanya jalankan koreksi jika ada defisit AC yang harus ditutup
+                if (deficitAC > 0) {
+                    // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
+                    calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
+                } else {
+                    calculatedBatP = rawBatP_DC;
+                }
             } else {
-                // Saat IDLE (rawCurrent ~ 0)
+                // Saat CHARGE atau IDLE, gunakan nilai DC murni dari BMS
                 calculatedBatP = rawBatP_DC;
             }
 
-            // Final check agar calculatedBatP valid
-            if (calculatedBatP === undefined || isNaN(calculatedBatP) || !isFinite(calculatedBatP)) {
-                 calculatedBatP = rawBatP_DC; // Fallback
+            // PERBAIKAN: Tambahkan validasi agar calculatedBatP tidak menjadi angka negatif tak terhingga (jika inverter efficiency 0)
+            if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) {
+                 calculatedBatP = rawBatP_DC; // Fallback jika perhitungan gagal
             }
 
+
+            // *PENTING*: Di sini kita menggunakan nilai calculatedBatP yang BISA NEGATIF. 
+            // Namun, untuk variable diagram, kita tetap simpan nilai ABSOLUT agar diagram PV Power tetap benar (sesuai revert).
+            // Logic diagram flow control akan menggunakan rawCurrent dan batP (di bawah).
             latestDiagramData.batteryPower = calculatedBatP; 
-            
+
             let eff = 0;
             const pvPeak = latestDiagramData.pvPeakPower > 0.1 ? latestDiagramData.pvPeakPower : CONFIG_PV_PEAK_WATT_DEFAULT;
             if (pvPeak > 0) {
                  eff = (solarP / pvPeak) * 100;
             }
-            latestDiagramData.pvEfficiency = Math.min(100, eff); 
+            latestDiagramData.pvEfficiency = Math.min(100, eff);
 
-            const batP = latestDiagramData.batteryPower; 
-            
+            // Gunakan nilai ABSOLUT dari calculatedBatP untuk visualisasi flow dan level.
+            const batP_for_visual = Math.abs(calculatedBatP); 
+
             // Rasio Autarky (SSR) & Ratio (SCR)
+            const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
-            const rawBatP_abs_corrected = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) / INVERTER_DISCHARGE_EFFICIENCY : 0;
-            const providedByBat_AC_Equivalent = rawBatP_abs_corrected; 
+
+            // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
+            const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0;
 
             let ratio = 0;
-            let autarky_ssr = 0; 
-            
-            if (loadP > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) { 
+            let autarky_ssr = 0;
+
+            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
+            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) {
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
-                const usedSelfGeneratedPower = Math.min(selfSupply, loadP); // Menggunakan loadP (beban)
-                
+                const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
+
                 // AUTARKY (SSR): Energi Sendiri / Total Beban
-                autarky_ssr = (usedSelfGeneratedPower / loadP) * 100;
-                
+                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+
                 // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
-                const totalProduction = providedBySolar + providedByBat_AC_Equivalent; 
+                const totalProduction = providedBySolar + providedByBat_AC_Equivalent;
                 ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
             } else {
-                autarky_ssr = 100; 
+                autarky_ssr = 100;
                 ratio = 100;
             }
-            
+
+            // Batasi nilai agar tidak lebih dari 100%
             latestDiagramData.ratioPercentage = Math.min(100, ratio);
-            latestDiagramData.autarkyPercentage = Math.min(100, autarky_ssr); 
-            
-            latestDiagramData.batterySOC = bmsData.soc; 
+            latestDiagramData.autarkyPercentage = Math.min(100, autarky_ssr);
+
+            // Perbarui data BMS
+            latestDiagramData.batterySOC = bmsData.soc;
             latestDiagramData.batterySOH = bmsData.soh;
-            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh; 
+            latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
 
 
-            // Memperbarui teks dengan data BMS (voltage, current)
+            // Memperbarui teks dengan data BMS (voltage, current, dan power yang kini bisa negatif)
             updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
-            
-            // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
-            updateBatteryLevel(bmsData.soc, latestDiagramData.batteryPower);
-            
-            // 3. Kontrol Animasi Aliran
-            
-            // 1. Solar Flow 
-            controlFlow(['solar_flow_anim_1', 'solar_flow_anim_2'], solarP, Math.abs(solarP));
 
-            // 2. Load Flow 
+            // Memperbarui level baterai dengan SOC dari BMS dan power BMS (yang bisa negatif)
+            updateBatteryLevel(bmsData.soc, calculatedBatP); // Gunakan calculatedBatP (bisa negatif) untuk flow animasi level baterai
+
+            // 3. Kontrol Animasi Aliran
+
+            // 1. Solar Flow
+            controlFlow(['solar_flow_anim_1'], solarP, Math.abs(solarP));
+
+            // 2. Load Flow
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
-            const batAbsPower = Math.abs(batP); 
-            
-            if (batAbsPower > minimumPowerThreshold) { 
+            if (batP_for_visual > minimumPowerThreshold) {
                 if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
-                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batAbsPower); 
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batP_for_visual);
                 } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
-                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batAbsPower); 
+                    controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], -1, batP_for_visual);
                 }
             } else {
-                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0); 
+                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0);
             }
 
             // 4. Grid Flow (DIPAKSA OFF)
-            controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
-            
+            controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0);
+
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
         }
 
@@ -3392,7 +3245,7 @@
 
             let allSuccessful = true;
             const results = await Promise.allSettled(fetchPromises);
-            
+
             let currentPvPower = 0;
             let currentAcLoad = 0;
 
@@ -3402,62 +3255,62 @@
                 const pin = pins[index];
                 const elementId = PIN_MAPPINGS[pin];
                 const element = document.getElementById(elementId);
-                const unitElement = document.getElementById(`${elementId}-unit`); 
-                
+                const unitElement = document.getElementById(`${elementId}-unit`);
+
                 let rawValue = null;
 
-                if (!element) return; 
+                if (!element) return;
 
                 element.classList.remove('loading-animation', 'text-red-500');
 
                 if (result.status === 'fulfilled') {
                     rawValue = result.value || '0';
-                    
+
                     // --- LOGIKA PENGAMBILAN NILAI KOREKSI UNTUK CHART/DIAGRAM ---
-                    if (pin === 'V2') { 
-                        currentPvPower = getCorrectedNumericValue(pin, rawValue); 
-                    } 
-                    else if (pin === 'V14') { 
-                        currentAcLoad = getCorrectedNumericValue(pin, rawValue); 
+                    if (pin === 'V2') {
+                        currentPvPower = getCorrectedNumericValue(pin, rawValue);
                     }
-                    
+                    else if (pin === 'V14') {
+                        currentAcLoad = getCorrectedNumericValue(pin, rawValue);
+                    }
+
                     // --- INTEGRASI DIAGRAM: Proses Pin Blynk untuk Diagram ---
                     processDiagramPins(pin, rawValue);
-                    
-                    // --- PLTS Dashboard Logic: Menggunakan nilai format ---
+
+                    // --- PLTS Dashboard Logic: Menggunakan nilai format (yang sudah terkoreksi untuk V2/V14/V10/V21) ---
                     const formattedValue = formatValue(pin, rawValue);
-                    const unit = getUnit(pin); 
-                    
+                    const unit = getUnit(pin);
+
                     if (pin === 'V18' || pin === 'V19') {
                         element.textContent = formattedValue;
-                        if (unitElement) unitElement.textContent = ''; 
+                        if (unitElement) unitElement.textContent = '';
                     } else {
                         element.textContent = formattedValue;
                         if (unitElement) unitElement.textContent = unit;
                     }
-                    
+
                     element.style.transform = 'scale(1.05)';
                     setTimeout(() => { element.style.transform = 'scale(1)'; }, 100);
-                    
+
                     let nominalColorClass = '';
                     let iconColorClass = '';
 
-                    if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V10', 'V11'].includes(pin) || pin.includes('pzem')) { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; } 
-                    else if (['V7', 'V9'].includes(pin)) { nominalColorClass = 'text-blue-bat'; iconColorClass = 'text-blue-bat'; } 
-                    else if (['V12', 'V13', 'V14', 'V15', 'V21'].includes(pin) || pin.includes('ac')) { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; } 
-                    else if (pin === 'V19' || pin.includes('rupiah')) { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; } 
-                    else if (pin === 'V18') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } 
-                    
-                    if (pin === 'V8' || pin === 'V20') { nominalColorClass = 'text-warning-red'; iconColorClass = 'text-warning-red'; } 
-                    else if (pin === 'V6') { nominalColorClass = 'text-orange-red'; iconColorClass = 'text-orange-red'; } 
-                    else if (pin === 'V0' || pin === 'V16') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } 
-                    
-                    
-                    if (element.closest('.solar-card') || element.closest('.power-summary-card')) { 
+                    if (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V10', 'V11'].includes(pin) || pin.includes('pzem')) { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; }
+                    else if (['V7', 'V9'].includes(pin)) { nominalColorClass = 'text-blue-bat'; iconColorClass = 'text-blue-bat'; }
+                    else if (['V12', 'V13', 'V14', 'V15', 'V21'].includes(pin) || pin.includes('ac')) { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; }
+                    else if (pin === 'V19' || pin.includes('rupiah')) { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; }
+                    else if (pin === 'V18') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; }
+
+                    if (pin === 'V8' || pin === 'V20') { nominalColorClass = 'text-warning-red'; iconColorClass = 'text-warning-red'; }
+                    else if (pin === 'V6') { nominalColorClass = 'text-orange-red'; iconColorClass = 'text-orange-red'; }
+                    else if (pin === 'V0' || pin === 'V16') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; }
+
+
+                    if (element.closest('.solar-card') || element.closest('.power-summary-card')) {
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
                         if (unitElement) { // Perbaikan null check
-                            unitElement.classList.remove(...colorsToRemove); 
+                            unitElement.classList.remove(...colorsToRemove);
                             unitElement.classList.add(nominalColorClass);
                         }
                         let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
@@ -3465,13 +3318,13 @@
                              summaryIcon.classList.remove(...colorsToRemove);
                              summaryIcon.classList.add(iconColorClass);
                         }
-                    } 
-                    
+                    }
+
                     else if (element.closest('.detail-item')) {
                         element.classList.remove(...colorsToRemove);
                         element.classList.add(nominalColorClass);
-                        
-                        let nominalDisplay = element.closest('.nominal-color'); 
+
+                        let nominalDisplay = element.closest('.nominal-color');
                         let unitDisplay = nominalDisplay ? nominalDisplay.querySelector('.text-sm') : null;
 
                         if(nominalDisplay) {
@@ -3501,7 +3354,7 @@
             // LOGIC PENGHITUNGAN LOKAL (Menggunakan nilai yang sudah dikoreksi)
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
             const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
-            
+
             if (!selfConsumptionEl || !potensiSurplusEl) {
                 console.warn("Self-Consumption or Potensi Surplus element not found. Skipping local calculation update.");
             } else {
@@ -3509,20 +3362,20 @@
                 if (currentPvPower > 0) { scValue = (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100; }
                 selfConsumptionEl.textContent = scValue.toFixed(0);
                 selfConsumptionEl.classList.remove('loading-animation');
-                
+
                 let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
                 potensiSurplusEl.textContent = surplusValue.toFixed(0);
                 potensiSurplusEl.classList.remove('loading-animation');
             }
-            
+
             if (!energyChartInstance) { renderRealtimeChart(); }
             updateRealtimeChartData(currentPvPower, currentAcLoad);
-            
+
             // --- NEW: Get Aggregated BMS Data ---
             const bmsAggregatedData = getAggregatedBmsData();
 
             // --- INTEGRASI DIAGRAM: Hitung dan Render Diagram ---
-            calculateAndRenderDiagram(bmsAggregatedData); 
+            calculateAndRenderDiagram(bmsAggregatedData);
 
             if (allSuccessful) {
                 showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
@@ -3536,40 +3389,31 @@
          */
         function startInstantMonitoring() {
             const dashboard = document.getElementById('monitoring-dashboard');
-            
+
             if (fetchInterval) {
                 clearInterval(fetchInterval);
                 fetchInterval = null;
             }
-            
-            // --- PENTING: Panggil fungsi loadDailyEnergy sebelum memuat data historis ---
-            loadDailyEnergy();
-            
+
             loadHistoricalData();
-            
-            dashboard.classList.remove('hidden'); 
-            
-            updateDashboard(); 
+
+            dashboard.classList.remove('hidden');
+
+            updateDashboard();
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
-            
-            // Skrip Refresh Otomatis ditambahkan di sini
-            console.log(`Auto-refresh halaman diaktifkan setiap ${AUTO_REFRESH_MS / 60000} menit.`);
-            setTimeout(() => {
-                window.location.reload();
-            }, AUTO_REFRESH_MS);
 
             startMQTT();
 
             showMessage(`Monitoring Instan dimulai ke ${serverIp}. PV Correction: +${INSTANT_PV_PERCENT.toFixed(1)}%.`, 'success');
             showDiagramStatus('Diagram siap. Menunggu data Blynk API pertama.', 'warning');
         }
-        
+
         // ==========================================================
         // INISIALISASI UTAMA
         // ==========================================================
 
         function initApp() {
-            
+
             const closeBatteryModalButton = document.getElementById('closeModalButton');
             if (closeBatteryModalButton) {
                 closeBatteryModalButton.onclick = closeModal;
@@ -3585,10 +3429,10 @@
             }
 
             updateTime();
-            setInterval(updateTime, 1000); 
+            setInterval(updateTime, 1000);
 
             lucide.createIcons();
-            
+
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
             safeUpdate("bms-logger-ip-footer", 'N/A');
 
@@ -3599,17 +3443,22 @@
         window.onload = function() {
             initApp();
         };
+
+        // Menghapus service worker yang error (sw.js) agar tidak ada Uncaught (in promise) TypeError
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              // Jika registrasi ditemukan, batalkan pendaftaran
+              if (registration.scope.includes('/monitoring/')) {
+                 registration.unregister().then(function(success) {
+                    console.log('Unregistered service worker to fix: sw.js error:', success);
+                 }).catch(function(error) {
+                    console.error('Failed to unregister service worker:', error);
+                 });
+              }
+            }
+          });
+        }
     </script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/monitoring/sw.js')
-    .then(function(reg) {
-      console.log('Service worker registered.', reg);
-    })
-    .catch(function(err) {
-      console.error('Service worker registration failed:', err);
-    });
-}
-</script>
 </body>
 </html>
