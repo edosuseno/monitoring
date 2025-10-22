@@ -774,7 +774,7 @@
                                     <!-- Titik Animasi 2 (Flow Kotak <-> Inverter) -->
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-grid)">
                                         <animateMotion id="grid_flow_anim_2" repeatCount="indefinite" keyTimes="1;0" calcMode="linear" dur="2s">
-                                            <mpath href="#grid-line-2"></path>
+                                            <mpath href="#grid-line-2"></mpath>
                                         </animateMotion>
                                     </circle>
                                 </svg>
@@ -817,7 +817,7 @@
                                         </animateMotion>
                                     </circle>
                                     <!-- Titik Animasi 2 (Flow Kotak -> Icon) -->
-                                    <circle cx="0" cy="0" id="es-dot-2" r="3.5" fill="var(--color-load)">
+                                    <circle cx="0" cy="0" r="3.5" fill="var(--color-load)">
                                         <animateMotion id="load_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
                                             <mpath href="#es-line-2"></path>
                                         </animateMotion>
@@ -1392,17 +1392,32 @@
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218"; 
         
-        // ** Efisiensi Inverter saat Discharging (92%) **
+        // ** Efisiensi Inverter saat Discharging (98%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.98; 
-        // ** BARU: Efisiensi Pengisian Baterai (98%) **
+        // ** Efisiensi Pengisian Baterai (98%) **
         const INVERTER_CHARGE_EFFICIENCY = 0.98;
         // Auto-refresh rate (5 menit)
         const AUTO_REFRESH_MS = 5 * 60 * 1000; 
         
         // Ambang batas daya minimum untuk menganggap aliran signifikan (50W ~ 1A @ 48V)
         const MINIMUM_POWER_THRESHOLD = 50;
+        const UPDATE_INTERVAL = 5000; // 5000 milidetik (5 detik)
+        
+        // FAKTOR KONVERSI: Mengubah Daya (W) selama INTERVAL menjadi Energi (kWh)
+        // Rumus: W * (Interval_ms / (1000 ms/detik * 3600 detik/jam * 1000 W/kW))
+        const UPDATE_INTERVAL_KWH_FACTOR = UPDATE_INTERVAL / (1000 * 60 * 60 * 1000); 
+        
+        // --- KUNCI PENYIMPANAN PERSISTEN ---
+        const localStorageKeyCharge = 'aepro_daily_charge_kwh';
+        const localStorageKeyDischarge = 'aepro_daily_discharge_kwh';
+        const localStorageKeyLastDay = 'aepro_last_reset_day'; // Menyimpan hari terakhir reset
         // --------------------------
 
+        // Variabel Akumulasi Daily Charge & Discharge (DIINISIALISASI DARI LOCALSTORAGE)
+        let dailyChargeEnergyKWh = 0.0; 
+        let dailyDischargeEnergyKWh = 0.0;
+        let lastDay = new Date().getDate(); // Untuk reset harian
+        
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
             'V10': 'v10-kwh-today', 'V21': 'v21-kwh-today-ac', 'V19': 'v19-rupiah-day', 'V18': 'v18-rupiah-total',
@@ -1413,7 +1428,6 @@
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant'; 
-        const UPDATE_INTERVAL = 5000; // 5 detik
         const MAX_DATA_POINTS = 17280; // Sekitar 24 jam @ 5 detik
 
         let fetchInterval = null; 
@@ -1490,14 +1504,55 @@
             'V16': { key: 'loadFrequency', unit: 'Hz', isFrequency: true }, 
             'V21': { key: 'dailyLoad', unit: 'kWh', isDailyEnergy: true }, 
 
-            // Battery (Only used for Diagram Logic Fallback and Daily Charge/Discharge)
-            'V7': { key: 'vpack', isGlobal: true, isBatVoltage: true },   // Fallback for Vpack
-            'V9': { key: 'current', isGlobal: true, isBatCurrent: true }, // Fallback for Current
-            'V10': { key: 'dailyBatCharge', unit: 'kWh', isDailyEnergy: true, isBatCharge: true}, 
+            // Battery (Hanya untuk Fallback dan Data Blynk Legacy)
+            'V7': { key: 'vpack', isGlobal: true, isBatVoltage: true },   
+            'V9': { key: 'current', isGlobal: true, isBatCurrent: true }, 
+            'V10': { key: 'dailyBatCharge_legacy', unit: 'kWh', isDailyEnergy: true, isBatCharge: true}, // Dibuat Legacy/tidak dipakai langsung
         };
 
         // ==========================================================
-        // UTILITY FUNCTIONS (UMUM) - DIPINDAHKAN KE ATAS AGAR DAPAT DIAKSES OLEH SEMUA FUNGSI
+        // UTILITY FUNCTIONS (PERSISTENCE)
+        // ==========================================================
+        
+        /**
+         * Memuat nilai daily charge/discharge dari localStorage.
+         */
+        function loadPersistentEnergy() {
+            const storedCharge = localStorage.getItem(localStorageKeyCharge);
+            const storedDischarge = localStorage.getItem(localStorageKeyDischarge);
+            const storedLastDay = localStorage.getItem(localStorageKeyLastDay);
+
+            const today = new Date().getDate();
+
+            if (storedLastDay !== null) {
+                lastDay = parseInt(storedLastDay);
+            }
+
+            // Cek apakah data disimpan hari ini atau perlu direset
+            if (lastDay === today) {
+                dailyChargeEnergyKWh = storedCharge ? tryParseFloat(storedCharge) : 0.0;
+                dailyDischargeEnergyKWh = storedDischarge ? tryParseFloat(storedDischarge) : 0.0;
+                console.log(`[STORAGE] Memuat data harian yang ada. Charge: ${dailyChargeEnergyKWh.toFixed(2)} kWh`);
+            } else {
+                // Hari sudah berganti, lakukan reset dan simpan hari baru
+                dailyChargeEnergyKWh = 0.0;
+                dailyDischargeEnergyKWh = 0.0;
+                console.log("[STORAGE] Tanggal berganti, akumulasi harian direset.");
+                savePersistentEnergy(); // Simpan nilai nol dan hari baru
+            }
+        }
+
+        /**
+         * Menyimpan nilai daily charge/discharge ke localStorage.
+         */
+        function savePersistentEnergy() {
+            localStorage.setItem(localStorageKeyCharge, dailyChargeEnergyKWh.toFixed(5));
+            localStorage.setItem(localStorageKeyDischarge, dailyDischargeEnergyKWh.toFixed(5));
+            localStorage.setItem(localStorageKeyLastDay, new Date().getDate().toString());
+        }
+
+        // ==========================================================
+        // UTILITY FUNCTIONS (UMUM)
         // ==========================================================
         
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -1525,6 +1580,11 @@
          * FUNGSI KRITIS: Mengonversi string ke float dengan penanganan NaN yang aman.
          */
         function tryParseFloat(value) {
+            // Mengubah string yang disimpan (yang merupakan float) menjadi float
+            if (typeof value === 'string') {
+                 value = value.replace(/,/g, ''); // Hapus koma ribuan jika ada
+            }
+
             const parsed = parseFloat(value);
             // Cek apakah nilai adalah NaN, null, atau undefined
             if (isNaN(parsed) || value === null || value === undefined) {
@@ -1551,7 +1611,7 @@
         }
 
         /**
-         * Menampilkan jam real-time
+         * Menampilkan jam real-time dan melakukan reset harian.
          */
         function updateTime() {
             const now = new Date();
@@ -1566,6 +1626,16 @@
             safeUpdate('current-time', timeStr);
             safeUpdate('v2-status-time', `Status ${timeStr}`);
             safeUpdate('v14-status-time', `Status ${timeStr}`);
+            
+            // Logika Reset Harian untuk Akumulasi Charge dan Discharge
+            const today = now.getDate();
+            if (today !== lastDay) {
+                dailyChargeEnergyKWh = 0.0;
+                dailyDischargeEnergyKWh = 0.0; 
+                lastDay = today;
+                savePersistentEnergy(); // Reset di storage
+                console.log("Daily Charge and Discharge Energy reset for the new day (00:00).");
+            }
         }
         
         /**
@@ -1777,7 +1847,8 @@
 
 
         function normalizeFromMqtt(data) {
-             const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
+             // Menggunakan Array.isArray dan Array.from untuk penanganan data array yang lebih baik
+             const cellVoltages = Array.isArray(data.cell_voltages) ? Array.from(data.cell_voltages) : [];
           
             const cells = cellVoltages.map(v => (v/1000).toFixed(3));
             
@@ -1785,7 +1856,7 @@
             const cell_vmin_val = cellVoltages.length > 0 ? Math.min(...cellVoltages) / 1000 : 'N/A';
             
             let cell_vdiff_val = 'N/A';
-            if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number') {
+            if (typeof cell_vmax_val === 'number' && typeof cell_vmin_val === 'number' && !isNaN(cell_vmax_val) && !isNaN(cell_vmin_val)) {
                 cell_vdiff_val = (cell_vmax_val - cell_vmin_val) * 1000; // Selisih dalam mV
             }
             
@@ -2322,8 +2393,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="zap" class="lucide w-6 h-4 text-yellow-500 mr-2"></i>
                                 <div>
-                                    <div class="text-gray-500">Tegangan</div>
-                                    <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
+                                    <div class=\"text-gray-500\">Tegangan</div>
+                                    <div id=\"voltage-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold text-white\">${batt.voltage} V</div>
                                 </div>
                             </div>
                             
@@ -2331,8 +2402,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="activity" class="lucide w-4 h-4 ${battAmpColorClass} mr-2" id="current-icon-${batt.typeBattery}-${batt.addr}"></i>
                                 <div>
-                                    <div class="text-gray-500">Arus</div>
-                                    <div id="current-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battAmpColorClass}">${batt.current} A</div>
+                                    <div class=\"text-gray-500\">Arus</div>
+                                    <div id=\"current-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold ${battAmpColorClass}\">${batt.current} A</div>
                                 </div>
                             </div>
 
@@ -2340,8 +2411,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="divide" class="lucide w-4 h-4 text-blue-400 mr-2"></i>
                                 <div>
-                                    <div class="text-gray-500">Selisih Sel</div>
-                                    <div id="voltagedif-${batt.typeBattery}-${batt.addr}" class="font-semibold text-blue-400">${batt.cell_vdif} mV</div>
+                                    <div class=\"text-gray-500\">Selisih Sel</div>
+                                    <div id=\"voltagedif-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold text-blue-400\">${batt.cell_vdif} mV</div>
                                 </div>
                             </div>
 
@@ -2349,8 +2420,8 @@
                             <div class="battery-metric-item">
                                 <i data-lucide="power" class="lucide w-4 h-4 ${battPowerColorClass} mr-2" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
                                 <div>
-                                    <div class="text-gray-500">Daya</div>
-                                    <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerColorClass}">${batt.power} W</div>
+                                    <div class=\"text-gray-500\">Daya</div>
+                                    <div id=\"power-${batt.typeBattery}-${batt.addr}\" class=\"font-semibold ${battPowerColorClass}\">${batt.power} W</div>
                                 </div>
                             </div>
 
@@ -2840,9 +2911,8 @@
                 // Gunakan nilai yang sudah dikoreksi dari getCorrectedNumericValue
                 latestDiagramData[mapping.key] = parseFloat(Math.abs(pValue).toFixed(1));
             } else if (mapping.isDailyEnergy) {
-                // Karena V10 dan V21 sudah dikoreksi di formatValue, kita ambil nilai koreksi di sana
-                // Di sini kita gunakan nilai yang sudah dikoreksi untuk V10/V21 dari formatValue
-                const formattedValue = formatValue(pin, rawValue); // Ini sudah mengaplikasikan koreksi
+                // Pin energi lain (V3, V11, V21) tetap mengambil dari Blynk (sudah dikoreksi di formatValue)
+                const formattedValue = formatValue(pin, rawValue); 
                 const numericValue = tryParseFloat(formattedValue);
                 latestDiagramData[mapping.key] = numericValue.toFixed(2);
             } else if (mapping.isTotalEnergy) {
@@ -2860,6 +2930,7 @@
             } else if (mapping.isStatic) {
                 latestDiagramData[mapping.key] = pValue;
             }
+            // V10 (dailyBatCharge_legacy) diabaikan di sini, karena sekarang dihitung lokal
         };
 
         // ==========================================================
@@ -3129,21 +3200,34 @@
             const totalSolarRounded = Math.round(tryParseFloat(data.totalSolarMWh));
             setText('total_solar_value', `${dailySolarRounded} kWh / ${totalSolarRounded} kWh`); 
 
+            // Daily Load di diagram
             setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`); 
             
-            // Daily Charge/Discharge (V10 / V21)
-            const dailyCharge = tryParseFloat(data.dailyBatCharge);
-            const dailyDischarge = tryParseFloat(data.dailyLoad); // Asumsi: Daily Load adalah proxy Daily Discharge 
-            
+            // Daily Charge (Akumulasi Lokal)
+            const dailyCharge = dailyChargeEnergyKWh; // Menggunakan variabel akumulasi lokal
             setText('daily_bat_charge_value', `${dailyCharge.toFixed(2)} kWh`);
+            
+            // Daily Discharge (Akumulasi Lokal)
+            const dailyDischarge = dailyDischargeEnergyKWh; // Menggunakan variabel akumulasi lokal
             setText('daily_bat_dischcharge_value', `${dailyDischarge.toFixed(2)} kWh`); 
 
+            // Pewarnaan Discharge
             const dischargeTextEl = document.getElementById('daily_bat_dischcharge_value');
             if (dischargeTextEl) {
                 if (dailyDischarge > 0.01) {
                     dischargeTextEl.setAttribute('fill', 'var(--color-battery)');
                 } else {
                     dischargeTextEl.setAttribute('fill', '#C0C0C0'); 
+                }
+            }
+            
+            // Pewarnaan Charge
+            const chargeTextEl = document.getElementById('daily_bat_charge_value');
+            if (chargeTextEl) {
+                if (dailyCharge > 0.01) {
+                    chargeTextEl.setAttribute('fill', 'var(--color-battery)');
+                } else {
+                    chargeTextEl.setAttribute('fill', '#C0C0C0'); 
                 }
             }
             
@@ -3252,17 +3336,25 @@
                 
                 if (surplusAC > minimumPowerThreshold) {
                     // Ada Surplus signifikan, dan Baterai aktif charging (rawCurrent > 0)
-                    // Hitung daya DC yang dihasilkan surplus AC
                     // Daya Baterai ditampilkan = Surplus AC / Efisiensi Charge (Konversi DC)
                     const surplusDC_forced = Math.max(minimumPowerThreshold, surplusAC / INVERTER_CHARGE_EFFICIENCY);
                     
-                    // Kita FORCE calculatedBatP menjadi Surplus DC yang tersedia.
                     calculatedBatP = surplusDC_forced; 
                     
                 } else {
                     // Jika PV tidak surplus signifikan, gunakan nilai DC murni BMS (yang sudah dikoreksi)
                     calculatedBatP = rawBatP_DC * INVERTER_CHARGE_EFFICIENCY;
                 }
+                
+                // *** LOGIKA AKUMULASI DAILY CHARGE (Daya Positif) ***
+                if (calculatedBatP > minimumPowerThreshold) {
+                    const chargePowerW = calculatedBatP; 
+                    // Konversi W ke kWh per interval (W * Faktor_Konversi_kWh)
+                    const chargedEnergyKWh = chargePowerW * UPDATE_INTERVAL_KWH_FACTOR;
+                    
+                    dailyChargeEnergyKWh += chargedEnergyKWh;
+                }
+                // *************************************
 
             } else if (rawCurrent < 0) {
                 // KASUS DISCHARGE: Baterai harus menutupi Defisit AC (Defisit Forcing)
@@ -3276,6 +3368,18 @@
                     // Jika PV sudah menutupi/melebihi beban, gunakan nilai rawBatP_DC (arus kecil discharge internal)
                     calculatedBatP = rawBatP_DC;
                 }
+                
+                // *** LOGIKA AKUMULASI DAILY DISCHARGE (Daya Negatif) ***
+                if (calculatedBatP < -minimumPowerThreshold) {
+                    // Ambil Daya Discharge yang sudah terkoreksi (positif W)
+                    const dischargePowerW = Math.abs(calculatedBatP); 
+                    // Hitung energi yang digunakan dalam interval 5 detik (W * Faktor_Konversi_kWh)
+                    const dischargedEnergyKWh = dischargePowerW * UPDATE_INTERVAL_KWH_FACTOR;
+                    
+                    dailyDischargeEnergyKWh += dischargedEnergyKWh;
+                }
+                // ****************************************************
+                
             } else {
                 // Saat IDLE (rawCurrent ~ 0), gunakan nilai DC murni dari BMS (sekitar nol)
                 calculatedBatP = rawBatP_DC;
@@ -3342,6 +3446,9 @@
             
             // Memperbarui level baterai dengan SOC dari BMS (yang kini pasti numerik) dan power BMS
             updateBatteryLevel(bmsData.soc, latestDiagramData.batteryPower);
+            
+            // 4. SIMPAN DATA PERSISTEN SETELAH AKUMULASI
+            savePersistentEnergy();
             
             // 3. Kontrol Animasi Aliran
             
@@ -3555,7 +3662,9 @@
         // ==========================================================
 
         function initApp() {
-            
+            // Memuat data persisten (akumulasi energi harian)
+            loadPersistentEnergy();
+
             const closeBatteryModalButton = document.getElementById('closeModalButton');
             if (closeBatteryModalButton) {
                 closeBatteryModalButton.onclick = closeModal;
