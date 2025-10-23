@@ -1986,7 +1986,10 @@
                          ? remainingCapacity.toFixed(2) 
                          : (remainingCapacity === 'N/A_FALLBACK' ? 'N/A' : 'N/A'), // Sisa Kapasitas (Ah)
               
-              cycles: data.cycle_count || 0,
+              // index.html (~Baris 1121) - MODIFIKASI: Koreksi Scaling Cycle Count
+cycles: safeParseFloat(data.cycle_count) !== 'N/A' 
+          ? parseInt(safeParseFloat(data.cycle_count) / 10) // Nilai riil dibagi 10
+          : 0, // Fallback ke 0 jika data tidak valid
               cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A',
               cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A',
               cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
