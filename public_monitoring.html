@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
 
-    <!-- PWA METADATA - Dihapus/Dipotong yang tidak relevan.
-         Perbaikan: Menghapus meta tag yang sudah deprecated (apple-mobile-web-app-capable)
-         karena tidak bisa diperbaiki tanpa file manifest/ikon yang hilang. -->
+    <!-- PWA METADATA -->
     <link rel="manifest" href="/monitoring/manifest.json">
     <meta name="theme-color" content="#05050D">
+    <!-- iOS / Apple specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="/monitoring/icon-192.png">
+    <!-- END PWA METADATA -->
 
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
@@ -453,11 +457,20 @@
           </div>
 
           <div class="overflow-y-auto flex-1 p-6">
-            <!-- BARIS KARTU RINGKASAN DI MODAL -->
+            <!-- PERBAIKAN: BARIS KARTU RINGKASAN DI MODAL -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div class="modal-summary-card modal-soc text-white"><h3 class="text-sm font-medium">State of Charge</h3><div class="text-4xl font-extrabold"><span id="modalSOCPercent">N/A</span>%</div><div class="text-xs text-blue-300 mt-2">Sisa Kapasitas: <span id="modalRemaining">N/A</span> Ah</div></div>
-              <div class="modal-summary-card modal-soh text-white"><h3 class="text-sm font-medium">State of Health</h3><div class="text-4xl font-extrabold"><span id="modalSOHPercent">N/A</span>%</div><div class="text-xs text-green-300 mt-2">Kapasitas Penuh: <span id="modalCapacity">N/A</span> Ah</div></div>
-              <div class="modal-summary-card modal-cycles text-white"><h3 class="text-sm font-medium">Cycle Count</h3><div class="text-4xl font-extrabold"><span id="modalCycles">N/A</span></div><div class="text-xs text-purple-300 mt-2">Terakhir diperbarui: <span id="modalLastUpdate">N/A</span></div></div>
+              <!-- SOC (Warna dinamis di JS, dan SATUAN SOC DIBUNGKUS SPAN untuk pewarnaan dinamis) -->
+              <div class="modal-summary-card modal-soc text-white">
+                  <h3 class="text-sm font-medium">State of Charge</h3>
+                  <div class="text-4xl font-extrabold">
+                      <span id="modalSOCPercent">N/A</span><span id="modalSOCUnit">%</span>
+                  </div>
+                  <div class="text-xs text-blue-300 mt-2">Sisa Kapasitas: <span id="modalRemaining">N/A</span> Ah</div>
+              </div>
+              <!-- SOH (Warna diselaraskan dengan fungsi serupa: text-green-400) -->
+              <div class="modal-summary-card modal-soh text-white"><h3 class="text-sm font-medium">State of Health</h3><div class="text-4xl font-extrabold text-green-400"><span id="modalSOHPercent">N/A</span>%</div><div class="text-xs text-green-300 mt-2">Kapasitas Penuh: <span id="modalCapacity">N/A</span> Ah</div></div>
+              <!-- Cycles (Warna diselaraskan dengan fungsi serupa: text-purple-300) -->
+              <div class="modal-summary-card modal-cycles text-white"><h3 class="text-sm font-medium">Cycle Count</h3><div class="text-4xl font-extrabold text-purple-300"><span id="modalCycles">N/A</span></div><div class="text-xs text-purple-300 mt-2">Terakhir diperbarui: <span id="modalLastUpdate">N/A</span></div></div>
             </div>
 
             <!-- 2 Kolom Detail -->
@@ -470,22 +483,27 @@
                 <div class="space-y-3 text-sm">
                     <div class="detail-metric">
                         <span class="text-gray-400">Tegangan Pack</span>
+                        <!-- Warna akan diatur dinamis di JS ke text-yellow-500 -->
                         <span class="font-semibold text-white" id="modalVoltage">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Tegangan Bus</span>
+                        <!-- Warna akan diatur dinamis di JS ke text-yellow-500 -->
                         <span class="font-semibold text-white" id="modalBusVoltage">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Tegangan Sel Min</span>
+                         <!-- Warna akan diatur dinamis di JS ke text-red-400 -->
                         <span class="font-semibold text-white" id="modalcellmin">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Tegangan Sel Max</span>
+                         <!-- Warna akan diatur dinamis di JS ke text-green-400 -->
                         <span class="font-semibold text-white" id="modalcellmax">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Perbedaan Tegangan</span>
+                        <!-- Warna akan diatur dinamis di JS ke text-blue-400 -->
                         <span class="font-semibold text-white" id="modalcelldif">N/A</span>
                     </div>
                 </div>
@@ -499,14 +517,17 @@
                 <div class="space-y-3 text-sm">
                     <div class="detail-metric">
                         <span class="text-gray-400">Arus Pack</span>
+                        <!-- Warna akan diatur dinamis di JS (Charge/Discharge/Standby) -->
                         <span class="font-semibold text-white" id="modalCurrent">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Daya (Power)</span>
+                        <!-- Warna akan diatur dinamis di JS (Charge/Discharge/Standby) -->
                         <span class="font-semibold text-white" id="modalPower">N/A</span>
                     </div>
                     <div class="detail-metric">
                         <span class="text-gray-400">Status Temp</span>
+                        <!-- Warna tetap text-white karena tidak ada warna fungsional untuk suhu -->
                         <span class="font-semibold text-white" id="modalTemp">N/A</span>
                     </div>
                      <div class="detail-metric opacity-0"><span class="text-gray-400">_</span><span class="font-semibold text-white">_</span></div>
@@ -627,7 +648,7 @@
                                         <text id="pv2_voltage_label" x="230" y="133" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
                                             -- V
                                         </text>
-                                    </a>
+                                    </a >
                                     <text id="pv_peak_label_text" x="247" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
                                         Peak:
                                     </text>
@@ -867,7 +888,7 @@
                                         <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)">
                                              <!-- PERBAIKAN ANIMASI SVG KEYPOINTS -->
                                              <animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s">
-                                                <mpath href="#bat-line-to-icon"></mpath>
+                                                <mpath href="#bat-line-to-icon"></path>
                                             </animateMotion>
                                         </circle>
 
@@ -916,7 +937,7 @@
                                     <svg id="battery_daily" style="overflow: visible;">
                                         <svg id="battery_daily_charge" style="overflow: visible;" x="0%" y="0%">
                                             <text id="daily_bat_charge_value" x="100" y="365" display="" class="st10 left-align" fill="var(--color-battery)">
-                                                -- kWh
+                                                0.00 kWh
                                             </text>
                                             <text id="daily_bat_charge" x="105" y="380" display="" class="st3 left-align" fill="var(--color-battery)">
                                                 DAILY CHARGE
@@ -924,7 +945,7 @@
                                         </svg>
                                         <svg id="battery_daily_discharge" style="overflow: visible;" x="0%" y="0%">
                                             <text id="daily_bat_dischcharge_value" x="100" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
-                                                -- kWh
+                                                0.00 kWh
                                             </text>
                                             <text id="daily_bat_dischcharge" x="85" y="415" display="" class="st3 left-align" fill="var(--color-battery)">
                                                 DAILY DISCHARGE
@@ -1379,14 +1400,34 @@
         // --- KONFIGURASI PATEN ---
         const INSTANT_SERVER_IP = 'iot.serangkota.go.id:9443';
         const INSTANT_AUTH_TOKEN = 'q3SRjKexoyK-dgb5dM21WxgFSRQBdqDh';
-        const INSTANT_PV_PERCENT = 6.0;
+        
+        // MODIFIKASI: Mengatur INSTANT_PV_PERCENT ke 0.0 agar daya instan (V2)
+        // ditampilkan tanpa koreksi, sehingga tidak melebihi 7020Wp.
+        const INSTANT_PV_PERCENT = 0.0; 
+        
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218";
 
+        // ** BARU: Kapasitas Nominal Baterai (Ah) - Disesuaikan dengan 100 Ah per bank **
+        const NOMINAL_BATTERY_AH = 100.0; 
+        
         // ** BARU: Efisiensi Inverter saat Discharging (92%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.92;
+        
+        // ** BARU: Koreksi 6.0% yang Anda gunakan sebelumnya untuk kWh. 
+        // Dipisahkan untuk V10 (Energi Harian) secara manual.
+        const KWH_CALIBRATION_FACTOR = 1 + (6.0 / 100); 
         // --------------------------
 
+        // VARIABEL ENERGI HARIAN BATERAI (BARU)
+        const STORAGE_KEY_CHARGE = 'dailyChargeWh'; // Kunci Storage untuk Charge
+        const STORAGE_KEY_DISCHARGE = 'dailyDischargeWh'; // Kunci Storage untuk Discharge
+        const STORAGE_KEY_RESET_DATE = 'dailyResetDate'; // Kunci Storage untuk tanggal reset
+
+        let lastUpdateTime = Date.now();
+        let dailyChargeWh = 0;
+        let dailyDischargeWh = 0;
+        
         // PLTS (Blynk) Konstan
         const PIN_MAPPINGS = {
             'V10': 'v10-kwh-today', 'V21': 'v21-kwh-today-ac', 'V19': 'v19-rupiah-day', 'V18': 'v18-rupiah-total',
@@ -1481,8 +1522,98 @@
         };
 
         // ==========================================================
-        // UTILITY FUNCTIONS (UMUM) - DIPINDAHKAN KE ATAS AGAR DAPAT DIAKSES OLEH SEMUA FUNGSI
+        // UTILITY FUNCTIONS (UMUM)
         // ==========================================================
+
+        /**
+         * FUNGSI BARU: Memuat data harian dari localStorage.
+         */
+        function loadDailyEnergy() {
+            const storedCharge = localStorage.getItem(STORAGE_KEY_CHARGE);
+            const storedDischarge = localStorage.getItem(STORAGE_KEY_DISCHARGE);
+
+            if (storedCharge !== null) {
+                dailyChargeWh = parseFloat(storedCharge);
+            }
+            if (storedDischarge !== null) {
+                dailyDischargeWh = parseFloat(storedDischarge);
+            }
+        }
+        
+        /**
+         * FUNGSI BARU: Menyimpan data harian ke localStorage.
+         */
+        function saveDailyEnergy() {
+             localStorage.setItem(STORAGE_KEY_CHARGE, dailyChargeWh.toString());
+             localStorage.setItem(STORAGE_KEY_DISCHARGE, dailyDischargeWh.toString());
+        }
+
+        /**
+         * FUNGSI MODIFIED: Mereset akumulasi energi harian setiap tengah malam (00:00) dan menghapus dari localStorage.
+         */
+        function resetDailyEnergy() {
+            const now = new Date();
+            const todayDate = now.toISOString().split('T')[0]; // Format YYYY-MM-DD
+            const lastResetDate = localStorage.getItem(STORAGE_KEY_RESET_DATE);
+
+            // Cek apakah hari sudah berganti (hanya reset sekali per hari)
+            if (lastResetDate !== todayDate) {
+                 if (dailyChargeWh !== 0 || dailyDischargeWh !== 0) {
+                    dailyChargeWh = 0;
+                    dailyDischargeWh = 0;
+                    
+                    // Simpan tanggal reset baru dan reset nilai di storage
+                    localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate);
+                    localStorage.setItem(STORAGE_KEY_CHARGE, '0');
+                    localStorage.setItem(STORAGE_KEY_DISCHARGE, '0');
+                    
+                    console.log("Daily battery energy reset at midnight.");
+                    
+                    // Update tampilan ke 0.00 kWh
+                    document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
+                    document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
+                }
+            }
+        }
+        
+        /**
+         * FUNGSI MODIFIED: Menghitung akumulasi energi Wh berdasarkan delta waktu dan menyimpan ke localStorage.
+         * @param {number} voltage Tegangan Pack rata-rata (V)
+         * @param {number} current Arus Pack total (A)
+         */
+        function updateBatteryEnergy(voltage, current) {
+            const now = Date.now();
+            // Hitung selang waktu (dt) sejak update terakhir dalam detik
+            const dt = (now - lastUpdateTime) / 1000; 
+            lastUpdateTime = now; // Perbarui waktu update terakhir
+
+            // Daya (W) = V * I
+            const power = voltage * current; 
+            // Energi (Wh) = Daya (W) * waktu (jam). 
+            // Waktu (jam) = dt (detik) / 3600
+            const energyWh = (power * dt) / 3600; 
+            
+            const chargeThreshold = 0.5; // Ambang batas untuk menghindari noise
+            
+            if (current > chargeThreshold) {
+                // Arus Positif: Baterai CHARGING
+                dailyChargeWh += energyWh;
+            } else if (current < -chargeThreshold) {
+                // Arus Negatif: Baterai DISCHARGING
+                // Gunakan nilai absolut agar energi Wh positif
+                dailyDischargeWh += Math.abs(energyWh);
+            }
+
+            // SIMPAN KE LOCALSTORAGE setiap update
+            saveDailyEnergy();
+
+            // Update tampilan di SVG elements (dikonversi ke kWh, 2 desimal)
+            document.getElementById("daily_bat_charge_value").textContent =
+                (dailyChargeWh / 1000).toFixed(2) + " kWh";
+            document.getElementById("daily_bat_dischcharge_value").textContent =
+                (dailyDischargeWh / 1000).toFixed(2) + " kWh";
+        }
+
 
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -1659,6 +1790,13 @@
                 element.classList.remove('text-green-400', 'text-warning-red', 'text-pink-400', 'text-white', 'text-red-500', 'text-orange-red-power', 'text-stabilo-green', 'text-soft-brown', 'text-power-standby', 'text-charging', 'text-discharging', 'text-standby');
             }
         }
+        
+        // FUNGSI BARU UNTUK MENGHAPUS SEMUA KELAS TEGANGAN METRIK
+        function removeVoltageColorClasses(element) {
+             if (element) {
+                element.classList.remove('text-yellow-500', 'text-red-400', 'text-green-400', 'text-blue-400', 'text-white');
+            }
+        }
 
         function getSocColorClasses(soc) {
             let textColor = 'text-soc-yellow';
@@ -1697,8 +1835,9 @@
                 const soh = tryParseFloat(b.soh); // Menggunakan tryParseFloat
                 const voltage = tryParseFloat(b.voltage); // Menggunakan tryParseFloat
                 const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
-                const remCapacity = tryParseFloat(b.remaining); // Menggunakan tryParseFloat
-                const capacity = tryParseFloat(b.capacity); // Menggunakan tryParseFloat
+                // Menggunakan tryParseFloat karena nilai capacity dan remaining sekarang bisa berupa string 'N/A' dari normalizeFromMqtt
+                const remCapacity = tryParseFloat(b.remaining); 
+                const capacity = tryParseFloat(b.capacity); 
                 const busVoltage = tryParseFloat(b.busVoltage); // Ambil Bus Voltage
 
                 if (!isNaN(current)) {
@@ -1739,18 +1878,22 @@
             let totalPower = totalPowerDC;
 
             let remainingAh;
+            let totalNominalAh; // BARU: Variabel untuk Total Kapasitas Nominal
 
-            if (validCapacityCount > 0) {
-                remainingAh = totalRemCapacity;
+            if (validCount === 0) {
+                 // Jika tidak ada data baterai sama sekali
+                 totalNominalAh = NOMINAL_BATTERY_AH; 
+                 remainingAh = 0;
+            } else if (validCapacityCount > 0) {
+                // Jika data Ah real-time dari BMS valid (minimal 1 baterai mengirim Ah), gunakan totalnya
+                remainingAh = totalRemCapacity; 
+                totalNominalAh = totalCapacity;
             } else {
-                // FALLBACK: Jika tidak ada data BMS yang valid, gunakan data Blynk yang terakhir
-                const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
-                // Ambil Ah nominal dari dashboard PLTS (V9)
-                const nominalAhStr = document.getElementById('v9-batere-ah')?.textContent || '0';
-                const nominalAh = tryParseFloat(nominalAhStr);
+                // FALLBACK: Jika tidak ada data BMS Ah yang valid, gunakan NOMINAL_BATTERY_AH * jumlah baterai
+                totalNominalAh = NOMINAL_BATTERY_AH * validCount; 
 
-                // Hitung sisa kapasitas dari SOC Blynk dan Ah nominal
-                remainingAh = (socFromBlynkVpack / 100) * nominalAh;
+                // Hitung sisa kapasitas dari SOC rata-rata
+                remainingAh = (avgSoc / 100) * totalNominalAh;
             }
 
 
@@ -1762,11 +1905,15 @@
                 current: totalCurrent,
                 totalPower: totalPower, // DAYA DC BATERAI MURNI
                 remainingAh: remainingAh, // Gunakan nilai yang sudah dihitung/fallback (number)
+                totalCapacityAh: totalNominalAh, // BARU: Tambahkan total kapasitas nominal
                 count: validCount
             };
         }
 
 
+        /**
+         * FUNGSI MODIFIED: Menerapkan Logika Fallback Kapasitas (Ah)
+         */
         function normalizeFromMqtt(data) {
              const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
 
@@ -1791,22 +1938,54 @@
 
             const safeParseFloat = (value) => {
                   const parsed = parseFloat(value);
-                  return isNaN(parsed) ? 'N/A' : parsed;
+                  // Mengubah 'N/A', null, undefined, atau NaN menjadi 'N/A' (string) untuk konsistensi.
+                  return isNaN(parsed) || value === null || value === undefined ? 'N/A' : parsed; 
             };
 
-            const soc = safeParseFloat(data.SOC);
-            const soh = safeParseFloat(data.SOH);
+            const soc = safeParseFloat(data.SOC); // Ambil SOC
+            
+            // Ambil Kapasitas dari MQTT (dibiarkan dalam bentuk number/string 'N/A')
+            let fullCapacity = (data.full_capacity !== undefined) ? safeParseFloat(data.full_capacity) : 'N/A';
+            let remainingCapacity = (data.rem_capacity !== undefined) ? safeParseFloat(data.rem_capacity) : 'N/A';
+
+            const nominalAhThreshold = 0.1; // 0.1 Ah (hampir nol)
+
+            // --- LOGIC FALLBACK UTAMA UNTUK KAPASITAS PENUH (100 AH) ---
+            // Jika data MQTT hilang ('N/A') ATAU nilainya 0 (karena corrupted/invalid string), gunakan NOMINAL_BATTERY_AH.
+            if (fullCapacity === 'N/A' || (typeof fullCapacity === 'number' && fullCapacity < nominalAhThreshold)) {
+                fullCapacity = NOMINAL_BATTERY_AH; // Dipaksa 100.0 Ah
+            }
+
+            // --- LOGIC FALLBACK UNTUK SISA KAPASITAS ---
+            if (remainingCapacity === 'N/A' && typeof soc === 'number' && typeof fullCapacity === 'number') {
+                if (soc > nominalAhThreshold) {
+                    // Hitung sisa kapasitas jika SOC di atas nol
+                    remainingCapacity = ((soc / 100) * fullCapacity); 
+                } else {
+                    // Jika SOC adalah 0 atau mendekati nol, dan data asli Ah hilang, 
+                    // kembalikan string 'N/A' untuk menghindari 0.00 Ah yang membingungkan.
+                    remainingCapacity = 'N/A_FALLBACK'; 
+                }
+            }
+            // ------------------------------------------
+
 
             return {
               typeBattery: data.typeBattery || 'Baterai',
               addr: data.AddrBattery || 'N/A',
               soc: typeof soc === 'number' ? soc.toFixed(0) : 'N/A',
-              soh: typeof soh === 'number' ? soh.toFixed(0) : 'N/A',
+              soh: safeParseFloat(data.SOH) !== 'N/A' ? safeParseFloat(data.SOH).toFixed(0) : 'N/A',
+              // Gunakan nilai fallback yang sudah dihitung, diformat ke 2 desimal
               voltage: typeof voltage === 'number' ? parseFloat(voltage).toFixed(2) : voltage, // Tegangan Pack
               busVoltage: typeof busVoltage === 'number' ? parseFloat(busVoltage).toFixed(2) : busVoltage, // Tegangan Bus
               current: typeof current === 'number' ? parseFloat(current).toFixed(2) : current, // Arus Pack
-              capacity: (data.full_capacity !== undefined) ? parseFloat(data.full_capacity).toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
-              remaining: (data.rem_capacity !== undefined) ? parseFloat(data.rem_capacity).toFixed(2) : 'N/A', // Sisa Kapasitas (Ah)
+              capacity: typeof fullCapacity === 'number' ? fullCapacity.toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
+              
+              // FINAL OUTPUT UNTUK REMAINING CAPACITY
+              remaining: typeof remainingCapacity === 'number' 
+                         ? remainingCapacity.toFixed(2) 
+                         : (remainingCapacity === 'N/A_FALLBACK' ? 'N/A' : 'N/A'), // Sisa Kapasitas (Ah)
+              
               cycles: data.cycle_count || 0,
               cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A',
               cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A',
@@ -1865,6 +2044,17 @@
                   const bmsAggregatedData = getAggregatedBmsData();
                   calculateAndRenderDiagram(bmsAggregatedData);
 
+                  // LOGIKA PERHITUNGAN ENERGI HARIAN (BARU)
+                  // Gunakan data BMS agregat yang sudah dihitung rata-rata tegangan pack
+                  const totalVoltage = bmsAggregatedData.voltage;
+                  const totalCurrent = bmsAggregatedData.current;
+                  
+                  resetDailyEnergy(); // Cek dan reset jika sudah tengah malam
+                  if (totalVoltage !== DEFAULT_DISPLAY && totalCurrent !== 0) {
+                      updateBatteryEnergy(totalVoltage, totalCurrent);
+                  }
+
+
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
                 }
@@ -1905,26 +2095,35 @@
             safeUpdate("modalAddr", batt.addr);
 
             const socValue = batt.soc !== 'N/A' ? parseInt(batt.soc) : NaN;
-            const { textClassesToRemove: summaryTextClassesToRemove } = getSocColorClasses(socValue);
+            const { textColor: summaryTextColor, textClassesToRemove: summaryTextClassesToRemove } = getSocColorClasses(socValue);
 
             const modalSOCPercentEl = document.getElementById("modalSOCPercent");
+            const modalSOCUnitEl = document.getElementById("modalSOCUnit"); // Elemen baru untuk satuan %
+            
             if (modalSOCPercentEl) {
                  modalSOCPercentEl.classList.remove(...summaryTextClassesToRemove);
-                 modalSOCPercentEl.classList.add(getSocColorClasses(socValue).textColor);
+                 modalSOCPercentEl.classList.add(summaryTextColor);
+            }
+            // PERBAIKAN: Terapkan warna dinamis ke satuan (%)
+            if (modalSOCUnitEl) {
+                 modalSOCUnitEl.classList.remove(...summaryTextClassesToRemove);
+                 modalSOCUnitEl.classList.add(summaryTextColor);
             }
 
             safeUpdate("modalSOCPercent", batt.soc);
+            // safeUpdate("modalSOCUnit", "%"); // Tetap % di HTML
+
+            // PASTIKAN MODAL MENGGUNAKAN NILAI CAPACITY DAN REMAINING YANG SUDAH DIHITUNG/FALLBACK
             safeUpdate("modalRemaining", batt.remaining !== 'N/A' ? `${batt.remaining}` : 'N/A');
             safeUpdate("modalSOHPercent", batt.soh);
             safeUpdate("modalCapacity", batt.capacity !== 'N/A' ? `${batt.capacity}` : 'N/A');
             safeUpdate("modalCycles", batt.cycles);
             safeUpdate("modalLastUpdate", batt.time);
 
-            safeUpdate("modalVoltage", batt.voltage !== 'N/A' ? `${batt.voltage} V` : 'N/A');
-            safeUpdate("modalBusVoltage", batt.busVoltage !== 'N/A' ? `${batt.busVoltage} V` : 'N/A');
-            safeUpdate("modalcellmax", batt.cell_vmax !== 'N/A' ? `${batt.cell_vmax} V` : 'N/A');
-            safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
-            safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
+            
+            // =======================================================================
+            // PEWARNAAN TEGANGAN, ARUS, DAN DAYA DI MODAL
+            // =======================================================================
 
             const currentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
             const currentThreshold = 0.1;
@@ -1938,8 +2137,17 @@
                   }
             }
 
+            // --- 1. ARUS (Menggunakan text-amp-discharging untuk discharge) ---
             const ampModalColor = battStatusClass === 'text-discharging' ? 'text-amp-discharging' : battStatusClass;
 
+            const modalCurrentEl = document.getElementById("modalCurrent");
+            if(modalCurrentEl){
+                removeCurrentColorClasses(modalCurrentEl);
+                modalCurrentEl.classList.add(ampModalColor);
+                safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
+            }
+
+            // --- 2. DAYA (Menggunakan text-power-standby untuk standby) ---
             let powerModalColor = battStatusClass;
             if (battStatusClass === 'text-standby') {
                  powerModalColor = 'text-power-standby';
@@ -1947,21 +2155,57 @@
                  powerModalColor = 'text-discharging';
             }
 
-            const modalCurrentEl = document.getElementById("modalCurrent");
-            if(modalCurrentEl){
-                removeCurrentColorClasses(modalCurrentEl);
-                modalCurrentEl.classList.add(ampModalColor);
-            }
-
             const modalPowerEl = document.getElementById("modalPower");
             if(modalPowerEl){
                 removePowerColorClasses(modalPowerEl);
                 modalPowerEl.classList.add(powerModalColor);
+                safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
             }
 
-            safeUpdate("modalCurrent", batt.current !== 'N/A' ? `${batt.current} A` : 'N/A');
-            safeUpdate("modalPower", batt.power !== 'N/A' ? `${batt.power} W` : 'N/A');
+            // --- 3. TEGANGAN PACK & BUS (Menggunakan warna fungsional: text-yellow-500) ---
+            const modalVoltageEl = document.getElementById("modalVoltage");
+            const modalBusVoltageEl = document.getElementById("modalBusVoltage");
+            
+            if(modalVoltageEl) {
+                removeVoltageColorClasses(modalVoltageEl);
+                modalVoltageEl.classList.add('text-yellow-500');
+                safeUpdate("modalVoltage", batt.voltage !== 'N/A' ? `${batt.voltage} V` : 'N/A');
+            }
+            if(modalBusVoltageEl) {
+                removeVoltageColorClasses(modalBusVoltageEl);
+                modalBusVoltageEl.classList.add('text-yellow-500');
+                safeUpdate("modalBusVoltage", batt.busVoltage !== 'N/A' ? `${batt.busVoltage} V` : 'N/A');
+            }
+
+            // --- 4. TEGANGAN SEL MIN/MAX/DIF (Menggunakan warna fungsional) ---
+            const modalCellMinEl = document.getElementById("modalcellmin");
+            const modalCellMaxEl = document.getElementById("modalcellmax");
+            const modalCellDifEl = document.getElementById("modalcelldif");
+            
+            if(modalCellMinEl) {
+                removeVoltageColorClasses(modalCellMinEl);
+                modalCellMinEl.classList.add('text-red-400'); // Merah untuk Min (Kritis)
+                safeUpdate("modalcellmin", batt.cell_vmin !== 'N/A' ? `${batt.cell_vmin} V` : 'N/A');
+            }
+            
+            if(modalCellMaxEl) {
+                removeVoltageColorClasses(modalCellMaxEl);
+                modalCellMaxEl.classList.add('text-green-400'); // Hijau untuk Max (Target)
+                safeUpdate("modalcellmax", batt.cell_vmax !== 'N/A' ? `${batt.cell_vmax} V` : 'N/A');
+            }
+
+            if(modalCellDifEl) {
+                removeVoltageColorClasses(modalCellDifEl);
+                modalCellDifEl.classList.add('text-blue-400'); // Biru untuk Selisih
+                safeUpdate("modalcelldif", batt.cell_vdif !== 'N/A' ? `${batt.cell_vdif} mV` : 'N/A');
+            }
+            
+            // --- Lainnya ---
             safeUpdate("modalTemp", batt.tempStatus);
+
+            // =======================================================================
+            // END PEWARNAAN TEGANGAN, ARUS, DAN DAYA DI MODAL
+            // =======================================================================
 
             const cellsDiv = document.getElementById("modalCells");
             if (cellsDiv) {
@@ -2166,11 +2410,11 @@
                         battAmpColorClass = 'text-amp-discharging';
                     }
 
-                    let battPowerColorClass = battStatusClass;
+                    let battPowerClass = battStatusClass;
                     if (battStatusClass === 'text-standby') {
-                         battPowerColorClass = 'text-power-standby';
+                         battPowerClass = 'text-power-standby';
                     } else if (battStatusClass === 'text-discharging') {
-                         battPowerColorClass = 'text-discharging';
+                         battPowerClass = 'text-discharging';
                     }
 
                     let card = document.createElement("div");
@@ -2209,7 +2453,7 @@
                                 <i data-lucide="zap" class="lucide w-6 h-4 text-yellow-500 mr-2"></i>
                                 <div>
                                     <div class="text-gray-500">Tegangan</div>
-                                    <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-white">${batt.voltage} V</div>
+                                    <div id="voltage-${batt.typeBattery}-${batt.addr}" class="font-semibold text-yellow-500">${batt.voltage} V</div>
                                 </div>
                             </div>
 
@@ -2233,10 +2477,10 @@
 
                             <!-- Daya -->
                             <div class="battery-metric-item">
-                                <i data-lucide="power" class="lucide w-4 h-4 ${battPowerColorClass} mr-2" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
+                                <i data-lucide="power" class="lucide w-4 h-4 ${battPowerClass} mr-2" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
                                 <div>
                                     <div class="text-gray-500">Daya</div>
-                                    <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerColorClass}">${batt.power} W</div>
+                                    <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerClass}">${batt.power} W</div>
                                 </div>
                             </div>
 
@@ -2296,11 +2540,11 @@
                     battAmpColorClass = 'text-amp-discharging';
                 }
 
-                let battPowerColorClass = battStatusClass;
+                let battPowerClass = battStatusClass;
                 if (battStatusClass === 'text-standby') {
-                     battPowerColorClass = 'text-power-standby';
+                     battPowerClass = 'text-power-standby';
                 } else if (battStatusClass === 'text-discharging') {
-                     battPowerColorClass = 'text-discharging';
+                     battPowerClass = 'text-discharging';
                 }
 
 
@@ -2334,13 +2578,13 @@
 
                 if (powerTextEl && powerIconCardEl) {
                     removePowerColorClasses(powerTextEl);
-                    powerTextEl.classList.add(battPowerColorClass);
+                    powerTextEl.classList.add(battPowerClass);
 
                     removePowerColorClasses(powerIconCardEl);
-                    powerIconCardEl.classList.add(battPowerColorClass);
+                    powerIconCardEl.classList.add(battPowerClass);
                 }
 
-
+                // Update teks metrik card individual (warna Tegangan, Sel Min/Max/Dif sudah di set di HTML untuk Card Individual)
                 safeUpdate(`voltage-${batt.typeBattery}-${batt.addr}`, `${batt.voltage} V`);
                 safeUpdate(`current-${batt.typeBattery}-${batt.addr}`, `${batt.current} A`);
                 safeUpdate(`voltagedif-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vdif} mV`);
@@ -2631,7 +2875,8 @@
 
             // Logika Koreksi Energi (Hanya untuk Energi Hari Ini dan Beban Hari Ini)
             if (pin === 'V10') {
-                 const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
+                 // MODIFIKASI: Koreksi 6.0% diterapkan secara eksplisit HANYA untuk V10 (Energi Harian kWh)
+                 const correctionFactor = KWH_CALIBRATION_FACTOR; // Menggunakan konstanta KWH_CALIBRATION_FACTOR (1.06)
                  numericValue *= correctionFactor;
             } else if (pin === 'V21') {
                  const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
@@ -2642,11 +2887,14 @@
             const chartPowerPins = ['V2', 'V14'];
             if (chartPowerPins.includes(pin)) {
                  if (pin === 'V2') {
+                    // Karena INSTANT_PV_PERCENT (ENERGY_CALIBRATION_PERCENT) sekarang 0.0,
+                    // koreksi di sini menjadi 0.0% untuk V2 (Daya Instan W)
                     const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
                     numericValue *= correctionFactor;
                  } else if (pin === 'V14') {
                     const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
-                    numericValue *= correctionFactor;
+                    // FIX: correctionValue is not defined. Mengganti correctionValue menjadi correctionFactor
+                    numericValue *= correctionFactor; 
                  }
             }
 
@@ -2680,6 +2928,7 @@
 
             // Koreksi Daya PV (V2)
             if (pin === 'V2') {
+                // Karena INSTANT_PV_PERCENT = 0.0, koreksi di sini menjadi 0.0%
                 const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
                 return numericValue * correctionFactor;
             }
@@ -2806,11 +3055,7 @@
 
             // LOGIKA PENGENDALIAN ARAH BARU:
             // Karena error terjadi saat keyTimes dan keyPoints disalahgunakan (keyPoints dihapus, keyTimes disalahgunakan),
-            // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengontrol durasi/opacity.
-
-            // Perlu dicatat: kode asli Anda di HTML untuk Grid Flow memiliki keyTimes="1;0",
-            // yang di konsol disebut sebagai "Invalid value, "1;0"". Ini sangat aneh.
-            // Saya telah mengubah *semua* animasi aliran di HTML menjadi `keyTimes="0;1"` dan akan mengandalkan JavaScript untuk mengontrol arah flow.
+            // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengandalkan JavaScript untuk mengontrol arah flow.
         }
 
         /**
@@ -3020,8 +3265,15 @@
             setText('load_frequency_192', data.loadFrequency);
 
             // --- PERBAIKAN AUTARKY & RATIO ---
-            setText('autarkyp_value', `${data.autarkyPercentage.toFixed(1)}%`); 
-            setText('ratiop_value', `${data.ratioPercentage.toFixed(1)}%`);
+            const autarkyValue = data.autarkyPercentage;
+            const ratioValue = data.ratioPercentage;
+            const threshold = 0.1; // Gunakan ambang batas kecil untuk menentukan "idle"
+
+            // Jika nilai Autarky mendekati nol (karena idle), tampilkan '--'
+            setText('autarkyp_value', Math.abs(autarkyValue) < threshold ? DEFAULT_DISPLAY_STR : `${autarkyValue.toFixed(1)}%`); 
+            
+            // Jika nilai Ratio mendekati nol (karena idle), tampilkan '--'
+            setText('ratiop_value', Math.abs(ratioValue) < threshold ? DEFAULT_DISPLAY_STR : `${ratioValue.toFixed(1)}%`);
             
             // Total Solar (V3 / V11) 
             const dailySolarRounded = Math.round(tryParseFloat(data.dailySolar));
@@ -3030,16 +3282,18 @@
 
             setText('daily_load_value', `${tryParseFloat(data.dailyLoad).toFixed(2)} kWh`);
 
-            // Daily Charge/Discharge (V10 / V21)
-            const dailyCharge = tryParseFloat(data.dailyBatCharge);
-            const dailyDischarge = tryParseFloat(data.dailyLoad); 
+            // Daily Charge/Discharge (V10 / V21) - Data ini sekarang dihitung secara lokal via MQTT
+            // const dailyCharge = tryParseFloat(data.dailyBatCharge);
+            // const dailyDischarge = tryParseFloat(data.dailyLoad); 
 
-            setText('daily_bat_charge_value', `${dailyCharge.toFixed(2)} kWh`);
-            setText('daily_bat_dischcharge_value', `${dailyDischarge.toFixed(2)} kWh`);
+            // setText('daily_bat_charge_value', `${dailyCharge.toFixed(2)} kWh`); // Sudah diupdate oleh updateBatteryEnergy
+            // setText('daily_bat_dischcharge_value', `${dailyDischarge.toFixed(2)} kWh`); // Sudah diupdate oleh updateBatteryEnergy
 
+            // Mengontrol warna teks Daily Discharge
+            const dischargeValue = tryParseFloat(document.getElementById('daily_bat_dischcharge_value')?.textContent);
             const dischargeTextEl = document.getElementById('daily_bat_dischcharge_value');
             if (dischargeTextEl) {
-                if (dailyDischarge > 0.01) {
+                if (dischargeValue > 0.01) {
                     dischargeTextEl.setAttribute('fill', 'var(--color-battery)');
                 } else {
                     dischargeTextEl.setAttribute('fill', '#C0C0C0');
@@ -3122,7 +3376,7 @@
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
-            const loadP = latestDiagramData.loadPower;
+            const loadP = latestDiagramData.loadPower; // Fix: use loadPower
             const minimumPowerThreshold = 10;
 
             // Daya DC murni dari BMS
@@ -3177,28 +3431,36 @@
             // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
             const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0;
 
-            let ratio = 0;
-            let autarky_ssr = 0;
+            let ratio = 0.0;
+            let autarky_ssr = 0.0;
 
-            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
-            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) {
+            const isSystemActive = totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold;
+
+            if (isSystemActive) {
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
 
                 // AUTARKY (SSR): Energi Sendiri / Total Beban
-                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                // Jika beban (denominator) sangat kecil, Autarky bisa melompat tinggi.
+                if (totalEnergyToLoad > 0.1) {
+                    autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                } else {
+                    autarky_ssr = 100.0; // Jika beban sangat kecil tapi ada supply, anggap 100%
+                }
 
                 // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
                 const totalProduction = providedBySolar + providedByBat_AC_Equivalent;
-                ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
+                ratio = totalProduction > 0.1 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0.0;
             } else {
-                autarky_ssr = 100;
-                ratio = 100;
+                // KONDISI IDLE: Tetapkan ke 0.0 (yang akan ditampilkan sebagai '--' oleh updateTextValues)
+                autarky_ssr = 0.0; 
+                ratio = 0.0;     
             }
 
             // Batasi nilai agar tidak lebih dari 100%
             latestDiagramData.ratioPercentage = Math.min(100, ratio);
             latestDiagramData.autarkyPercentage = Math.min(100, autarky_ssr);
+
 
             // Perbarui data BMS
             latestDiagramData.batterySOC = bmsData.soc;
@@ -3396,8 +3658,19 @@
             }
 
             loadHistoricalData();
+            
+            // MUAT DATA ENERGI HARIAN BATERAI DARI LOCAL STORAGE
+            loadDailyEnergy();
 
             dashboard.classList.remove('hidden');
+
+            // Set waktu update pertama untuk perhitungan energi yang akurat
+            lastUpdateTime = Date.now();
+            
+            // Perbarui tampilan awal daily charge/discharge dengan nilai yang dimuat
+            document.getElementById("daily_bat_charge_value").textContent = (dailyChargeWh / 1000).toFixed(2) + " kWh";
+            document.getElementById("daily_bat_dischcharge_value").textContent = (dailyDischargeWh / 1000).toFixed(2) + " kWh";
+
 
             updateDashboard();
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
@@ -3443,22 +3716,6 @@
         window.onload = function() {
             initApp();
         };
-
-        // Menghapus service worker yang error (sw.js) agar tidak ada Uncaught (in promise) TypeError
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-              // Jika registrasi ditemukan, batalkan pendaftaran
-              if (registration.scope.includes('/monitoring/')) {
-                 registration.unregister().then(function(success) {
-                    console.log('Unregistered service worker to fix: sw.js error:', success);
-                 }).catch(function(error) {
-                    console.error('Failed to unregister service worker:', error);
-                 });
-              }
-            }
-          });
-        }
     </script>
 </body>
 </html>
