@@ -1408,6 +1408,9 @@
         const INSTANT_LOAD_PERCENT = 0.0;
         const BMS_MQTT_TOPIC_KEY = "316506218";
 
+        // ** BARU: Kapasitas Nominal Baterai (Ah) - Disesuaikan dengan 100 Ah per bank **
+        const NOMINAL_BATTERY_AH = 100.0; 
+        
         // ** BARU: Efisiensi Inverter saat Discharging (92%) **
         const INVERTER_DISCHARGE_EFFICIENCY = 0.92;
         
@@ -1832,8 +1835,9 @@
                 const soh = tryParseFloat(b.soh); // Menggunakan tryParseFloat
                 const voltage = tryParseFloat(b.voltage); // Menggunakan tryParseFloat
                 const current = tryParseFloat(b.current); // Menggunakan tryParseFloat
-                const remCapacity = tryParseFloat(b.remaining); // Menggunakan tryParseFloat
-                const capacity = tryParseFloat(b.capacity); // Menggunakan tryParseFloat
+                // Menggunakan tryParseFloat karena nilai capacity dan remaining sekarang bisa berupa string 'N/A' dari normalizeFromMqtt
+                const remCapacity = tryParseFloat(b.remaining); 
+                const capacity = tryParseFloat(b.capacity); 
                 const busVoltage = tryParseFloat(b.busVoltage); // Ambil Bus Voltage
 
                 if (!isNaN(current)) {
@@ -1874,18 +1878,22 @@
             let totalPower = totalPowerDC;
 
             let remainingAh;
+            let totalNominalAh; // BARU: Variabel untuk Total Kapasitas Nominal
 
-            if (validCapacityCount > 0) {
-                remainingAh = totalRemCapacity;
+            if (validCount === 0) {
+                 // Jika tidak ada data baterai sama sekali
+                 totalNominalAh = NOMINAL_BATTERY_AH; 
+                 remainingAh = 0;
+            } else if (validCapacityCount > 0) {
+                // Jika data Ah real-time dari BMS valid (minimal 1 baterai mengirim Ah), gunakan totalnya
+                remainingAh = totalRemCapacity; 
+                totalNominalAh = totalCapacity;
             } else {
-                // FALLBACK: Jika tidak ada data BMS yang valid, gunakan data Blynk yang terakhir
-                const socFromBlynkVpack = calculateSOCFromVoltage(vpack);
-                // Ambil Ah nominal dari dashboard PLTS (V9)
-                const nominalAhStr = document.getElementById('v9-batere-ah')?.textContent || '0';
-                const nominalAh = tryParseFloat(nominalAhStr);
+                // FALLBACK: Jika tidak ada data BMS Ah yang valid, gunakan NOMINAL_BATTERY_AH * jumlah baterai
+                totalNominalAh = NOMINAL_BATTERY_AH * validCount; 
 
-                // Hitung sisa kapasitas dari SOC Blynk dan Ah nominal
-                remainingAh = (socFromBlynkVpack / 100) * nominalAh;
+                // Hitung sisa kapasitas dari SOC rata-rata
+                remainingAh = (avgSoc / 100) * totalNominalAh;
             }
 
 
@@ -1897,11 +1905,15 @@
                 current: totalCurrent,
                 totalPower: totalPower, // DAYA DC BATERAI MURNI
                 remainingAh: remainingAh, // Gunakan nilai yang sudah dihitung/fallback (number)
+                totalCapacityAh: totalNominalAh, // BARU: Tambahkan total kapasitas nominal
                 count: validCount
             };
         }
 
 
+        /**
+         * FUNGSI MODIFIED: Menerapkan Logika Fallback Kapasitas (Ah)
+         */
         function normalizeFromMqtt(data) {
              const cellVoltages = Array.isArray(data.cell_voltages) ? data.cell_voltages : [];
 
@@ -1926,22 +1938,54 @@
 
             const safeParseFloat = (value) => {
                   const parsed = parseFloat(value);
-                  return isNaN(parsed) ? 'N/A' : parsed;
+                  // Mengubah 'N/A', null, undefined, atau NaN menjadi 'N/A' (string) untuk konsistensi.
+                  return isNaN(parsed) || value === null || value === undefined ? 'N/A' : parsed; 
             };
 
-            const soc = safeParseFloat(data.SOC);
-            const soh = safeParseFloat(data.SOH);
+            const soc = safeParseFloat(data.SOC); // Ambil SOC
+            
+            // Ambil Kapasitas dari MQTT (dibiarkan dalam bentuk number/string 'N/A')
+            let fullCapacity = (data.full_capacity !== undefined) ? safeParseFloat(data.full_capacity) : 'N/A';
+            let remainingCapacity = (data.rem_capacity !== undefined) ? safeParseFloat(data.rem_capacity) : 'N/A';
+
+            const nominalAhThreshold = 0.1; // 0.1 Ah (hampir nol)
+
+            // --- LOGIC FALLBACK UTAMA UNTUK KAPASITAS PENUH (100 AH) ---
+            // Jika data MQTT hilang ('N/A') ATAU nilainya 0 (karena corrupted/invalid string), gunakan NOMINAL_BATTERY_AH.
+            if (fullCapacity === 'N/A' || (typeof fullCapacity === 'number' && fullCapacity < nominalAhThreshold)) {
+                fullCapacity = NOMINAL_BATTERY_AH; // Dipaksa 100.0 Ah
+            }
+
+            // --- LOGIC FALLBACK UNTUK SISA KAPASITAS ---
+            if (remainingCapacity === 'N/A' && typeof soc === 'number' && typeof fullCapacity === 'number') {
+                if (soc > nominalAhThreshold) {
+                    // Hitung sisa kapasitas jika SOC di atas nol
+                    remainingCapacity = ((soc / 100) * fullCapacity); 
+                } else {
+                    // Jika SOC adalah 0 atau mendekati nol, dan data asli Ah hilang, 
+                    // kembalikan string 'N/A' untuk menghindari 0.00 Ah yang membingungkan.
+                    remainingCapacity = 'N/A_FALLBACK'; 
+                }
+            }
+            // ------------------------------------------
+
 
             return {
               typeBattery: data.typeBattery || 'Baterai',
               addr: data.AddrBattery || 'N/A',
               soc: typeof soc === 'number' ? soc.toFixed(0) : 'N/A',
-              soh: typeof soh === 'number' ? soh.toFixed(0) : 'N/A',
+              soh: safeParseFloat(data.SOH) !== 'N/A' ? safeParseFloat(data.SOH).toFixed(0) : 'N/A',
+              // Gunakan nilai fallback yang sudah dihitung, diformat ke 2 desimal
               voltage: typeof voltage === 'number' ? parseFloat(voltage).toFixed(2) : voltage, // Tegangan Pack
               busVoltage: typeof busVoltage === 'number' ? parseFloat(busVoltage).toFixed(2) : busVoltage, // Tegangan Bus
               current: typeof current === 'number' ? parseFloat(current).toFixed(2) : current, // Arus Pack
-              capacity: (data.full_capacity !== undefined) ? parseFloat(data.full_capacity).toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
-              remaining: (data.rem_capacity !== undefined) ? parseFloat(data.rem_capacity).toFixed(2) : 'N/A', // Sisa Kapasitas (Ah)
+              capacity: typeof fullCapacity === 'number' ? fullCapacity.toFixed(2) : 'N/A', // Kapasitas Penuh (Ah)
+              
+              // FINAL OUTPUT UNTUK REMAINING CAPACITY
+              remaining: typeof remainingCapacity === 'number' 
+                         ? remainingCapacity.toFixed(2) 
+                         : (remainingCapacity === 'N/A_FALLBACK' ? 'N/A' : 'N/A'), // Sisa Kapasitas (Ah)
+              
               cycles: data.cycle_count || 0,
               cell_vmax: typeof cell_vmax_val === 'number' ? cell_vmax_val.toFixed(3) : 'N/A',
               cell_vmin: typeof cell_vmin_val === 'number' ? cell_vmin_val.toFixed(3) : 'N/A',
@@ -2069,6 +2113,7 @@
             safeUpdate("modalSOCPercent", batt.soc);
             // safeUpdate("modalSOCUnit", "%"); // Tetap % di HTML
 
+            // PASTIKAN MODAL MENGGUNAKAN NILAI CAPACITY DAN REMAINING YANG SUDAH DIHITUNG/FALLBACK
             safeUpdate("modalRemaining", batt.remaining !== 'N/A' ? `${batt.remaining}` : 'N/A');
             safeUpdate("modalSOHPercent", batt.soh);
             safeUpdate("modalCapacity", batt.capacity !== 'N/A' ? `${batt.capacity}` : 'N/A');
@@ -2495,11 +2540,11 @@
                     battAmpColorClass = 'text-amp-discharging';
                 }
 
-                let battPowerColorClass = battStatusClass;
+                let battPowerClass = battStatusClass;
                 if (battStatusClass === 'text-standby') {
-                     battPowerColorClass = 'text-power-standby';
+                     battPowerClass = 'text-power-standby';
                 } else if (battStatusClass === 'text-discharging') {
-                     battPowerColorClass = 'text-discharging';
+                     battPowerClass = 'text-discharging';
                 }
 
 
@@ -2533,10 +2578,10 @@
 
                 if (powerTextEl && powerIconCardEl) {
                     removePowerColorClasses(powerTextEl);
-                    powerTextEl.classList.add(battPowerColorClass);
+                    powerTextEl.classList.add(battPowerClass);
 
                     removePowerColorClasses(powerIconCardEl);
-                    powerIconCardEl.classList.add(battPowerColorClass);
+                    powerIconCardEl.classList.add(battPowerClass);
                 }
 
                 // Update teks metrik card individual (warna Tegangan, Sel Min/Max/Dif sudah di set di HTML untuk Card Individual)
@@ -2848,7 +2893,8 @@
                     numericValue *= correctionFactor;
                  } else if (pin === 'V14') {
                     const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
-                    numericValue *= correctionFactor;
+                    // FIX: correctionValue is not defined. Mengganti correctionValue menjadi correctionFactor
+                    numericValue *= correctionFactor; 
                  }
             }
 
@@ -3010,10 +3056,6 @@
             // LOGIKA PENGENDALIAN ARAH BARU:
             // Karena error terjadi saat keyTimes dan keyPoints disalahgunakan (keyPoints dihapus, keyTimes disalahgunakan),
             // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengandalkan JavaScript untuk mengontrol arah flow.
-
-            // Perlu dicatat: kode asli Anda di HTML untuk Grid Flow memiliki keyTimes="1;0",
-            // yang di konsol disebut sebagai "Invalid value, "1;0"". Ini sangat aneh.
-            // Saya telah mengubah *semua* animasi aliran di HTML menjadi `keyTimes="0;1"` dan akan mengandalkan JavaScript untuk mengontrol arah flow.
         }
 
         /**
@@ -3327,7 +3369,7 @@
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
-            const loadP = latestDiagramData.loadPower;
+            const loadP = latestDiagramData.loadPowe;
             const minimumPowerThreshold = 10;
 
             // Daya DC murni dari BMS
@@ -3659,23 +3701,6 @@
         window.onload = function() {
             initApp();
         };
-        
-        // PERBAIKAN: Menghapus seluruh blok service worker
-        /* if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) {
-              // Jika registrasi ditemukan, batalkan pendaftaran
-              if (registration.scope.includes('/monitoring/')) {
-                 registration.unregister().then(function(success) {
-                    console.log('Unregistered service worker to fix: sw.js error:', success);
-                 }).catch(function(error) {
-                    console.error('Failed to unregister service worker:', error);
-                 });
-              }
-            }
-          });
-        }
-        */
     </script>
 </body>
 </html>
