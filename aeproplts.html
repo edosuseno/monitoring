@@ -2410,11 +2410,11 @@
                         battAmpColorClass = 'text-amp-discharging';
                     }
 
-                    let battPowerColorClass = battStatusClass;
+                    let battPowerClass = battStatusClass;
                     if (battStatusClass === 'text-standby') {
-                         battPowerColorClass = 'text-power-standby';
+                         battPowerClass = 'text-power-standby';
                     } else if (battStatusClass === 'text-discharging') {
-                         battPowerColorClass = 'text-discharging';
+                         battPowerClass = 'text-discharging';
                     }
 
                     let card = document.createElement("div");
@@ -2477,10 +2477,10 @@
 
                             <!-- Daya -->
                             <div class="battery-metric-item">
-                                <i data-lucide="power" class="lucide w-4 h-4 ${battPowerColorClass} mr-2" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
+                                <i data-lucide="power" class="lucide w-4 h-4 ${battPowerClass} mr-2" id="power-icon-${batt.typeBattery}-${batt.addr}"></i>
                                 <div>
                                     <div class="text-gray-500">Daya</div>
-                                    <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerColorClass}">${batt.power} W</div>
+                                    <div id="power-${batt.typeBattery}-${batt.addr}" class="font-semibold ${battPowerClass}">${batt.power} W</div>
                                 </div>
                             </div>
 
@@ -3265,8 +3265,15 @@
             setText('load_frequency_192', data.loadFrequency);
 
             // --- PERBAIKAN AUTARKY & RATIO ---
-            setText('autarkyp_value', `${data.autarkyPercentage.toFixed(1)}%`); 
-            setText('ratiop_value', `${data.ratioPercentage.toFixed(1)}%`);
+            const autarkyValue = data.autarkyPercentage;
+            const ratioValue = data.ratioPercentage;
+            const threshold = 0.1; // Gunakan ambang batas kecil untuk menentukan "idle"
+
+            // Jika nilai Autarky mendekati nol (karena idle), tampilkan '--'
+            setText('autarkyp_value', Math.abs(autarkyValue) < threshold ? DEFAULT_DISPLAY_STR : `${autarkyValue.toFixed(1)}%`); 
+            
+            // Jika nilai Ratio mendekati nol (karena idle), tampilkan '--'
+            setText('ratiop_value', Math.abs(ratioValue) < threshold ? DEFAULT_DISPLAY_STR : `${ratioValue.toFixed(1)}%`);
             
             // Total Solar (V3 / V11) 
             const dailySolarRounded = Math.round(tryParseFloat(data.dailySolar));
@@ -3369,7 +3376,7 @@
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
-            const loadP = latestDiagramData.loadPowe;
+            const loadP = latestDiagramData.loadPower; // Fix: use loadPower
             const minimumPowerThreshold = 10;
 
             // Daya DC murni dari BMS
@@ -3424,28 +3431,36 @@
             // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
             const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0;
 
-            let ratio = 0;
-            let autarky_ssr = 0;
+            let ratio = 0.0;
+            let autarky_ssr = 0.0;
 
-            // Hitung nilai Autarky dan Ratio hanya jika ada konsumsi atau produksi yang signifikan
-            if (totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold) {
+            const isSystemActive = totalEnergyToLoad > minimumPowerThreshold || providedBySolar > minimumPowerThreshold || providedByBat_AC_Equivalent > minimumPowerThreshold;
+
+            if (isSystemActive) {
                 const selfSupply = providedBySolar + providedByBat_AC_Equivalent;
                 const usedSelfGeneratedPower = Math.min(selfSupply, totalEnergyToLoad);
 
                 // AUTARKY (SSR): Energi Sendiri / Total Beban
-                autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                // Jika beban (denominator) sangat kecil, Autarky bisa melompat tinggi.
+                if (totalEnergyToLoad > 0.1) {
+                    autarky_ssr = (usedSelfGeneratedPower / totalEnergyToLoad) * 100;
+                } else {
+                    autarky_ssr = 100.0; // Jika beban sangat kecil tapi ada supply, anggap 100%
+                }
 
                 // RATIO (SCR): Energi yang Digunakan Sendiri / Total Produksi
                 const totalProduction = providedBySolar + providedByBat_AC_Equivalent;
-                ratio = totalProduction > 0 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0;
+                ratio = totalProduction > 0.1 ? (usedSelfGeneratedPower / totalProduction) * 100 : 0.0;
             } else {
-                autarky_ssr = 100;
-                ratio = 100;
+                // KONDISI IDLE: Tetapkan ke 0.0 (yang akan ditampilkan sebagai '--' oleh updateTextValues)
+                autarky_ssr = 0.0; 
+                ratio = 0.0;     
             }
 
             // Batasi nilai agar tidak lebih dari 100%
             latestDiagramData.ratioPercentage = Math.min(100, ratio);
             latestDiagramData.autarkyPercentage = Math.min(100, autarky_ssr);
+
 
             // Perbarui data BMS
             latestDiagramData.batterySOC = bmsData.soc;
