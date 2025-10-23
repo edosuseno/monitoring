@@ -1951,20 +1951,24 @@
             const nominalAhThreshold = 0.1; // 0.1 Ah (hampir nol)
 
             // --- LOGIC FALLBACK UTAMA UNTUK KAPASITAS PENUH (100 AH) ---
-            // Jika data MQTT hilang ('N/A') ATAU nilainya 0 (karena corrupted/invalid string), gunakan NOMINAL_BATTERY_AH.
             if (fullCapacity === 'N/A' || (typeof fullCapacity === 'number' && fullCapacity < nominalAhThreshold)) {
                 fullCapacity = NOMINAL_BATTERY_AH; // Dipaksa 100.0 Ah
             }
 
-            // --- LOGIC FALLBACK UNTUK SISA KAPASITAS ---
-            if (remainingCapacity === 'N/A' && typeof soc === 'number' && typeof fullCapacity === 'number') {
-                if (soc > nominalAhThreshold) {
-                    // Hitung sisa kapasitas jika SOC di atas nol
-                    remainingCapacity = ((soc / 100) * fullCapacity); 
+            // --- MODIFIKASI KRITIS: LOGIC FALLBACK/OVERRIDE UNTUK SISA KAPASITAS ---
+            // Cek jika remainingCapacity adalah N/A ATAU 0 (termasuk nilai numerik 0.0)
+            if (remainingCapacity === 'N/A' || (typeof remainingCapacity === 'number' && remainingCapacity < nominalAhThreshold)) {
+                // Pastikan SOC dan Kapasitas Penuh adalah angka
+                if (typeof soc === 'number' && typeof fullCapacity === 'number') {
+                    if (soc > nominalAhThreshold) {
+                        // HITUNG ULANG DARI SOC
+                        remainingCapacity = ((soc / 100) * fullCapacity); 
+                    } else {
+                        // Jika SOC adalah 0 atau mendekati nol, kembalikan 'N/A'
+                        remainingCapacity = 'N/A_FALLBACK'; 
+                    }
                 } else {
-                    // Jika SOC adalah 0 atau mendekati nol, dan data asli Ah hilang, 
-                    // kembalikan string 'N/A' untuk menghindari 0.00 Ah yang membingungkan.
-                    remainingCapacity = 'N/A_FALLBACK'; 
+                    remainingCapacity = 'N/A';
                 }
             }
             // ------------------------------------------
