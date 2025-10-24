@@ -617,24 +617,26 @@
 
             // Cek apakah tanggal terakhir reset berbeda dengan tanggal hari ini
             if (lastResetDate !== todayDate) {
-                 // Melakukan reset jika data akumulasi tidak nol
-                 if (dailyChargeWh !== 0 || dailyDischargeWh !== 0) {
-                    dailyChargeWh = 0;
-                    dailyDischargeWh = 0;
-                    // Memperbarui tanggal reset di localStorage
-                    localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate); 
-                    localStorage.setItem(STORAGE_KEY_CHARGE, '0');
-                    localStorage.setItem(STORAGE_KEY_DISCHARGE, '0');
-                    // Memperbarui tampilan
-                    document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
-                    document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
-                    console.log(`[DAILY RESET] Daily energy reset to 0. New date: ${todayDate}`);
-                } else if (lastResetDate === null || lastResetDate === undefined) {
-                    // Kasus pertama kali atau data lama sudah 0
-                     localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate);
-                     console.log(`[DAILY RESET] Initializing daily reset date: ${todayDate}`);
-                }
+                 // **Perbaikan di sini: Reset variabel dan localStorage TERLEPAS dari nilai akumulasi**
+                 // Ini penting jika pengguna menutup browser setelah 00:00 tetapi sebelum ada akumulasi baru.
+                 
+                 // 1. Reset variabel global
+                 dailyChargeWh = 0;
+                 dailyDischargeWh = 0;
+
+                 // 2. Reset localStorage dan simpan tanggal reset baru
+                 localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate); 
+                 localStorage.setItem(STORAGE_KEY_CHARGE, '0');
+                 localStorage.setItem(STORAGE_KEY_DISCHARGE, '0');
+                 
+                 // 3. Memperbarui tampilan secara langsung
+                 document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
+                 document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
+                 
+                 console.log(`[DAILY RESET] Daily energy reset to 0 and date updated. New date: ${todayDate}`);
             }
+            
+            // Jika tanggal sama, biarkan akumulasi berlanjut.
         }
         
         function updateBatteryEnergy(voltage, current) {
@@ -751,7 +753,7 @@
                 progressColor = 'bg-soc-yellow'; 
                 socColorClass = 'text-yellow-400';
             }
-            else if (soc < 20) { 
+            else if (soc < 30) { 
                 textColor = 'text-soc-red'; 
                 progressColor = 'bg-soc-red'; 
                 socColorClass = 'text-warning-red';
@@ -898,7 +900,7 @@
                   calculateAndRenderDiagram(bmsAggregatedData);
                   const totalVoltage = bmsAggregatedData.voltage;
                   const totalCurrent = bmsAggregatedData.current;
-                  // resetDailyEnergy(); // Dihapus di sini agar hanya dipanggil di updateBatteryEnergy
+                  
                   if (totalVoltage !== DEFAULT_DISPLAY && totalCurrent !== 0) { updateBatteryEnergy(totalVoltage, totalCurrent); }
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
