@@ -547,6 +547,7 @@
             'V3': 'v3-pzem-energy', 'V11': 'v11-total-pv',
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
+        // Mengatur MAX_DATA_POINTS menjadi 17280 * 5s = 86400s = 24 Jam
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
         const UPDATE_INTERVAL = 5000;
         const MAX_DATA_POINTS = 17280;
@@ -1405,12 +1406,19 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
+                        // Peningkatan: Mengubah judul untuk menekankan rentang 24 jam
                         title: { display: true, text: 'Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)', color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
                         zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
                     },
                     scales: {
-                        x: { type: 'category', title: { display: true, text: 'Waktu', color: '#AAAAAA' }, ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        x: { 
+                            type: 'category', 
+                            title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
+                            // Mengatur ulang batas tiks agar lebih mudah dibaca dalam rentang 24 jam
+                            ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, 
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' } 
+                        },
                         y: { min: 0, max: 7000, ticks: { color: '#FFFFFF', callback: function(value) { return value + ' W'; } }, title: { display: true, text: 'Daya (Watt)', color: '#FFFFFF' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
                     }
                 }
@@ -1421,7 +1429,10 @@
 
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
-            const timeLabel = now.toLocaleTimeString('id-ID');
+            // Peningkatan KRITIS: Mengubah format label waktu menjadi Tanggal & Jam (DD Mon HH:MM)
+            // Ini akan memastikan rentang 24 jam terlihat benar bahkan melewati tengah malam.
+            const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+
 
             if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
                 window.realtimeData.labels.shift();
