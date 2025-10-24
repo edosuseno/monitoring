@@ -3136,10 +3136,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             if (isFlowing) {
                 if (batPower > 0) { // CHARGING (Positif = Charge)
-                    flowHighlightColor = 'var(--color-load)';
+                    flowHighlightColor = overallColorStop;
                     flowBaseColor = '#388E3C';
                 } else { // DISCHARGING (Negatif = Discharge)
-                    flowHighlightColor = 'var(--color-battery)';
+                    flowHighlightColor = overallColorStop;
                     flowBaseColor = '#8D0000';
                 }
             } else {
