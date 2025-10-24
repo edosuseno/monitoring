@@ -3104,9 +3104,9 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             let overallColorStop;
 
-            if (soc >= 75) {
+            if (soc >= 100) {
                 overallColorStop = 'var(--color-bar-green)';
-            } else if (soc >= 50) {
+            } else if (soc >= 60) {
                 overallColorStop = 'var(--color-bar-green-light)';
             } else if (soc >= 30) {
                 overallColorStop = 'var(--color-bar-yellow)';
