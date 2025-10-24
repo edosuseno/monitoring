@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,9 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEPRO PLTS & BMS</title>
 
+    <!-- PWA METADATA (Dikomenter karena memicu peringatan CORS saat dimuat secara lokal/file://) -->
+    <!--
+    <link rel="manifest" href="/monitoring/manifest.json">
+    <meta name="theme-color" content="#05050D">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="/monitoring/icon-192.png">
+    -->
+    <!-- END PWA METADATA -->
+
     <!-- MEMUAT SEMUA LIB YANG DIPERLUKAN -->
     <!-- Tailwind CSS (Umum) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Ikon Lucide (Umum) - PERBAIKAN KRITIS: Memuat lucide-icons dan inti lucide secara terpisah
+         untuk memastikan modul `lucide` tersedia saat `createIcons` dipanggil. -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide-icons@latest"></script>
+
     <!-- MQTT (BMS) -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <!-- Font Awesome (BMS) -->
@@ -286,7 +302,7 @@
             #modalCells { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         @media (min-width: 1024px) { /* lg */
-            #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            #modalCells { grid-template-columns: repeat(7, minmax(0, 1fr)); }
         }
 
         /* Gaya Chart (Dari PLTS) */
@@ -530,7 +546,7 @@
               <h3 class="font-medium text-gray-300 mb-4 flex items-center">
                 <i data-lucide="layout-grid" class="lucide w-4 h-4 text-green-500 mr-2"></i> Tegangan Sel (Cell Voltages)
               </h3>
-              <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+              <div id="modalCells" class="grid gap-3"></div>
             </div>
           </div>
         </div>
@@ -2122,7 +2138,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             safeUpdate("modalSOCPercent", batt.soc);
             // safeUpdate("modalSOCUnit", "%"); // Tetap % di HTML
 
-            // PASTIKAN MODAL MENGGUNAKAN NILAI CAPACITY DAN REMAINING YANG SUDAH DIHITUNG/FALLBACK
+            // PASTIKAN MODAL MENGGUNANAKAN NILAI CAPACITY DAN REMAINING YANG SUDAH DIHITUNG/FALLBACK
             safeUpdate("modalRemaining", batt.remaining !== 'N/A' ? `${batt.remaining}` : 'N/A');
             safeUpdate("modalSOHPercent", batt.soh);
             safeUpdate("modalCapacity", batt.capacity !== 'N/A' ? `${batt.capacity}` : 'N/A');
@@ -2251,7 +2267,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             }
 
             blinkLed("led-modal");
-            lucide.createIcons();
+            // LUCIDE FIX: Menghapus panggilan di sini karena sudah dipanggil di initApp() dan tidak perlu diulang setiap update.
+            // if (typeof lucide !== 'undefined') {
+            //     lucide.createIcons();
+            // }
         }
 
         function renderCards(datane) {
@@ -2529,7 +2548,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
                 if (grid) grid.appendChild(fragment);
                 lastRenderedAddresses = currentAddresses;
-                lucide.createIcons();
+                // LUCIDE FIX: Cek apakah objek lucide sudah dimuat sebelum memanggil createIcons()
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
             } else {
                 // Update in-place
                 const batt = batteries.find(b => (b.addr === datane.addr) && (b.typeBattery === datane.typeBattery));
@@ -2607,7 +2629,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`);
 
                 safeUpdate(`time-update-${batt.typeBattery}-${batt.addr}`, `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>`, true);
-                lucide.createIcons();
+                // LUCIDE FIX: Menghapus panggilan di sini karena sudah dipanggil di initApp() dan tidak perlu diulang setiap update.
+                // if (typeof lucide !== 'undefined') {
+                //     lucide.createIcons();
+                // }
                 // --- END UPDATE IN-PLACE ---
 
                 const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
@@ -2691,7 +2716,11 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 chartText.textContent = 'Full Layar';
             }
 
-            lucide.createIcons();
+            // LUCIDE FIX: Cek apakah objek lucide sudah dimuat sebelum memanggil createIcons()
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
             if (energyChartInstance) {
                 setTimeout(() => {
                     energyChartInstance.resize();
@@ -3079,7 +3108,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             batteryInner.querySelectorAll('rect').forEach(rect => rect.remove());
 
             const totalBars = 8;
-            const socPerBar = 100 / totalBars;
+            const socPerBar = 120 / totalBars;
             const barWidth = 7;
             const barHeight = 1.5;
             const startX = 5;
@@ -3093,9 +3122,9 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             let overallColorStop;
 
-            if (soc >= 75) {
+            if (soc >= 100) {
                 overallColorStop = 'var(--color-bar-green)';
-            } else if (soc >= 50) {
+            } else if (soc >= 60) {
                 overallColorStop = 'var(--color-bar-green-light)';
             } else if (soc >= 30) {
                 overallColorStop = 'var(--color-bar-yellow)';
@@ -3721,7 +3750,17 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             updateTime();
             setInterval(updateTime, 1000);
 
-            lucide.createIcons();
+            // LUCIDE FIX: Panggil createIcons sekali saat startup (onload).
+            // Pustaka `lucide` yang dimuat via UNPKG akan menetapkan objek `lucide` secara global.
+            if (typeof lucide !== 'undefined') {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.error("Error creating Lucide icons during init:", e);
+                }
+            } else {
+                console.error("Lucide object is undefined. Icons may not render.");
+            }
 
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
             safeUpdate("bms-logger-ip-footer", 'N/A');
