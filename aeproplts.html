@@ -749,7 +749,7 @@
                             <!-- Grid Elements -->
                             <svg id="Grid" style="overflow: visible; display: inline;">
                                 <!-- Grid Icon (Pylon/Tower) -->
-                                <svg id="transmission_on" x="20" y="185" width="64.5" height="64.5" viewBox="0 0 24 24">
+                                <svg x="20" y="185" width="64.5" height="64.5" viewBox="0 0 24 24">
                                     <path fill="var(--color-grid)" d="m8.28 5.45l-1.78-.9L7.76 2h8.47l1.27 2.55l-1.78.89L15 4H9l-.72 1.45M18.62 8h-4.53l-.79-3h-2.6l-.79 3H5.38L4.1 10.55l1.79.89l.73-1.44h10.76l.72 1.45l1.79-.89L18.62 8m-.85 14H15.7l-.24-.9L12 15.9l-3.47 5.2l-.23.9H6.23l2.89-11h2.07l-.36 1.35L12 14.1l1.16-1.75l-.35-1.35h2.07l2.89 11m-6.37-7l-.9-1.35l-1.18 4.48L11.4 15m3.28 3.12l-1.18-4.48l-.9 1.36l2.08 3.12Z"></path>
                                 </svg>
 
@@ -1411,12 +1411,18 @@
         // ** BARU: Kapasitas Nominal Baterai (Ah) - Disesuaikan dengan 100 Ah per bank **
         const NOMINAL_BATTERY_AH = 100.0; 
         
-        // ** BARU: Efisiensi Inverter saat Discharging (92%) **
-        const INVERTER_DISCHARGE_EFFICIENCY = 0.99;
+        // ** PERUBAHAN KRITIS **
+        // Untuk menonaktifkan koreksi efisiensi pada aliran daya baterai di diagram, 
+        // nilai ini diubah menjadi 1.0 (100%).
+        const INVERTER_DISCHARGE_EFFICIENCY = 1.0; 
         
         // ** BARU: Koreksi 6.0% yang Anda gunakan sebelumnya untuk kWh. 
         // Dipisahkan untuk V10 (Energi Harian) secara manual.
         const KWH_CALIBRATION_FACTOR = 1 + (6.0 / 100); 
+        
+        // ** PERBAIKAN KRITIS: AMBANG BATAS ARUS GLOBAL **
+        // Variabel ini dibutuhkan oleh calculateAndRenderDiagram, updateModal, renderCards, dll.
+        const CURRENT_THRESHOLD_A = 0.1;
         // --------------------------
 
         // VARIABEL ENERGI HARIAN BATERAI (BARU)
@@ -1473,6 +1479,7 @@
             solarPower: DEFAULT_DISPLAY,
             loadPower: DEFAULT_DISPLAY,
             batteryPower: DEFAULT_DISPLAY,
+            rawBmsPower: DEFAULT_DISPLAY, // BARU: Daya DC murni BMS (Absolut)
             gridPower: 0.0, // Diinisialisasi 0.0 karena non-aktif
             rawGridPower: DEFAULT_DISPLAY,
             dailySolar: DEFAULT_DISPLAY_STR,
@@ -1933,7 +1940,7 @@
 
             let power = 'N/A';
             if (typeof voltage === 'number' && typeof current === 'number' && !isNaN(voltage) && !isNaN(current)) {
-                power = (parseFloat(voltage) * parseFloat(current)).toFixed(2);
+                power = (parseFloat(voltage) * parseFloat(current)).toFixed(0); // Dibulatkan ke W
             }
 
             const safeParseFloat = (value) => {
@@ -1999,8 +2006,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
               cell_vdif: typeof cell_vdiff_val === 'number' ? cell_vdiff_val.toFixed(0) : 'N/A',
               tempStatus: data.temp_status || 'Normal', // Status Suhu (Placeholder)
               time: getCurrentTimeHHMMSS(),
-              cells: cells, // Data cell voltages
-              power: power // Daya 2 desimal
+              cells: cellVoltages.map(v => (v/1000).toFixed(3)), // Pastikan cells selalu berupa array string
+              power: power // Daya (W) dibulatkan ke integer
             };
         }
 
@@ -2063,6 +2070,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
 
                 } catch (e) {
+                  // KRITIS: Tambahkan console log untuk melihat pesan MQTT mentah yang mungkin menyebabkan error
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
                 }
               }
@@ -2097,7 +2105,11 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             const batt = batteries.find(b => b.addr === currentAddr);
 
-            if (!batt) return;
+            // Perbaikan utama: Periksa apakah objek baterai ditemukan
+            if (!batt) {
+                console.error(`Battery with address ${currentAddr} not found in state.`);
+                return;
+            }
 
             safeUpdate("modalAddr", batt.addr);
 
@@ -2133,7 +2145,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             // =======================================================================
 
             const currentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
-            const currentThreshold = 0.1;
+            const currentThreshold = CURRENT_THRESHOLD_A; // Menggunakan konstanta global
 
             let battStatusClass = 'text-standby';
             if (!isNaN(currentVal)) {
@@ -2215,10 +2227,13 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             // =======================================================================
 
             const cellsDiv = document.getElementById("modalCells");
+            
+            // Perbaikan: Pastikan batt.cells adalah array sebelum memanggil forEach
+            const cellData = Array.isArray(batt.cells) ? batt.cells : [];
             if (cellsDiv) {
                 cellsDiv.innerHTML = "";
 
-                batt.cells.forEach((v, i) => {
+                cellData.forEach((v, i) => {
                   const cellValue = parseFloat(v);
 
                   let textColor = 'text-green-400';
@@ -2275,14 +2290,15 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             let validBatteryCount = aggregated.count;
             let displayPower = aggregated.totalPower; // Ini adalah P_DC murni
 
-            const currentThreshold = 0.1;
+            const currentThreshold = CURRENT_THRESHOLD_A; // Menggunakan konstanta global
             const powerThresholdSummary = 10;
             
             // --- Logika Koreksi Daya (Untuk Tampilan Ringkasan Power) ---
-            if (totalCurrent < -currentThreshold) {
-                // Saat discharge, tampilkan nilai AC setara di ringkasan
-                displayPower = displayPower * INVERTER_DISCHARGE_EFFICIENCY;
-            }
+            // Saat discharge, kita tetap menggunakan nilai DC murni untuk Ringkasan
+            // Jika Anda ingin ringkasan juga mencerminkan P_AC:
+            // if (totalCurrent < -currentThreshold) {
+            //     displayPower = displayPower * INVERTER_DISCHARGE_EFFICIENCY;
+            // }
 
             // Tentukan Status (Charging/Discharging/Standby)
             let currentStatusText = 'Standby';
@@ -2534,6 +2550,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 const battCurrentVal = tryParseFloat(batt.current); // Menggunakan tryParseFloat
 
                 let battStatusClass = 'text-standby';
+                const currentThreshold = CURRENT_THRESHOLD_A; // Menggunakan konstanta global
                 if (!isNaN(battCurrentVal)) {
                     if (battCurrentVal > currentThreshold) {
                         battStatusClass = 'text-charging';
@@ -2995,7 +3012,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 if (mapping.key === 'inverterCurrent') {
                     latestDiagramData.inverterCurrent = `${pValue.toFixed(1)} A`;
                 } else {
-                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} A`;
+                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} V`;
                 }
             } else if (mapping.isFrequency) {
                 latestDiagramData[mapping.key] = `${pValue.toFixed(1)} Hz`;
@@ -3020,22 +3037,24 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             return `${duration.toFixed(1)}s`;
         }
 
-        /**
+                /**
          * FUNGSI MODIFIED: Menggunakan powerValue untuk menentukan arah keyPoints
          * powerValue > 0: Aliran Normal (0;1)
          * powerValue < 0: Aliran Terbalik (1;0)
          * powerValue == 0: Stop
-         * * PERBAIKAN KRITIS: Mengatur attribute `keyPoints` dan `keyTimes`
-         * tanpa koma, yang menyebabkan error di konsol.
          */
-        function controlFlow(animIds, powerValue, absPower) {
+        function controlFlow(animIds, powerValue, absPower) { 
             const flowSpeed = getFlowDuration(absPower);
             const isFlowing = absPower > 10;
-
-            // KeyTimes harus berupa daftar angka terpisah semikolon atau spasi,
-            // dan keyPoints harus berupa daftar koordinat terpisah semikolon atau spasi
-            let keyTimes = "0;1";
-
+            
+            // Tentukan keyPoints yang eksplisit
+            let keyPoints;
+            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
+                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
+            } else { // Discharging / Grid Buy (Aliran masuk)
+                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
+            }
+            
             animIds.forEach(id => {
                 const animElement = document.getElementById(id);
                 if (!animElement) return;
@@ -3050,20 +3069,13 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                     // Set opasitas ke 1 untuk menampilkan titik
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
-                    animElement.setAttribute('keyTimes', keyTimes);
+                    animElement.setAttribute('keyTimes', '0;1'); 
                     animElement.setAttribute('dur', flowSpeed);
-
-                    // Hapus atribut keyPoints jika ada, karena animateMotion menggunakan mpath
-                    // dan keyTimes sudah cukup untuk mengontrol arah jika diubah dari JS (walau di sini tetap 0;1)
-                    // Jika ingin membalikkan, harus membalikkan path atau nilai keyTimes/keyPoints.
-                    // Karena ini animasi sederhana (0;1), biarkan saja.
+                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
                 }
             });
-
-            // LOGIKA PENGENDALIAN ARAH BARU:
-            // Karena error terjadi saat keyTimes dan keyPoints disalahgunakan (keyPoints dihapus, keyTimes disalahgunakan),
-            // kita akan membiarkan keyTimes="0;1" di HTML dan hanya mengandalkan JavaScript untuk mengontrol arah flow.
         }
+        
 
         /**
          * FUNGSI PERBAIKAN: Memastikan animasi gradien berjalan di mobile.
@@ -3215,7 +3227,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
         /**
          * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
          *
-         * PERBAIKAN 1 (Revert Diagram): Daya dan Arus Baterai Diagram kembali ke Absolute Value + Status text.
+         * PERBAIKAN KRITIS: Menggunakan data.rawBmsPower untuk mengisi kotak daya.
          */
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
@@ -3230,14 +3242,15 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
 
             // --- BMS DATA (Battery Power Display) ---
-            const batP = data.batteryPower; // Nilai ini sudah dikoreksi Efisiensi Inverter jika Discharge (bisa NEGATIF)
+            const rawBmsP = data.rawBmsPower; // NILAI MURNI DC DARI BMS (Absolut)
+            const batP_flow = data.batteryPower; // Nilai yang terkoreksi (untuk flow/animasi/level)
             const powerThreshold = 10;
             
             let batPDisplay;
 
-            // REVERT DIAGRAM POWER: Gunakan nilai Absolute Value untuk kotak diagram
-            if (Math.abs(batP) > powerThreshold) {
-                batPDisplay = Math.abs(batP).toFixed(0); 
+            // KRITIS: Menggunakan rawBmsP (Daya DC Murni Absolut) untuk tampilan di kotak diagram
+            if (Math.abs(rawBmsP) > powerThreshold) {
+                batPDisplay = Math.abs(rawBmsP).toFixed(0); 
             } else {
                 batPDisplay = DEFAULT_DISPLAY_STR;
             }
@@ -3251,7 +3264,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             setText('pv1_power_186', `${solarP} W`);
             setText('ess_power', `${loadP} W`);
-            // Daya Baterai Kotak Diagram: Menampilkan Absolute Value (sesuai revert)
+            // Daya Baterai Kotak Diagram: Menggunakan Daya DC Murni dari BMS
             setText('data.batteryPower_190', `${batPDisplay} W`); 
 
             const pvV = data.pvVoltage.replace(' V', '');
@@ -3348,7 +3361,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             setText('duration', `${batteryVDisplay} V`);
 
             // --- BMS DATA (Current Pack & Status) ---
-            const currentThreshold = 0.1;
+            const currentThreshold = CURRENT_THRESHOLD_A; // Menggunakan konstanta global
             const rawCurrent = rawBatteryI;
             
             let displayCurrentI;
@@ -3380,15 +3393,21 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
         /**
          * FUNGSI MODIFIED: Menerima data BMS untuk Baterai.
+         * MODIFIKASI KRITIS: Menghapus logika koreksi efisiensi pada saat discharge (INVERTER_DISCHARGE_EFFICIENCY)
          */
         function calculateAndRenderDiagram(bmsData) {
             const solarP = latestDiagramData.solarPower;
             const loadP = latestDiagramData.loadPower; // Fix: use loadPower
             const minimumPowerThreshold = 10;
+            // Didefinisikan di sini untuk akses yang mudah
+            const currentThreshold = CURRENT_THRESHOLD_A; // Menggunakan konstanta global
 
             // Daya DC murni dari BMS
             const rawBatP_DC = bmsData.totalPower;
             const rawCurrent = bmsData.current;
+
+            // KRITIS: Simpan Daya DC murni (Absolut) untuk tampilan kotak daya
+            latestDiagramData.rawBmsPower = Math.abs(rawBatP_DC); 
 
             let calculatedBatP;
 
@@ -3403,6 +3422,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                     // Daya DC yang DIBUTUHKAN = Defisit AC / Efisiensi Inverter. Nilai harus NEGATIF.
                     calculatedBatP = -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY);
                 } else {
+                    // Jika tidak ada defisit, gunakan nilai DC murni (0 atau sedikit positif)
                     calculatedBatP = rawBatP_DC;
                 }
             } else {
@@ -3416,9 +3436,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             }
 
 
-            // *PENTING*: Di sini kita menggunakan nilai calculatedBatP yang BISA NEGATIF. 
-            // Namun, untuk variable diagram, kita tetap simpan nilai ABSOLUT agar diagram PV Power tetap benar (sesuai revert).
-            // Logic diagram flow control akan menggunakan rawCurrent dan batP (di bawah).
+            // *PENTING*: latestDiagramData.batteryPower digunakan untuk flow/animasi, 
+            // sehingga menggunakan calculatedBatP (yang mungkin dihitung ulang dari defisit AC)
             latestDiagramData.batteryPower = calculatedBatP; 
 
             let eff = 0;
@@ -3435,7 +3454,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
 
-            // Daya AC yang disediakan baterai = Abs(Raw DC) * 0.92
+            // Daya AC yang disediakan baterai = Abs(Raw DC) * 1.0 (karena efisiensi dinonaktifkan)
             const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0;
 
             let ratio = 0.0;
@@ -3490,7 +3509,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
 
             // 3. Battery Flow (powerValue: > 0 CHARGE / < 0 DISCHARGE)
-            if (batP_for_visual > minimumPowerThreshold) {
+            // KRITIS: Gunakan rawCurrent (arus) untuk menentukan arah, karena ini lebih jelas
+            if (Math.abs(rawCurrent) > currentThreshold) { // Cek apakah ada aliran yang signifikan
                 if (rawCurrent > 0) { // CHARGE: Flow Inverter -> Baterai (ke bawah)
                     controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 1, batP_for_visual);
                 } else { // DISCHARGE: Flow Baterai -> Inverter (ke atas)
@@ -3615,7 +3635,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 } else {
                     allSuccessful = false;
                     element.textContent = 'N/A';
-                    element.classList.add('text-red-500');
+                    element.classList.add('loading-animation', 'text-red-500');
                     if (unitElement) unitElement.textContent = '';
                 }
             });
