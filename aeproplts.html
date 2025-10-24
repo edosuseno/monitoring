@@ -97,11 +97,6 @@
             --color-bar-yellow: #FFC107;
             --color-bar-red: #E57373;
             --color-bar-empty: #444444;
-            
-            /* VARIBEL UNTUK ANIMASI GRADIENT CSS BARU */
-            --flow-charge-color: #4CAF50;   /* Hijau tua/gelap saat charge */
-            --flow-discharge-color: #FF5252; /* Merah terang/cerah saat discharge */
-            --flow-idle-color: var(--color-battery);
         }
 
         body {
@@ -429,44 +424,6 @@
                 content: "";
             }
         }
-        
-        /* ========================================================== */
-        /* PERBAIKAN KRITIS: ANIMASI GRADIENT BATTERY (CSS KEYFRAMES) */
-        /* ========================================================== */
-        
-        /* 1. Definisikan Keyframes untuk Translasi Y (Geser ke Atas/Bawah) */
-        @keyframes charge-flow {
-            /* Charge = Aliran ke Baterai (Masuk) = Gradien bergerak ke ATAS (Y negatif) */
-            from { transform: translate(0, 0); }
-            to { transform: translate(0, -10px); } /* Geser 10px ke atas */
-        }
-
-        @keyframes discharge-flow {
-            /* Discharge = Aliran Keluar dari Baterai = Gradien bergerak ke BAWAH (Y positif) */
-            from { transform: translate(0, 0); }
-            to { transform: translate(0, 10px); } /* Geser 10px ke bawah */
-        }
-
-        /* 2. Terapkan Animasi ke Elemen Gradien */
-        /* CSS Animasi pada SVG LinearGradient menggunakan properti 'transform' */
-        .flow-charge {
-            animation: charge-flow 0.5s linear infinite; 
-            /* Tambahkan property transform untuk memastikan animasi CSS berjalan pada elemen SVG */
-            transform-box: fill-box; /* Berguna untuk beberapa browser */
-            transform-origin: 0 0;
-        }
-
-        .flow-discharge {
-            animation: discharge-flow 0.5s linear infinite;
-            transform-box: fill-box;
-            transform-origin: 0 0;
-        }
-
-        .flow-idle {
-            animation: none !important;
-            transform: translate(0, 0) !important;
-        }
-        /* ========================================================== */
     </style>
 </head>
 
@@ -833,10 +790,10 @@
                                 </svg>
 
                                 <!-- Daily Grid Buy Value -->
-                                <text id="daily_grid_buy_value" x="30" y="265" dominant-baseline="central" class="st10 left-align" fill="var(--color-grid)">
+                                <text id="daily_grid_buy_value" x="30" y="265" display="" class="st10 left-align" fill="var(--color-grid)">
                                     --
                                 </text>
-                                <text id="daily_grid_buy" x="30" y="280" dominant-baseline="central" class="st3 left-align" fill="var(--color-grid)">
+                                <text id="daily_grid_buy" x="30" y="280" display="" class="st3 left-align" fill="var(--color-grid)">
                                     GRID PLN
                                 </text>
 
@@ -888,11 +845,11 @@
 
                                 <!-- Daily Load Value -->
                                 <a href="#">
-                                    <text id="daily_load_value" x="400" y="265" dominant-baseline="central" class="st10 left-align" fill="var(--color-load)">
+                                    <text id="daily_load_value" x="400" y="265" display="" class="st10 left-align" fill="var(--color-load)">
                                         -- kWh
                                     </text>
                                 </a>
-                                <text id="daily_load" x="404" y="280" dominant-baseline="central" class="st3 left-align" fill="var(--color-load)">
+                                <text id="daily_load" x="404" y="280" display="" class="st3 left-align" fill="var(--color-load)">
                                     DAILY LOAD
                                 </text>
                             </svg>
@@ -955,13 +912,13 @@
                                     </svg>
 
                                     <!-- Data KWH dan SOC (di kanan baterai) -->
-                                    <text id="battery_remaining_energy" x="292.375" y="362" dominant-baseline="central" display="" class="remaining-energy left-align" fill="var(--color-battery)">
+                                    <text id="battery_remaining_energy" x="292.375" y="362" display="" class="remaining-energy left-align" fill="var(--color-battery)">
                                         -- Ah
                                     </text>
 
                                     <svg id="Battery1_SOC" style="overflow: visible; display: inline;">
                                         <a href="#">
-                                            <text id="battery_soc_184" x="292.375" y="383" dominant-baseline="central" display="" class="st13 left-align" fill="var(--color-battery)">
+                                            <text id="battery_soc_184" x="292.375" y="383" display="" class="st13 left-align" fill="var(--color-battery)">
                                                 --% | --%
                                             </text>
                                         </a>
@@ -969,10 +926,10 @@
 
                                     <!-- VOLTAGE & CURRENT -->
                                     <svg id="battery_1_runtime" style="overflow: visible; display: inline;">
-                                        <text id="duration" x="292.375" y="400" dominant-baseline="central" display="" class="st4 left-align" fill="var(--color-inverter)">
+                                        <text id="duration" x="292.375" y="400" display="" class="st4 left-align" fill="var(--color-inverter)">
                                             -- V
                                         </text>
-                                        <text id="duration_text" x="292.375" y="415" dominant-baseline="central" display="" class="st3 left-align" fill="var(--color-battery)">
+                                        <text id="duration_text" x="292.375" y="415" display="" class="st3 left-align" fill="var(--color-battery)">
                                             -- A
                                         </text>
                                     </svg>
@@ -980,18 +937,18 @@
                                     <!-- Daily Charge/Discharge (di kiri baterai) -->
                                     <svg id="battery_daily" style="overflow: visible;">
                                         <svg id="battery_daily_charge" style="overflow: visible;" x="0%" y="0%">
-                                            <text id="daily_bat_charge_value" x="100" y="365" dominant-baseline="central" display="" class="st10 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_charge_value" x="100" y="365" display="" class="st10 left-align" fill="var(--color-battery)">
                                                 0.00 kWh
                                             </text>
-                                            <text id="daily_bat_charge" x="105" y="380" dominant-baseline="central" display="" class="st3 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_charge" x="105" y="380" display="" class="st3 left-align" fill="var(--color-battery)">
                                                 DAILY CHARGE
                                             </text>
                                         </svg>
                                         <svg id="battery_daily_discharge" style="overflow: visible;" x="0%" y="0%">
-                                            <text id="daily_bat_dischcharge_value" x="100" y="400" dominant-baseline="central" display="" class="st10 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_dischcharge_value" x="100" y="400" display="" class="st10 left-align" fill="var(--color-battery)">
                                                 0.00 kWh
                                             </text>
-                                            <text id="daily_bat_dischcharge" x="85" y="415" dominant-baseline="central" display="" class="st3 left-align" fill="var(--color-battery)">
+                                            <text id="daily_bat_dischcharge" x="85" y="415" display="" class="st3 left-align" fill="var(--color-battery)">
                                                 DAILY DISCHARGE
                                             </text>
                                         </svg>
@@ -2339,6 +2296,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             
             // --- Logika Koreksi Daya (Untuk Tampilan Ringkasan Power) ---
             // Saat discharge, kita tetap menggunakan nilai DC murni untuk Ringkasan
+            // Jika Anda ingin ringkasan juga mencerminkan P_AC:
             // if (totalCurrent < -currentThreshold) {
             //     displayPower = displayPower * INVERTER_DISCHARGE_EFFICIENCY;
             // }
@@ -3067,10 +3025,210 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
         // ==========================================================
         // DIAGRAM LOGIC
         // ==========================================================
+
+        function getFlowDuration(power) {
+            const minDuration = 0.5;
+            const maxDuration = 10;
+            const maxPower = 5000;
+            let duration = maxDuration - (power / maxPower) * (maxDuration - minDuration);
+
+            if (power < 10) duration = maxDuration;
+            if (power > maxPower) duration = minDuration;
+
+            return `${duration.toFixed(1)}s`;
+        }
+
+                /**
+         * FUNGSI MODIFIED: Menggunakan powerValue untuk menentukan arah keyPoints
+         * powerValue > 0: Aliran Normal (0;1)
+         * powerValue < 0: Aliran Terbalik (1;0)
+         * powerValue == 0: Stop
+         */
+        function controlFlow(animIds, powerValue, absPower) { 
+            const flowSpeed = getFlowDuration(absPower);
+            const isFlowing = absPower > 10;
+            
+            // Tentukan keyPoints yang eksplisit
+            let keyPoints;
+            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
+                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
+            } else { // Discharging / Grid Buy (Aliran masuk)
+                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
+            }
+            
+            animIds.forEach(id => {
+                const animElement = document.getElementById(id);
+                if (!animElement) return;
+
+                if (!isFlowing) {
+                    // Set opasitas ke 0 untuk menghilangkan titik
+                    animElement.parentNode.style.opacity = 0;
+                    // Tetapkan durasi tinggi dan hitungan 1 agar animasi berhenti
+                    animElement.setAttribute('dur', '10.0s');
+                    animElement.setAttribute('repeatCount', '1');
+                } else {
+                    // Set opasitas ke 1 untuk menampilkan titik
+                    animElement.parentNode.style.opacity = 1;
+                    animElement.setAttribute('repeatCount', 'indefinite');
+                    animElement.setAttribute('keyTimes', '0;1'); 
+                    animElement.setAttribute('dur', flowSpeed);
+                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
+                }
+            });
+        }
         
+
         /**
-         * FUNGSI KRITIS: Memperbarui nilai teks di dalam SVG Diagram.
-         * (Fungsi ini sebelumnya hilang, menyebabkan ReferenceError)
+         * FUNGSI PERBAIKAN: Memastikan animasi gradien berjalan di mobile.
+         */
+        function updateBatteryLevel(soc, batPower) {
+            const batteryInner = document.getElementById('bat_inner');
+            const svgDefs = document.querySelector('.svg-content defs');
+
+            if (!batteryInner || !svgDefs) return;
+
+            batteryInner.querySelectorAll('rect').forEach(rect => rect.remove());
+
+            const totalBars = 8;
+            const socPerBar = 120 / totalBars;
+            const barWidth = 7;
+            const barHeight = 1.5;
+            const startX = 5;
+            const startYVisual = 6;
+
+            // Perbaikan agar SOC selalu berupa integer 0-100
+            let numericSoc = parseInt(soc);
+            if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
+            if (numericSoc > 100) numericSoc = 100;
+            soc = numericSoc;
+
+            let overallColorStop;
+
+            if (soc >= 75) {
+                overallColorStop = 'var(--color-bar-green)';
+            } else if (soc >= 50) {
+                overallColorStop = 'var(--color-bar-green-light)';
+            } else if (soc >= 30) {
+                overallColorStop = 'var(--color-bar-yellow)';
+            } else {
+                overallColorStop = 'var(--color-bar-red)';
+            }
+
+            const emptyColor = 'var(--color-bar-empty)';
+
+            svgDefs.innerHTML = '';
+
+            const gradientId = `socFlowGradient`;
+            const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+            gradient.setAttribute('id', gradientId);
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '0%');
+            gradient.setAttribute('y2', '30%'); // Ukuran pattern
+            gradient.setAttribute('spreadMethod', 'repeat');
+            gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+
+            let flowHighlightColor = overallColorStop;
+            let flowBaseColor = overallColorStop;
+
+            const absPower = Math.abs(batPower);
+            const isFlowing = absPower > 10;
+
+            if (isFlowing) {
+                if (batPower > 0) { // CHARGING (Positif = Charge)
+                    flowHighlightColor = overallColorStop;
+                    flowBaseColor = '#388E3C';
+                } else { // DISCHARGING (Negatif = Discharge)
+                    flowHighlightColor = overallColorStop;
+                    flowBaseColor = '#8D0000';
+                }
+            } else {
+                flowHighlightColor = overallColorStop;
+                flowBaseColor = overallColorStop;
+            }
+
+            // --- DEFINISI STOP UNTUK ANIMASI FLOW ---
+            let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', flowBaseColor);
+            stop1.setAttribute('stop-opacity', '1.0');
+            gradient.appendChild(stop1);
+
+            if(isFlowing) {
+                let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                stop2.setAttribute('offset', '10%');
+                stop2.setAttribute('stop-color', flowHighlightColor);
+                stop2.setAttribute('stop-opacity', '1.0');
+                gradient.appendChild(stop2);
+
+                let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                stop3.setAttribute('offset', '20%');
+                stop3.setAttribute('stop-color', flowBaseColor);
+                stop3.setAttribute('stop-opacity', '1.0');
+                gradient.appendChild(stop3);
+
+            } else {
+                 let stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+                 stop4.setAttribute('offset', '100%');
+                 stop4.setAttribute('stop-color', overallColorStop);
+                 stop4.setAttribute('stop-opacity', '1.0');
+                 gradient.appendChild(stop4);
+            }
+
+
+            let animMotion = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+            animMotion.setAttribute('attributeName', 'gradientTransform');
+            animMotion.setAttribute('type', 'translate');
+
+            const animDuration = getFlowDuration(absPower);
+
+            if (isFlowing) {
+                 if (batPower > 0) { // CHARGING
+                    // Gradien bergerak ke atas (nilai y negatif)
+                    animMotion.setAttribute('from', '0 0');
+                    animMotion.setAttribute('to', '0 -20');
+                } else { // DISCHARGING
+                    // Gradien bergerak ke bawah (nilai y positif)
+                    animMotion.setAttribute('from', '0 0');
+                    animMotion.setAttribute('to', '0 20');
+                }
+
+                animMotion.setAttribute('dur', animDuration);
+                animMotion.setAttribute('repeatCount', 'indefinite');
+
+                gradient.appendChild(animMotion);
+            }
+
+            svgDefs.appendChild(gradient);
+
+            const fillUrl = `url(#${gradientId})`;
+
+            for (let i = 0; i < totalBars; i++) {
+                const minSocToFillBar = (totalBars - i) * socPerBar;
+                const isFilled = soc > (minSocToFillBar - socPerBar);
+
+                const finalBarFill = isFilled ? fillUrl : emptyColor;
+
+                const yPosition = startYVisual + (i * (barHeight + 0.5));
+
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute('x', startX);
+                rect.setAttribute('y', yPosition);
+                rect.setAttribute('width', barWidth);
+                rect.setAttribute('height', barHeight);
+                rect.setAttribute('rx', 0.5);
+                rect.setAttribute('ry', 0.5);
+
+                rect.setAttribute('fill', finalBarFill);
+
+                batteryInner.appendChild(rect);
+            }
+        }
+
+        /**
+         * FUNGSI MODIFIED: Menerima dan menggunakan data BMS untuk Baterai
+         *
+         * PERBAIKAN KRITIS: Menggunakan data.rawBmsPower untuk mengisi kotak daya.
          */
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => {
@@ -3086,7 +3244,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
             // --- BMS DATA (Battery Power Display) ---
             const rawBmsP = data.rawBmsPower; // NILAI MURNI DC DARI BMS (Absolut)
-            // const batP_flow = data.batteryPower; // Nilai yang terkoreksi (untuk flow/animasi/level)
+            const batP_flow = data.batteryPower; // Nilai yang terkoreksi (untuk flow/animasi/level)
             const powerThreshold = 10;
             
             let batPDisplay;
@@ -3231,200 +3389,6 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                     displayCurrentI = absCurrent.toFixed(1); // Tetap tampilkan 0.0 A saat idle
                     durationTextElement.textContent = `${displayCurrentI} A (Idle)`; 
                 }
-            }
-        }
-        
-        function getFlowDuration(power) {
-            const minDuration = 0.5;
-            const maxDuration = 10;
-            const maxPower = 5000;
-            let duration = maxDuration - (power / maxPower) * (maxDuration - minDuration);
-
-            if (power < 10) duration = maxDuration;
-            if (power > maxPower) duration = minDuration;
-
-            return `${duration.toFixed(1)}s`;
-        }
-
-                /**
-         * FUNGSI MODIFIED: Menggunakan powerValue untuk menentukan arah keyPoints
-         * powerValue > 0: Aliran Normal (0;1)
-         * powerValue < 0: Aliran Terbalik (1;0)
-         * powerValue == 0: Stop
-         */
-        function controlFlow(animIds, powerValue, absPower) { 
-            const flowSpeed = getFlowDuration(absPower);
-            const isFlowing = absPower > 10;
-            
-            // Tentukan keyPoints yang eksplisit
-            let keyPoints;
-            if (powerValue > 0) { // Charging / PV ke Inverter / Inverter ke Load
-                keyPoints = "0;1"; // Normal (Awal ke Akhir path)
-            } else { // Discharging / Grid Buy (Aliran masuk)
-                keyPoints = "1;0"; // Reverse (Akhir ke Awal path)
-            }
-            
-            animIds.forEach(id => {
-                const animElement = document.getElementById(id);
-                if (!animElement) return;
-
-                if (!isFlowing) {
-                    // Set opasitas ke 0 untuk menghilangkan titik
-                    animElement.parentNode.style.opacity = 0;
-                    // Tetapkan durasi tinggi dan hitungan 1 agar animasi berhenti
-                    animElement.setAttribute('dur', '10.0s');
-                    animElement.setAttribute('repeatCount', '1');
-                } else {
-                    // Set opasitas ke 1 untuk menampilkan titik
-                    animElement.parentNode.style.opacity = 1;
-                    animElement.setAttribute('repeatCount', 'indefinite');
-                    animElement.setAttribute('keyTimes', '0;1'); 
-                    animElement.setAttribute('dur', flowSpeed);
-                    animElement.setAttribute('keyPoints', keyPoints); // Set keyPoints yang sudah pasti
-                }
-            });
-        }
-        
-
-        /**
-         * FUNGSI KRITIS MODIFIED: Menggunakan CSS Class untuk Animasi Gradien
-         */
-        function updateBatteryLevel(soc, batPower) {
-            const batteryInner = document.getElementById('bat_inner');
-            const svgDefs = document.querySelector('.svg-content defs');
-
-            if (!batteryInner || !svgDefs) return;
-
-            batteryInner.querySelectorAll('rect').forEach(rect => rect.remove());
-
-            const totalBars = 8;
-            const socPerBar = 120 / totalBars;
-            const barWidth = 7;
-            const barHeight = 1.5;
-            const startX = 5;
-            const startYVisual = 6;
-
-            // Perbaikan agar SOC selalu berupa integer 0-100
-            let numericSoc = parseInt(soc);
-            if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
-            if (numericSoc > 100) numericSoc = 100;
-            soc = numericSoc;
-
-            let overallColorStop;
-
-            if (soc >= 75) {
-                overallColorStop = 'var(--color-bar-green)';
-            } else if (soc >= 50) {
-                overallColorStop = 'var(--color-bar-green-light)';
-            } else if (soc >= 30) {
-                overallColorStop = 'var(--color-bar-yellow)';
-            } else {
-                overallColorStop = 'var(--color-bar-red)';
-            }
-
-            const emptyColor = 'var(--color-bar-empty)';
-
-            // Hapus semua definisi gradien yang ada
-            svgDefs.innerHTML = '';
-
-            const gradientId = `socFlowGradient`;
-            const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-            gradient.setAttribute('id', gradientId);
-            gradient.setAttribute('x1', '0%');
-            gradient.setAttribute('y1', '0%');
-            gradient.setAttribute('x2', '0%');
-            // Ganti y2 agar gradien cukup panjang untuk efek aliran (repeat)
-            gradient.setAttribute('y2', '20%'); 
-            
-            // Hapus spreadMethod="repeat" yang bermasalah di mobile
-            // Ganti dengan setting yang lebih stabil
-            gradient.setAttribute('gradientUnits', 'objectBoundingBox'); 
-
-            // --- Tentukan Class CSS untuk Animasi (BARU) ---
-            gradient.classList.remove('flow-charge', 'flow-discharge', 'flow-idle'); 
-            const absPower = Math.abs(batPower);
-            const isFlowing = absPower > 10;
-
-            let flowBaseColor = overallColorStop;
-            let flowHighlightColor;
-            
-            if (isFlowing) {
-                if (batPower > 0) { // CHARGING
-                    flowHighlightColor = 'var(--flow-charge-color)';
-                    gradient.classList.add('flow-charge'); 
-                } else { // DISCHARGING
-                    flowHighlightColor = 'var(--flow-discharge-color)';
-                    gradient.classList.add('flow-discharge'); 
-                }
-            } else {
-                flowHighlightColor = overallColorStop;
-                gradient.classList.add('flow-idle');
-            }
-
-
-            // --- DEFINISI STOP UNTUK ANIMASI FLOW (Sederhana & Compatible) ---
-            
-            // Stop 1: Warna Dasar
-            let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            stop1.setAttribute('offset', '0%');
-            stop1.setAttribute('stop-color', flowBaseColor);
-            gradient.appendChild(stop1);
-
-            if(isFlowing) {
-                // Stop 2: Highlight (Membuat efek bergerak lebih jelas)
-                let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop2.setAttribute('offset', '10%');
-                stop2.setAttribute('stop-color', flowHighlightColor);
-                gradient.appendChild(stop2);
-
-                // Stop 3: Kembali ke Warna Dasar (Menciptakan pattern)
-                let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop3.setAttribute('offset', '20%');
-                stop3.setAttribute('stop-color', flowBaseColor);
-                gradient.appendChild(stop3);
-                
-                // Stop 4: Warna Dasar Penuh (Mencegah tampilan terpotong)
-                let stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop4.setAttribute('offset', '100%');
-                stop4.setAttribute('stop-color', flowBaseColor);
-                gradient.appendChild(stop4);
-
-            } else {
-                 // Jika idle, hanya tampilkan gradien statis
-                 let stop5 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                 stop5.setAttribute('offset', '100%');
-                 stop5.setAttribute('stop-color', overallColorStop);
-                 gradient.appendChild(stop5);
-            }
-
-            // Hapus Animasi SMIL yang lama
-            // Hapus juga `animMotion.setAttribute` dan `gradient.appendChild(animMotion)`
-            
-            // Menambahkan gradien ke defs SVG
-            svgDefs.appendChild(gradient);
-
-            const fillUrl = `url(#${gradientId})`;
-
-            // Render bar
-            for (let i = 0; i < totalBars; i++) {
-                const minSocToFillBar = (totalBars - i) * socPerBar;
-                const isFilled = soc > (minSocToFillBar - socPerBar);
-
-                const finalBarFill = isFilled ? fillUrl : emptyColor;
-
-                const yPosition = startYVisual + (i * (barHeight + 0.5));
-
-                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                rect.setAttribute('x', startX);
-                rect.setAttribute('y', yPosition);
-                rect.setAttribute('width', barWidth);
-                rect.setAttribute('height', barHeight);
-                rect.setAttribute('rx', 0.5);
-                rect.setAttribute('ry', 0.5);
-
-                rect.setAttribute('fill', finalBarFill);
-
-                batteryInner.appendChild(rect);
             }
         }
 
