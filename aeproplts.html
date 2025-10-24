@@ -638,7 +638,7 @@
                                     </a >
                                 </svg>
 
-                                <!-- NILAI PARAMETER TAMBAHAN (Di bawah PV Module) - TATA LETAK 3X2 -->
+                                 <!-- NILAI PARAMETER TAMBAHAN (Di bawah PV Module) - TATA LETAK 3X2 -->
                                 <g id="pv_extra_info" x="0%" y="0%">
                                     <!-- BARIS 1: Voltase Bus dan Peak -->
                                     <text x="197" y="133" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
@@ -648,7 +648,7 @@
                                         <text id="pv2_voltage_label" x="230" y="133" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
                                             -- V
                                         </text>
-                                    </a >
+                                    </a>
                                     <text id="pv_peak_label_text" x="247" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
                                         Peak:
                                     </text>
@@ -674,7 +674,7 @@
 
 
                                     <!-- BARIS 3: Matahari Efektif dan Placeholder (SOC Bat) -->
-                                    <text x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
+                                    <text id="effective_sun_hours_text" x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">
                                         Matahari Efektif:
                                     </text>
                                     <text id="effective_sun_hours" x="201" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
@@ -683,11 +683,12 @@
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
                                         SOC:
                                     </text>
-                                    <text id="pv_placeholder" x="270" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
+                                    <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">
                                         -- %
                                     </text>
 
                                 </g>
+
 
 
                                 <!-- Flow line down from Solar to Inverter -->
@@ -3012,7 +3013,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 if (mapping.key === 'inverterCurrent') {
                     latestDiagramData.inverterCurrent = `${pValue.toFixed(1)} A`;
                 } else {
-                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} V`;
+                    latestDiagramData.pvCurrent = `${pValue.toFixed(1)} A`;
                 }
             } else if (mapping.isFrequency) {
                 latestDiagramData[mapping.key] = `${pValue.toFixed(1)} Hz`;
