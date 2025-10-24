@@ -547,7 +547,6 @@
             'V3': 'v3-pzem-energy', 'V11': 'v11-total-pv',
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
-        // Mengatur MAX_DATA_POINTS menjadi 17280 * 5s = 86400s = 24 Jam
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
         const UPDATE_INTERVAL = 5000;
         const MAX_DATA_POINTS = 17280;
@@ -612,23 +611,36 @@
 
         function resetDailyEnergy() {
             const now = new Date();
-            const todayDate = now.toISOString().split('T')[0];
+            // Mengambil tanggal hari ini dalam format YYYY-MM-DD
+            const todayDate = now.toISOString().split('T')[0]; 
             const lastResetDate = localStorage.getItem(STORAGE_KEY_RESET_DATE);
 
+            // Cek apakah tanggal terakhir reset berbeda dengan tanggal hari ini
             if (lastResetDate !== todayDate) {
+                 // Melakukan reset jika data akumulasi tidak nol
                  if (dailyChargeWh !== 0 || dailyDischargeWh !== 0) {
                     dailyChargeWh = 0;
                     dailyDischargeWh = 0;
-                    localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate);
+                    // Memperbarui tanggal reset di localStorage
+                    localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate); 
                     localStorage.setItem(STORAGE_KEY_CHARGE, '0');
                     localStorage.setItem(STORAGE_KEY_DISCHARGE, '0');
+                    // Memperbarui tampilan
                     document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
                     document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
+                    console.log(`[DAILY RESET] Daily energy reset to 0. New date: ${todayDate}`);
+                } else if (lastResetDate === null || lastResetDate === undefined) {
+                    // Kasus pertama kali atau data lama sudah 0
+                     localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate);
+                     console.log(`[DAILY RESET] Initializing daily reset date: ${todayDate}`);
                 }
             }
         }
         
         function updateBatteryEnergy(voltage, current) {
+            // PENTING: Panggil reset harian di sini sebelum akumulasi untuk memastikan data hari sebelumnya tidak tercampur.
+            resetDailyEnergy(); 
+
             const now = Date.now();
             const dt = (now - lastUpdateTime) / 1000; 
             lastUpdateTime = now;
@@ -886,7 +898,7 @@
                   calculateAndRenderDiagram(bmsAggregatedData);
                   const totalVoltage = bmsAggregatedData.voltage;
                   const totalCurrent = bmsAggregatedData.current;
-                  resetDailyEnergy();
+                  // resetDailyEnergy(); // Dihapus di sini agar hanya dipanggil di updateBatteryEnergy
                   if (totalVoltage !== DEFAULT_DISPLAY && totalCurrent !== 0) { updateBatteryEnergy(totalVoltage, totalCurrent); }
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
@@ -1406,7 +1418,6 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
-                        // Peningkatan: Mengubah judul untuk menekankan rentang 24 jam
                         title: { display: true, text: 'Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)', color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
                         zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
@@ -1415,7 +1426,6 @@
                         x: { 
                             type: 'category', 
                             title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
-                            // Mengatur ulang batas tiks agar lebih mudah dibaca dalam rentang 24 jam
                             ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
@@ -1805,6 +1815,9 @@
 
         async function updateDashboard() {
             if (!authToken) return;
+
+            // PENTING: Panggil reset harian di sini di awal loop 5 detik.
+            resetDailyEnergy(); 
 
             const pins = Object.keys(PIN_MAPPINGS);
             const results = await Promise.allSettled(pins.map(pin => fetchPinValue(pin)));
