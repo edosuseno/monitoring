@@ -122,11 +122,14 @@
         .modal-soh { border-bottom-color: #22c55e; }
         .modal-cycles { border-bottom-color: #a855f7; }
         
-        /* PERBAIKAN GRID SEL: Max 5 kolom di layar besar (>= 1024px) */
-        #modalCells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
-        @media (min-width: 640px) { #modalCells { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-        @media (min-width: 768px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-        /* Mengubah 6 kolom menjadi 5 kolom (max-w-5xl adalah sekitar 1024-1280px, jadi 5 kolom sudah cukup) */
+        /* PERBAIKAN GRID SEL: Max 3 kolom di HP, max 5 di layar besar */
+        #modalCells { 
+            display: grid; 
+            grid-template-columns: repeat(3, minmax(0, 1fr)); /* Default 3 kolom (HP) */
+            gap: 0.75rem; 
+        }
+        @media (min-width: 640px) { #modalCells { grid-template-columns: repeat(4, minmax(0, 1fr)); } } /* 4 kolom di layar kecil/tablet */
+        @media (min-width: 768px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } /* 5 kolom di tablet/desktop */
         @media (min-width: 1280px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } 
 
         .fullscreen-chart { position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; background-color: #05050D !important; z-index: 9999; padding: 20px; }
@@ -180,7 +183,8 @@
             </button>
           </div>
 
-          <div class="flex-1 p-6"> 
+          <!-- Menambahkan overflow-y-auto untuk mengizinkan scrolling di konten utama modal -->
+          <div class="flex-1 p-6 overflow-y-auto"> 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div class="modal-summary-card modal-soc text-white"><h3 class="text-sm font-medium">State of Charge</h3><div class="text-4xl font-extrabold"><span id="modalSOCPercent">N/A</span><span id="modalSOCUnit">%</span></div><div class="text-xs text-blue-300 mt-2">Sisa Kapasitas: <span id="modalRemaining">N/A</span> Ah</div></div>
               <div class="modal-summary-card modal-soh text-white"><h3 class="text-sm font-medium">State of Health</h3><div class="text-4xl font-extrabold text-green-400"><span id="modalSOHPercent">N/A</span>%</div><div class="text-xs text-green-300 mt-2">Kapasitas Penuh: <span id="modalCapacity">N/A</span> Ah</div></div>
@@ -274,7 +278,7 @@
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
                                 <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
-                                    <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
+                                    <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
                             </svg>
