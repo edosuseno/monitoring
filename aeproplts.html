@@ -3139,7 +3139,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                     flowHighlightColor = overallColorStop;
                     flowBaseColor = '#388E3C';
                 } else { // DISCHARGING (Negatif = Discharge)
-                    flowHighlightColor = overallColorStop;
+                    flowHighlightColor = 'var(--color-bar-yellow)';
                     flowBaseColor = '#8D0000';
                 }
             } else {
