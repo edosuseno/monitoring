@@ -297,7 +297,7 @@
             #modalCells { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         @media (min-width: 1024px) { /* lg */
-            #modalCells { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+            #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         }
 
         /* Gaya Chart (Dari PLTS) */
@@ -541,7 +541,7 @@
               <h3 class="font-medium text-gray-300 mb-4 flex items-center">
                 <i data-lucide="layout-grid" class="lucide w-4 h-4 text-green-500 mr-2"></i> Tegangan Sel (Cell Voltages)
               </h3>
-              <div id="modalCells" class="grid gap-3"></div>
+              <div id="modalCells" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
             </div>
           </div>
         </div>
