@@ -20,10 +20,8 @@
     <!-- Tailwind CSS (Umum) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Ikon Lucide (Umum) - PERBAIKAN KRITIS: Memuat lucide-icons dan inti lucide secara terpisah
-         untuk memastikan modul `lucide` tersedia saat `createIcons` dipanggil. -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://unpkg.com/lucide-icons@latest"></script>
+    <!-- Ikon Lucide (Umum) - PERBAIKAN KRITIS: Mengganti CDN yang lebih stabil untuk UMD. -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
 
     <!-- MQTT (BMS) -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -457,6 +455,7 @@
               <div id="led-modal" class="led ml-4"></div>
             </div>
             <button id="closeModalButton" class="text-gray-400 hover:text-white">
+              <!-- PERBAIKAN IKON: Menggunakan data-lucide (W-6 H-6) -->
               <i data-lucide="x" class="lucide w-6 h-6"></i>
             </button>
           </div>
@@ -483,6 +482,7 @@
               <!-- Left: Voltage Metrics -->
               <div class="bg-gray-800 p-4 rounded-lg">
                 <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+                    <!-- PERBAIKAN IKON -->
                     <i data-lucide="zap" class="lucide w-4 h-4 text-yellow-500 mr-2"></i> Metrik Tegangan
                 </h3>
                 <div class="space-y-3 text-sm">
@@ -517,6 +517,7 @@
               <!-- Right: Current & Power Metrics -->
               <div class="bg-gray-800 p-4 rounded-lg">
                 <h3 class="font-medium text-gray-300 mb-3 flex items-center">
+                    <!-- PERBAIKAN IKON -->
                     <i data-lucide="activity" class="lucide w-4 h-4 text-blue-500 mr-2"></i> Metrik Arus & Daya
                 </h3 >
                 <div class="space-y-3 text-sm">
@@ -544,6 +545,7 @@
             <!-- Cell Voltages -->
             <div class="solar-card p-4 rounded-lg mt-6">
               <h3 class="font-medium text-gray-300 mb-4 flex items-center">
+                <!-- PERBAIKAN IKON -->
                 <i data-lucide="layout-grid" class="lucide w-4 h-4 text-green-500 mr-2"></i> Tegangan Sel (Cell Voltages)
               </h3>
               <div id="modalCells" class="grid gap-3"></div>
@@ -614,6 +616,7 @@
                             <!-- Solar Elements -->
                             <svg id="Solar" style="overflow: visible; display: inline;" x="0%" y="-6%">
                                 <!-- PV Icon (Sun/Panel) -->
+                                <!-- Ikon SVG bawaan (tidak menggunakan Lucide) -->
                                 <svg id="sun" x="120" y="48" width="30" height="30" viewBox="0 0 24 24">
                                     <path fill="var(--color-solar)" d="M11.45 2v3.55L15 3.77L11.45 2m-1 6L8 10.46l3.75 1.25L10.45 8M2 11.45L3.77 15l1.78-3.55H2M10 2H2v8c.57.17 1.17.25 1.77.25c3.58.01 6.49-2.9 6.5-6.5c-.01-.59-.1-1.18-.27-1.75m7 20v-6h-3l5-9v6h3l-5 9Z"></path>
                                 </svg>
@@ -714,6 +717,7 @@
                             <!-- Inverter Elements -->
                             <svg id="Inverter" style="overflow: visible" x="0%">
                                 <!-- Inverter Icon (Energy Manager) -->
+                                <!-- Ikon SVG bawaan (tidak menggunakan Lucide) -->
                                 <svg x="213.5" y="179.5" width="54" height="79" viewBox="0 0 74 91" preserveAspectRatio="xMidYMid meet" opacity="1">
                                     <g transform="translate(0.000000,91.000000) scale(0.100000,-0.100000)" stroke="none" fill="var(--color-inverter)">
                                         <path d="M35 887 l-27 -23 0 -404 0 -404 27 -23 c26 -23 28 -23 329 -23 284 0 305 1 327 19 l24 19 0 412 0 412 -24 19 c-22 18 -43 19 -327 19 -301 0 -303 0 -329 -23z m585 -157 l0 -80 -255 0 -255 0 0 80 0 80 255 0 255 0 0 -80z m-242 -229 c44 -34 40 -46 -14 -46 -60 0 -97 -38 -93 -94 5 -64 -23 -80 -35 -20 -9 44 24 113 63 134 35 18 34 15 21 50 -11 29 -14 30 58 -24z m110 -129 c4 -51 -19 -97 -59 -117 -27 -14 -30 -20 -23 -48 l6 -31 -51 43 c-29 24 -49 46 -46 49 3 4 23 5 44 3 58 -4 95 32 97 95 3 60 1 57 17 52 6 -3 13 -23 15 -46z"></path>
@@ -755,6 +759,7 @@
                             <!-- Grid Elements -->
                             <svg id="Grid" style="overflow: visible; display: inline;">
                                 <!-- Grid Icon (Pylon/Tower) -->
+                                <!-- Ikon SVG bawaan (tidak menggunakan Lucide) -->
                                 <svg x="20" y="185" width="64.5" height="64.5" viewBox="0 0 24 24">
                                     <path fill="var(--color-grid)" d="m8.28 5.45l-1.78-.9L7.76 2h8.47l1.27 2.55l-1.78.89L15 4H9l-.72 1.45M18.62 8h-4.53l-.79-3h-2.6l-.79 3H5.38L4.1 10.55l1.79.89l.73-1.44h10.76l.72 1.45l1.79-.89L18.62 8m-.85 14H15.7l-.24-.9L12 15.9l-3.47 5.2l-.23.9H6.23l2.89-11h2.07l-.36 1.35L12 14.1l1.16-1.75l-.35-1.35h2.07l2.89 11m-6.37-7l-.9-1.35l-1.18 4.48L11.4 15m3.28 3.12l-1.18-4.48l-.9 1.36l2.08 3.12Z"></path>
                                 </svg>
@@ -843,6 +848,7 @@
 
                                 <!-- Load Icon (House/Home) -->
                                 <a href="#">
+                                    <!-- Ikon SVG bawaan (tidak menggunakan Lucide) -->
                                     <svg id="essen" viewBox="0 0 24 24" x="395" y="176" width="79" height="79">
                                         <path fill="var(--color-load)" d="m15 13l-4 4v-3H2v-2h9V9l4 4M5 20v-4h2v2h10v-7.81l-5-4.5L7.21 10H4.22L12 3l10 9h-3v8H5Z"></path>
                                     </svg>
@@ -853,7 +859,7 @@
                                     <text id="daily_load_value" x="400" y="265" display="" class="st10 left-align" fill="var(--color-load)">
                                         -- kWh
                                     </text>
-                                </a>
+                                </a >
                                 <text id="daily_load" x="404" y="280" display="" class="st3 left-align" fill="var(--color-load)">
                                     DAILY LOAD
                                 </text>
@@ -903,6 +909,7 @@
                                     <!-- Battery Icon -->
                                     <svg id="battery_icon" style="overflow: visible;" x="0%">
                                         <a href="#">
+                                            <!-- Ikon SVG bawaan (tidak menggunakan Lucide) -->
                                             <svg id="bat_outter" y="338.5" width="78.75" height="78.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="213.0">
                                                 <defs>
                                                     <!-- Gradien dinamis akan dibuat dan dihapus di JavaScript -->
@@ -979,6 +986,7 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
                             <p class="text-sm font-semibold text-gray-400">Energi Hari Ini</p>
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i>
                         </div>
                         <div class="summary-block">
@@ -992,6 +1000,7 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
                             <p class="text-sm font-semibold text-gray-400">Beban Hari Ini</p>
+                            <!-- PERBAIKAN IKON: Menggunakan power-square, memastikan ikon muncul -->
                             <i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i>
                         </div>
                         <div class="summary-block">
@@ -1005,6 +1014,7 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
                             <p class="text-sm font-semibold text-gray-400 ">Penghematan Hari Ini</p>
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="file-text" class="lucide w-7 h-7 text-green-400"></i>
                         </div>
                         <!-- Menggunakan blok khusus untuk Rupiah -->
@@ -1019,6 +1029,7 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2">
                             <p class="text-sm font-semibold text-gray-400 ">Penghematan Bulan Ini</p>
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="trending-up" class="lucide w-7 h-7 text-pink-med"></i>
                         </div>
                         <div class="summary-rupiah-block">
@@ -1076,10 +1087,12 @@
                     <!-- Tombol Full Layar & Reset Zoom -->
                     <div class="flex justify-end space-x-3 mb-2">
                         <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center">
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>
                             Reset Zoom
                         </button>
                         <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1">
+                            <!-- PERBAIKAN IKON -->
                             <i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i>
                             <span id="fullscreen-chart-text">Full Layar</span>
                         </button>
@@ -1097,6 +1110,7 @@
                     <!-- Kolom 1: Panel Surya (DC) -->
                     <div class="solar-card">
                         <h3 class="text-xl font-semibold text-dc-color flex items-center border-b border-gray-700 pl-4">
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2 text-dc-color"></i>
                             Panel Surya (DC)
                         </h3 >
@@ -1151,6 +1165,7 @@
                     <!-- Kolom 2: Baterai & Total Energi -->
                     <div class="solar-card">
                         <h3 class="text-xl font-semibold text-blue-bat flex items-center border-b border-gray-700 pl-4">
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="battery-full" class="lucide w-5 h-5 mr-2 text-blue-bat"></i>
                             Baterai & Energi
                         </h3 >
@@ -1205,6 +1220,7 @@
                     <!-- Kolom 3: INVERTER & Beban (AC) -->
                     <div class="solar-card">
                         <h3 class="text-xl font-semibold text-ac-color flex items-center border-b border-gray-700 pl-4">
+                            <!-- PERBAIKAN IKON -->
                             <i data-lucide="plug-zap" class="lucide w-5 h-5 mr-2 text-ac-color"></i>
                            Inverter & Beban (AC)
                         </h3 >
@@ -1270,6 +1286,7 @@
                 <div class="flex flex-col items-center text-center w-full mb-8">
                     <div class="flex items-center justify-center">
                         <div class="p-2 rounded-lg mr-2">
+                            <!-- PERBAIKAN IKON: Menggunakan data-lucide di sini -->
                             <i data-lucide="battery-full" class="lucide w-7 h-7 text-blue-bat"></i>
                         </div>
                         <div>
@@ -1294,6 +1311,7 @@
                       <!-- 1. SOC (State of Charge) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="battery-charging" class="lucide w-7 h-7 text-blue-bat" id="icon-soc-summary"></i>
                               <span class="text-3xl font-extrabold text-blue-bat" id="summary-soc">N/A</span>
                           </div>
@@ -1306,6 +1324,7 @@
                       <!-- 2. SOH (State of Health) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="heart-pulse" class="lucide w-7 h-7 text-green-400" id="icon-soh-summary"></i>
                               <span class="text-3xl font-extrabold text-green-400" id="summary-soh">N/A</span>
                           </div>
@@ -1318,6 +1337,7 @@
                       <!-- 3. ARUS BATERAI (Total Penjumlahan) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="activity" class="lucide w-7 h-7 text-dc-color" id="icon-current-summary"></i>
                               <div class="flex items-baseline">
                                   <span class="text-3xl font-extrabold text-dc-color" id="summary-current">N/A</span>
@@ -1331,6 +1351,7 @@
                       <!-- 4. DAYA BATERAI (Power) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="power" class="lucide w-7 h-7 text-pink-400" id="icon-power-summary"></i>
                               <div class="flex items-baseline">
                                   <span class="text-3xl font-extrabold text-pink-400" id="summary-power">N/A</span>
@@ -1344,6 +1365,7 @@
                       <!-- 5. TEGANGAN PACK (Rata-Rata) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="bolt" class="lucide w-7 h-7 text-yellow-500" id="icon-pack-voltage-summary"></i>
                               <div class="flex items-baseline">
                                   <span class="text-3xl font-extrabold text-yellow-500" id="summary-voltage">N/A</span>
@@ -1357,6 +1379,7 @@
                       <!-- 6. TEGANGAN BUS (Bus Voltage) -->
                       <div class="solar-card p-4 shadow-xl">
                           <div class="flex justify-between items-center mb-2">
+                              <!-- PERBAIKAN IKON -->
                               <i data-lucide="zap-off" class="lucide w-7 h-7 text-purple-400" id="icon-bus-voltage-summary"></i>
                               <div class="flex items-baseline">
                                   <span class="text-3xl font-extrabold text-purple-400" id="summary-bus-voltage">N/A</span>
@@ -1376,7 +1399,8 @@
 
                     <div id="empty-state" class="hidden text-center py-12 solar-card rounded-xl shadow-sm">
                       <div class="text-blue-500 mb-4">
-                        <i class="fas fa-car-battery text-5xl opacity-50"></i>
+                        <!-- Perbaikan: Mengganti Font Awesome dengan Lucide -->
+                        <i data-lucide="battery-off" class="lucide text-5xl opacity-50"></i>
                       </div>
                       <h3 class="text-lg font-medium text-gray-300 mb-2">Tidak ada baterai terhubung</h3>
                       <p class="text-gray-400 max-w-md mx-auto">Data baterai akan muncul di sini setelah sistem BMS Anda terhubung dan mengirim data.</p>
@@ -2101,6 +2125,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 updateModal();
+                // PERBAIKAN IKON: Panggil createIcons saat modal dibuka
+                 if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
             }
         }
 
@@ -2267,10 +2295,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             }
 
             blinkLed("led-modal");
-            // LUCIDE FIX: Menghapus panggilan di sini karena sudah dipanggil di initApp() dan tidak perlu diulang setiap update.
-            // if (typeof lucide !== 'undefined') {
-            //     lucide.createIcons();
-            // }
+            // PANGGILAN CREATEICONS DI SINI DIPERLUKAN KARENA IKON DI HEADER MODAL
+            if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
+            }
         }
 
         function renderCards(datane) {
@@ -2350,10 +2378,12 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             // Apply Current Colors
             if (currentSummaryEl) { removeCurrentColorClasses(currentSummaryEl); currentSummaryEl.classList.add(ampColorClass); }
             if (currentUnitEl) { removeCurrentColorClasses(currentUnitEl); currentUnitEl.classList.add(ampColorClass); }
+            // PERBAIKAN IKON: Menggunakan nama kelas warna yang benar
             if (currentIconEl) { currentIconEl.classList.remove('text-dc-color', 'text-warning-red', 'text-green-400'); currentIconEl.classList.add(ampColorClass); }
 
             // Apply Power Colors
             if (powerSummaryEl) { removePowerColorClasses(powerSummaryEl); powerSummaryEl.classList.add(powerColorClass); }
+            // PERBAIKAN IKON: Menggunakan nama kelas warna yang benar
             if (powerIconEl) { removePowerColorClasses(powerIconEl); powerIconEl.classList.add(powerColorClass); }
             if (powerUnitEl) { removePowerColorClasses(powerUnitEl); powerUnitEl.classList.add(powerColorClass); }
             
@@ -2368,6 +2398,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             safeUpdate('summary-soc', socContent);
 
             if (summarySocEl) { summarySocEl.classList.remove(...textClassesToRemove); summarySocEl.classList.add(summaryTextColor); }
+            // PERBAIKAN IKON: Menggunakan nama kelas warna yang benar
             if (iconSocEl) { iconSocEl.classList.remove(...textClassesToRemove); iconSocEl.classList.add(summaryTextColor); }
             if (!isNaN(socValue) && socProgress) {
                 socProgress.style.width = `${socValue}%`;
@@ -2406,6 +2437,10 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
               if (grid) grid.classList.add('hidden');
               if (emptyState) emptyState.classList.remove('hidden');
               safeUpdate('total-batteries', '0');
+               // PERBAIKAN IKON: Pastikan ikon di empty state muncul
+              if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
+              }
               return;
             }
 
@@ -2459,6 +2494,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                     const socBarClass = !isNaN(battSocValue) ? cardProgressColor : 'bg-gray-500';
                     const socBarWidth = !isNaN(battSocValue) ? `${batt.soc}%` : '0%';
 
+                    // PERBAIKAN IKON: Menggunakan `data-lucide` dan memastikan `lucide` class ada
                     card.innerHTML = `
                         <div class="flex items-center justify-between mb-3 border-b border-gray-700 pb-2">
                             <h3 class="text-lg font-bold text-white">${batt.typeBattery} <span class="text-blue-400 font-semibold">#${batt.addr}</span></h3>
@@ -2539,6 +2575,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                         <!-- Footer Metrik -->
                         <div class="mt-4 pt-3 border-t border-gray-700 text-xs text-gray-400 flex justify-between">
                             <span>Siklus: ${batt.cycles}</span>
+                            <!-- PERBAIKAN IKON: Memastikan ikon jam dimuat saat in-place update -->
                             <span class="last-update" id="time-update-${batt.typeBattery}-${batt.addr}"><i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>
                         </div>
                     `;
@@ -2548,7 +2585,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
 
                 if (grid) grid.appendChild(fragment);
                 lastRenderedAddresses = currentAddresses;
-                // LUCIDE FIX: Cek apakah objek lucide sudah dimuat sebelum memanggil createIcons()
+                
+                // PERBAIKAN IKON KRITIS: Panggil createIcons setelah semua kartu baru ditambahkan ke DOM
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 }
@@ -2628,11 +2666,18 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 safeUpdate(`cellmin-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmin} V`);
                 safeUpdate(`cellmax-${batt.typeBattery}-${batt.addr}`, `${batt.cell_vmax} V`);
 
-                safeUpdate(`time-update-${batt.typeBattery}-${batt.addr}`, `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}</span>`, true);
-                // LUCIDE FIX: Menghapus panggilan di sini karena sudah dipanggil di initApp() dan tidak perlu diulang setiap update.
-                // if (typeof lucide !== 'undefined') {
-                //     lucide.createIcons();
-                // }
+                // Mengupdate HTML dengan elemen ikon di dalamnya. Ini akan membutuhkan createIcons
+                // PERBAIKAN IKON: Update elemen ini secara HTML, lalu panggil createIcons
+                const timeUpdateEl = document.getElementById(`time-update-${batt.typeBattery}-${batt.addr}`);
+                if (timeUpdateEl) {
+                    timeUpdateEl.innerHTML = `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}`;
+                    
+                    // PANGGILAN CREATEICONS DI SINI DIPERLUKAN UNTUK MEMASTIKAN IKON JAM MUNCUL
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons({ scope: timeUpdateEl }); // Hanya buat ikon di scope ini
+                    }
+                }
+                
                 // --- END UPDATE IN-PLACE ---
 
                 const led = document.getElementById(`led-card-${batt.typeBattery}-${batt.addr}`);
@@ -2716,7 +2761,7 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 chartText.textContent = 'Full Layar';
             }
 
-            // LUCIDE FIX: Cek apakah objek lucide sudah dimuat sebelum memanggil createIcons()
+            // PERBAIKAN IKON: Panggil createIcons untuk ikon fullscreen
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
@@ -2909,6 +2954,29 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
         }
 
         /**
+         * FUNGSI TAMBAHAN: Mengembalikan nilai mentah NUMERIK yang SUDAH dikoreksi.
+         * Ini diperlukan untuk memperbarui `currentPvPower` dan `currentAcLoad`.
+         */
+        function getCorrectedNumericValue(pin, rawValue) {
+             let numericValue = tryParseFloat(rawValue);
+            if (numericValue === DEFAULT_DISPLAY && rawValue !== '0') return 0; // Pastikan 0 jika gagal parsing
+
+            // Koreksi Daya PV (V2)
+            if (pin === 'V2') {
+                // Karena INSTANT_PV_PERCENT = 0.0, koreksi di sini menjadi 0.0%
+                const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
+                return numericValue * correctionFactor;
+            }
+            // Koreksi Daya Beban AC (V14)
+            else if (pin === 'V14') {
+                const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
+                return numericValue * correctionFactor;
+            }
+
+            return numericValue;
+        }
+
+        /**
          * FUNGSI MODIFIED: Menghitung nilai terformat dan terkoreksi.
          * Mengembalikan string nilai terformat.
          */
@@ -2959,29 +3027,6 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             }
 
             return numericValue.toFixed(1);
-        }
-
-        /**
-         * FUNGSI TAMBAHAN: Mengembalikan nilai mentah NUMERIK yang SUDAH dikoreksi.
-         * Ini diperlukan untuk memperbarui `currentPvPower` dan `currentAcLoad`.
-         */
-        function getCorrectedNumericValue(pin, rawValue) {
-             let numericValue = tryParseFloat(rawValue);
-            if (numericValue === DEFAULT_DISPLAY && rawValue !== '0') return 0; // Pastikan 0 jika gagal parsing
-
-            // Koreksi Daya PV (V2)
-            if (pin === 'V2') {
-                // Karena INSTANT_PV_PERCENT = 0.0, koreksi di sini menjadi 0.0%
-                const correctionFactor = 1 + (ENERGY_CALIBRATION_PERCENT / 100);
-                return numericValue * correctionFactor;
-            }
-            // Koreksi Daya Beban AC (V14)
-            else if (pin === 'V14') {
-                const correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100);
-                return numericValue * correctionFactor;
-            }
-
-            return numericValue;
         }
 
         function getUnit(pin) {
@@ -3621,7 +3666,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                             unitElement.classList.remove(...colorsToRemove);
                             unitElement.classList.add(nominalColorClass);
                         }
-                        let summaryIcon = element.closest('.solar-card')?.querySelector(`.lucide`);
+                        // PERBAIKAN IKON: Update warna ikon
+                        let summaryIcon = element.closest('.solar-card')?.querySelector(`[data-lucide]`);
                         if (summaryIcon) {
                              summaryIcon.classList.remove(...colorsToRemove);
                              summaryIcon.classList.add(iconColorClass);
@@ -3644,7 +3690,8 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                             }
                         }
 
-                        let detailIconElement = element.closest('.detail-item').querySelector('.metric-title .lucide');
+                        // PERBAIKAN IKON: Update warna ikon
+                        let detailIconElement = element.closest('.detail-item').querySelector('.metric-title [data-lucide]');
                         if (detailIconElement) {
                             detailIconElement.classList.remove(...colorsToRemove);
                             detailIconElement.classList.add(iconColorClass);
@@ -3689,6 +3736,11 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
                 showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success');
             } else {
                 showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error');
+            }
+            
+            // PERBAIKAN IKON: Panggil createIcons untuk ikon yang diupdate (misalnya ikon fullscreen)
+            if (typeof lucide !== 'undefined') {
+                 lucide.createIcons();
             }
         }
 
@@ -3751,15 +3803,16 @@ cycles: safeParseFloat(data.cycle_count) !== 'N/A'
             setInterval(updateTime, 1000);
 
             // LUCIDE FIX: Panggil createIcons sekali saat startup (onload).
-            // Pustaka `lucide` yang dimuat via UNPKG akan menetapkan objek `lucide` secara global.
+            // Tambahkan pengecekan `lucide.icons` untuk menghindari 'icons undefined'
             if (typeof lucide !== 'undefined') {
                 try {
+                    // Panggil createIcons tanpa pengecekan icons. Itu harusnya sudah ada dari CDN
                     lucide.createIcons();
                 } catch (e) {
                     console.error("Error creating Lucide icons during init:", e);
                 }
             } else {
-                console.error("Lucide object is undefined. Icons may not render.");
+                console.warn("Lucide object is undefined. Icons may not render.");
             }
 
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
