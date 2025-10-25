@@ -418,11 +418,31 @@
                     <div class="solar-card">
                         <h3 class="text-xl font-semibold text-dc-color flex items-center border-b border-gray-700 pl-4"><i data-lucide="panel-top-open" class="lucide w-5 h-5 mr-2 text-dc-color"></i>Panel Surya (DC)</h3>
                         <div>
-                            <div class="detail-item"><div class="flex items-center metric-title text-white"><i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>Arus PV</div><div class="nominal-color"><span id="v1-pzem-current" class="text-lg font-bold loading-animation">...</span><span id="v1-pzem-current-unit" class="text-sm ml-1"></span></div></div>
-                            <div class="detail-item"><div class="flex items-center metric-title text-white"><i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-orange-red"></i>PV Peak</div><div class="nominal-color"><span id="v6-pv-peak" class="text-lg font-bold loading-animation">...</span><span id="v6-pv-peak-unit" class="text-sm ml-1"></span></div></div>
-                            <div class="detail-item"><div class="flex items-center metric-title text-white"><i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-dc-color"></i>Eefisiensi PV</div><div class="nominal-color"><span id="v5-pv-persen" class="text-lg font-bold loading-animation">...</span><span id="v5-pv-persen-unit" class="text-sm ml-1"></span></div></div>
-                            <div class="detail-item"><div class="flex items-center metric-title text-white"><i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-dc-color"></i>Matahari Efektif</div><div class="nominal-color"><span id="v4-sunhour" class="text-lg font-bold loading-animation">...</span><span id="v4-sunhour-unit" class="text-sm ml-1"></span></div></div>
-                            <div class="detail-item"><div class="flex items-center metric-title text-white"><i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-dc-color"></i>Max Energi PV</div><div class="nominal-color"><span id="v11-total-pv" class="text-lg font-bold loading-animation">...</span><span id="v11-total-pv-unit" class="text-sm ml-1"></span></div></div>
+                            <!-- Arus PV (V1) - Tetap DC Color/Stabilo -->
+                            <div class="detail-item">
+                                <div class="flex items-center metric-title text-white"><i data-lucide="activity" class="lucide w-4 h-4 mr-3 text-dc-color"></i>Arus PV</div>
+                                <div class="nominal-color text-dc-color"><span id="v1-pzem-current" class="text-lg font-bold loading-animation">...</span><span id="v1-pzem-current-unit" class="text-sm ml-1"></span></div>
+                            </div>
+                            <!-- PV Peak (V6) - Diubah menjadi Pink Med -->
+                            <div class="detail-item">
+                                <div class="flex items-center metric-title text-white"><i data-lucide="mountain" class="lucide w-4 h-4 mr-3 text-pink-med"></i>PV Peak</div>
+                                <div class="nominal-color text-pink-med"><span id="v6-pv-peak" class="text-lg font-bold loading-animation">...</span><span id="v6-pv-peak-unit" class="text-sm ml-1"></span></div>
+                            </div>
+                            <!-- Eefisiensi PV (V5) - Diubah menjadi Chart Self-Consumption (Cyan) -->
+                            <div class="detail-item">
+                                <div class="flex items-center metric-title text-white"><i data-lucide="percent" class="lucide w-4 h-4 mr-3 text-chart-self-consumption"></i>Eefisiensi PV</div>
+                                <div class="nominal-color text-chart-self-consumption"><span id="v5-pv-persen" class="text-lg font-bold loading-animation">...</span><span id="v5-pv-persen-unit" class="text-sm ml-1"></span></div>
+                            </div>
+                            <!-- Matahari Efektif (V4) - Diubah menjadi Purple 400 -->
+                            <div class="detail-item">
+                                <div class="flex items-center metric-title text-white"><i data-lucide="clock" class="lucide w-4 h-4 mr-3 text-purple-400"></i>Matahari Efektif</div>
+                                <div class="nominal-color text-purple-400"><span id="v4-sunhour" class="text-lg font-bold loading-animation">...</span><span id="v4-sunhour-unit" class="text-sm ml-1"></span></div>
+                            </div>
+                            <!-- Max Energi PV (V11) - Diubah menjadi Green 400 -->
+                            <div class="detail-item">
+                                <div class="flex items-center metric-title text-white"><i data-lucide="layers-3" class="lucide w-4 h-4 mr-3 text-green-400"></i>Max Energi PV</div>
+                                <div class="nominal-color text-green-400"><span id="v11-total-pv" class="text-lg font-bold loading-animation">...</span><span id="v11-total-pv-unit" class="text-sm ml-1"></span></div>
+                            </div>
                         </div>
                     </div>
                     <div class="solar-card">
@@ -617,8 +637,7 @@
 
             // Cek apakah tanggal terakhir reset berbeda dengan tanggal hari ini
             if (lastResetDate !== todayDate) {
-                 // **Perbaikan di sini: Reset variabel dan localStorage TERLEPAS dari nilai akumulasi**
-                 // Ini penting jika pengguna menutup browser setelah 00:00 tetapi sebelum ada akumulasi baru.
+                 // **Reset Paksa:**
                  
                  // 1. Reset variabel global
                  dailyChargeWh = 0;
@@ -1826,7 +1845,7 @@
             let currentPvPower = 0;
             let currentAcLoad = 0;
             let allSuccessful = true;
-            const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal', 'text-chart-self-consumption', 'text-chart-surplus', 'text-red-500'];
+            const colorsToRemove = ['text-dc-color', 'text-blue-bat', 'text-ac-color', 'text-white', 'text-green-400', 'text-pink-med', 'text-purple-med', 'text-orange-red', 'text-warning-red', 'text-white-nominal', 'text-chart-self-consumption', 'text-chart-surplus', 'text-red-500', 'text-yellow-500', 'text-purple-400', 'text-pink-400'];
 
             results.forEach((result, index) => {
                 const pin = pins[index];
@@ -1851,17 +1870,43 @@
                     element.style.transform = 'scale(1.05)';
                     setTimeout(() => { element.style.transform = 'scale(1)'; }, 100);
 
-                    let nominalColorClass = (['V0', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V10', 'V11'].includes(pin) || pin.includes('pzem')) ? 'text-dc-color' : (
-                                            (['V7', 'V9'].includes(pin) || pin === 'V0' || pin === 'V16') ? 'text-blue-bat' : (
-                                            (['V12', 'V13', 'V14', 'V15', 'V21'].includes(pin) || pin.includes('ac')) ? 'text-ac-color' : (
-                                            (pin === 'V19' || pin.includes('rupiah')) ? 'text-green-400' : (
-                                            (pin === 'V18') ? 'text-pink-med' : (
-                                            (pin === 'V8' || pin === 'V20') ? 'text-warning-red' : (
-                                            (pin === 'V6') ? 'text-orange-red' : 'text-white'))))));
-                    
-                    let iconColorClass = nominalColorClass;
-                    if (pin === 'V0' || pin === 'V16') iconColorClass = 'text-pink-med'; // Override untuk ikon Bus Voltase/Freq
+                    // LOGIC PENYESUAIAN WARNA DI SINI
+                    let nominalColorClass = 'text-white';
+                    let iconColorClass = 'text-white';
 
+                    // Logika warna untuk Ringkasan Harian/Bulan (di atas grafik)
+                    if (pin === 'V10') { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; } // Energi Hari Ini (DC)
+                    else if (pin === 'V21') { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; } // Beban Hari Ini (AC)
+                    else if (pin === 'V19') { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; } // Penghematan Hari Ini
+                    else if (pin === 'V18') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // Penghematan Bulan Ini
+
+                    // Logika warna untuk Detail Sistem: Panel Surya (PENTING)
+                    else if (pin === 'V1') { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; } // Arus PV (DC Color)
+                    else if (pin === 'V6') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // PV Peak (Pink Med)
+                    else if (pin === 'V5') { nominalColorClass = 'text-chart-self-consumption'; iconColorClass = 'text-chart-self-consumption'; } // Eefisiensi PV (Cyan)
+                    else if (pin === 'V4') { nominalColorClass = 'text-purple-400'; iconColorClass = 'text-purple-400'; } // Matahari Efektif (Purple)
+                    else if (pin === 'V11') { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; } // Max Energi PV (Green)
+
+                    // Logika warna untuk Detail Sistem: Baterai & Energi
+                    else if (pin === 'V0') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // Bus Voltase (Pink Med)
+                    else if (pin === 'V7') { nominalColorClass = 'text-blue-bat'; iconColorClass = 'text-blue-bat'; } // Baterai Max (Blue Bat)
+                    else if (pin === 'V8') { nominalColorClass = 'text-warning-red'; iconColorClass = 'text-warning-red'; } // Baterai Low (Warning Red)
+                    else if (pin === 'V9') { nominalColorClass = 'text-blue-bat'; iconColorClass = 'text-blue-bat'; } // Kapasitas Baterai (Blue Bat)
+                    else if (pin === 'V3') { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; } // Total Energi DC (DC Color)
+                    
+                    // Logika warna untuk Detail Sistem: Inverter & Beban (AC)
+                    else if (pin === 'V12') { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; } // Tegangan AC (AC Color)
+                    else if (pin === 'V13') { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; } // Arus AC (AC Color)
+                    else if (pin === 'V16') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // Frequensi (Pink Med)
+                    else if (pin === 'V20') { nominalColorClass = 'text-warning-red'; iconColorClass = 'text-warning-red'; } // Inverter Peak (Warning Red)
+                    else if (pin === 'V15') { nominalColorClass = 'text-ac-color'; iconColorClass = 'text-ac-color'; } // Total Energi AC (AC Color)
+                    
+                    // Logika warna untuk Ringkasan Daya (di bawah judul Grafik)
+                    else if (pin === 'V2') { nominalColorClass = 'text-dc-color'; } // Daya PV (DC Color)
+                    else if (pin === 'V14') { nominalColorClass = 'text-ac-color'; } // Beban AC (AC Color)
+                    // Self-Consumption dan Potensi Surplus di-handle di luar loop ini
+                    
+                    // Penerapan kelas warna
                     if (element.closest('.solar-card') || element.closest('.power-summary-card')) {
                         [element, unitElement].forEach(el => { if(el) { el.classList.remove(...colorsToRemove); el.classList.add(nominalColorClass); }});
                         let summaryIcon = element.closest('.solar-card')?.querySelector(`[data-lucide]`);
@@ -1883,8 +1928,11 @@
                 }
             });
 
+            // Perlu memperbarui warna Self-Consumption dan Potensi Surplus secara manual di sini
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
+            const selfConsumptionUnitEl = document.getElementById('self-consumption-calc-unit');
             const potensiSurplusEl = document.getElementById('potensi-surplus-calc');
+            const potensiSurplusUnitEl = document.getElementById('potensi-surplus-calc-unit');
 
             if (selfConsumptionEl && potensiSurplusEl) {
                 let scValue = currentPvPower > 0 ? (Math.min(currentPvPower, currentAcLoad) / currentPvPower) * 100 : 0;
@@ -1893,7 +1941,16 @@
                 let surplusValue = Math.max(0, currentPvPower - currentAcLoad);
                 potensiSurplusEl.textContent = surplusValue.toFixed(0);
                 potensiSurplusEl.classList.remove('loading-animation');
+
+                // Pastikan elemen tetap menggunakan warna yang benar
+                [selfConsumptionEl, selfConsumptionUnitEl].forEach(el => { 
+                    if(el) { el.classList.remove(...colorsToRemove); el.classList.add('text-chart-self-consumption'); } 
+                });
+                [potensiSurplusEl, potensiSurplusUnitEl].forEach(el => { 
+                    if(el) { el.classList.remove(...colorsToRemove); el.classList.add('text-chart-surplus'); } 
+                });
             }
+
 
             if (!energyChartInstance) { renderRealtimeChart(); }
             updateRealtimeChartData(currentPvPower, currentAcLoad);
