@@ -153,6 +153,13 @@
             .battery-metric-grid > div:nth-child(3n-1)::after { content: ""; }
             .battery-metric-grid > div:nth-child(3n-2)::after { content: ""; }
         }
+
+        /* Gaya untuk tombol durasi yang aktif */
+        .duration-button.active {
+            background-color: #4B87FF; /* blynk-primary */
+            color: white;
+            box-shadow: 0 0 5px rgba(75, 135, 255, 0.5);
+        }
     </style>
 </head>
 
@@ -277,7 +284,7 @@
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
-                                <svg xmlns:xlink="http://www.w3.org/2000/xlink" overflow="visible" id="solar-flow">
+                                <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
@@ -403,9 +410,18 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
-                    <div class="flex justify-end space-x-3 mb-2">
-                        <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
-                        <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
+                    <!-- Penambahan Pilihan Durasi -->
+                    <div class="flex justify-between items-center mb-4 flex-wrap">
+                        <div class="flex space-x-3 text-sm font-medium">
+                            <button id="duration-1" onclick="setChartDuration(1)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition active" data-duration="1">1 Jam</button>
+                            <button id="duration-3" onclick="setChartDuration(3)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="3">3 Jam</button>
+                            <button id="duration-6" onclick="setChartDuration(6)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="6">6 Jam</button>
+                            <button id="duration-24" onclick="setChartDuration(24)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="24">24 Jam</button>
+                        </div>
+                        <div class="flex justify-end space-x-3 mt-3 sm:mt-0">
+                            <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
+                            <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
+                        </div>
                     </div>
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
@@ -569,7 +585,14 @@
         };
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
         const UPDATE_INTERVAL = 5000;
-        const MAX_DATA_POINTS = 17280;
+        const S_PER_HOUR = 3600;
+        // Interval update 5 detik (5000ms), 1 jam = 3600 detik.
+        // Titik data per jam = 3600s / 5s = 720
+        // Titik data maks (24 jam) = 24 jam * 720 = 17280
+        const MAX_DATA_POINTS = 17280; // Total titik data untuk menyimpan 24 jam
+        
+        // VARIABEL DURASI BARU
+        let currentDurationHours = 1; // Default: 1 jam
 
         let fetchInterval = null;
         let serverIp = INSTANT_SERVER_IP;
@@ -1327,6 +1350,7 @@
             if (savedData) {
                 try {
                     const parsedData = JSON.parse(savedData);
+                    // Pastikan kita hanya menyimpan data hingga MAX_DATA_POINTS
                     const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
                     window.realtimeData.labels = parsedData.labels.slice(startIndex);
                     window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
@@ -1404,24 +1428,64 @@
             }
         }
 
+        /**
+         * FUNGSI KRITIS: Menyesuaikan data yang ditampilkan berdasarkan durasi yang dipilih.
+         */
+        function getChartDataForDuration(durationHours) {
+            const pointsPerHour = S_PER_HOUR / (UPDATE_INTERVAL / 1000); // 3600 / 5 = 720
+            const maxPoints = Math.ceil(durationHours * pointsPerHour); 
+            
+            // Pastikan kita tidak mengambil lebih dari jumlah data yang tersedia atau MAX_DATA_POINTS.
+            const totalStoredPoints = window.realtimeData.labels.length;
+            const pointsToDisplay = Math.min(maxPoints, totalStoredPoints);
+            const startIndex = totalStoredPoints - pointsToDisplay;
+
+            return {
+                labels: window.realtimeData.labels.slice(startIndex),
+                pvPower: window.realtimeData.pvPower.slice(startIndex),
+                acLoad: window.realtimeData.acLoad.slice(startIndex)
+            };
+        }
+
+        function setChartDuration(durationHours) {
+            currentDurationHours = durationHours;
+            
+            // Perbarui status tombol aktif
+            document.querySelectorAll('.duration-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.getAttribute('data-duration')) === durationHours) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Render ulang chart dengan data baru
+            renderRealtimeChart();
+            energyChartInstance.resetZoom(); // Reset zoom setiap kali durasi diubah
+        }
+
+
         function renderRealtimeChart() {
              const ctx = document.getElementById('realtime-power-chart');
             if (!ctx) return;
             const context = ctx.getContext('2d');
+            
+            // Ambil data berdasarkan durasi yang aktif
+            const dataToDisplay = getChartDataForDuration(currentDurationHours);
+
 
             const dataConfig = {
-                labels: window.realtimeData.labels,
+                labels: dataToDisplay.labels,
                 datasets: [
                     {
                         label: 'PV Power (W)',
-                        data: window.realtimeData.pvPower,
+                        data: dataToDisplay.pvPower,
                         backgroundColor: 'rgba(191, 255, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderWidth: 2, type: 'line', fill: 'origin', tension: 0.2, pointRadius: 0, yAxisID: 'y'
                     },
                     {
                         label: 'AC Load (W)',
-                        data: window.realtimeData.acLoad,
+                        data: dataToDisplay.acLoad,
                         backgroundColor: 'rgba(255, 185, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderWidth: 2, type: 'line', fill: false, tension: 0.2, pointRadius: 0, yAxisID: 'y'
@@ -1439,7 +1503,7 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
-                        title: { display: true, text: 'Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)', color: '#FFFFFF' },
+                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
                         zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
                     },
@@ -1447,12 +1511,12 @@
                         x: { 
                             type: 'category', 
                             title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
-                            ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, 
+                            ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: currentDurationHours * 2 + 1 }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
                         y: { 
                             min: 0, 
-                            max: 8000, // **PERUBAHAN KRITIS: Mengatur max Y-axis menjadi 8000**
+                            max: 8000, 
                             ticks: { color: '#FFFFFF', callback: function(value) { return value + ' W'; } }, 
                             title: { display: true, text: 'Daya (Watt)', color: '#FFFFFF' }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
@@ -1481,7 +1545,18 @@
             window.realtimeData.pvPower.push(pvValue);
             window.realtimeData.acLoad.push(acValue);
 
-            if (energyChartInstance) { energyChartInstance.update(); }
+            // Kita hanya perlu memperbarui data model, renderRealtimeChart akan dipanggil setiap 5 detik
+            if (energyChartInstance) { 
+                const dataToDisplay = getChartDataForDuration(currentDurationHours);
+                energyChartInstance.data.labels = dataToDisplay.labels;
+                energyChartInstance.data.datasets[0].data = dataToDisplay.pvPower;
+                energyChartInstance.data.datasets[1].data = dataToDisplay.acLoad;
+                
+                // Update judul saat data baru masuk
+                energyChartInstance.options.plugins.title.text = `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`;
+                
+                energyChartInstance.update(); 
+            }
             saveHistoricalData();
         }
 
@@ -1965,8 +2040,13 @@
             }
 
 
-            if (!energyChartInstance) { renderRealtimeChart(); }
-            updateRealtimeChartData(currentPvPower, currentAcLoad);
+            if (!energyChartInstance) { 
+                renderRealtimeChart(); 
+            } else {
+                 // Perbarui data chart yang sedang ditampilkan
+                updateRealtimeChartData(currentPvPower, currentAcLoad);
+            }
+
 
             const bmsAggregatedData = getAggregatedBmsData();
             calculateAndRenderDiagram(bmsAggregatedData);
@@ -1988,8 +2068,11 @@
             
             document.getElementById("daily_bat_charge_value").textContent = (dailyChargeWh / 1000).toFixed(2) + " kWh";
             document.getElementById("daily_bat_dischcharge_value").textContent = (dailyDischargeWh / 1000).toFixed(2) + " kWh";
-
+            
+            // Set durasi default (1 jam) dan render awal
+            setChartDuration(1); // Set default ke 1 jam
             updateDashboard();
+            
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             startMQTT();
 
