@@ -297,11 +297,11 @@
                                     <a href="#"><text id="pv2_voltage_label" x="230" y="133" dominant-baseline="central" text-anchor="end" class="pv-bus-label">-- V</text></a>
                                     <text id="pv_peak_label_text" x="247" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Peak:</text>
                                     <text id="pv_peak_label" x="273" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- W</text>
-                                    <text x="197" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Arus:</text>
+                                    <text x="197" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Arus PV:</text>
                                     <a href="#"><text id="pv2_current_label" x="230" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">-- A</text></a>
-                                    <text id="pv_efficiency_value_text" x="247" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Eff:</text>
+                                    <text id="pv_efficiency_value_text" x="247" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Effic :</text>
                                     <text id="pv_efficiency_value" x="272" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">--%</text>
-                                    <text id="effective_sun_hours_text" x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Matahari Efektif:</text>
+                                    <text id="effective_sun_hours_text" x="197" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Sun Efektif:</text>
                                     <text id="effective_sun_hours" x="201" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- Hrs</text>
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
@@ -1537,6 +1537,7 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
+                        // Mengganti teks judul untuk mencerminkan durasi yang diperbarui
                         title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
                         zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
@@ -1545,7 +1546,16 @@
                         x: { 
                             type: 'category', 
                             title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
-                            ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: currentDurationHours * 2 + 1 }, 
+                            // Mengubah maxTicksLimit menjadi dinamis
+                            ticks: { 
+                                color: '#AAAAAA', 
+                                autoSkip: true, 
+                                maxRotation: 45, // Menaikkan rotasi agar DD Mon HH:MM bisa muat
+                                maxTicksLimit: 
+                                    currentDurationHours <= 1 ? 7 : // 1 Jam: ~7 tick
+                                    currentDurationHours <= 6 ? 13 : // 6 Jam: ~13 tick
+                                    25 // 24 Jam: ~25 tick (1 per jam)
+                            }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
                         y: { 
