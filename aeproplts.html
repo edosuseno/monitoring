@@ -132,7 +132,29 @@
         @media (min-width: 768px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } /* 5 kolom di tablet/desktop */
         @media (min-width: 1280px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } 
 
-        .fullscreen-chart { position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; background-color: #05050D !important; z-index: 9999; padding: 20px; }
+        /* CSS untuk mode Fullscreen yang baru */
+        .fullscreen-chart-wrapper {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background-color: #05050D !important; 
+            z-index: 9999; 
+            padding: 20px;
+            display: flex; /* Tambahkan flex untuk memastikan kontainer chart anak mengikuti */
+            flex-direction: column;
+        }
+
+        /* Kontainer Chart yang fleksibel di mode Fullscreen */
+        .fullscreen-chart-wrapper #realtime-chart-container {
+            flex-grow: 1; /* Kontainer chart mengisi sisa ruang */
+            height: auto; /* Biarkan Chart.js yang menentukan tinggi, tapi kontainer harus fleksibel */
+            max-height: 100%; /* Batas tinggi */
+        }
+        /* Akhir CSS Fullscreen */
+
+
         #realtime-chart-container { height: 350px; margin-top: 1rem; }
         @media (min-width: 768px) { #realtime-chart-container { height: 350px; } }
         .summary-block { display: flex; align-items: baseline; justify-content: flex-start; }
@@ -284,7 +306,7 @@
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
-                                <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
+                                <svg xmlns:xlink="http://www.w3.org/2000/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
@@ -1383,7 +1405,8 @@
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
-            const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
+            // Cek apakah native fullscreen aktif ATAU class fullscreen-chart-wrapper aktif (untuk mobile/fallback)
+            const isFullscreen = chartCard.classList.contains('fullscreen-chart-wrapper') || document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
 
             if (isFullscreen) {
                 chartIcon.setAttribute('data-lucide', 'minimize');
@@ -1394,7 +1417,14 @@
             }
 
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-            if (energyChartInstance) { setTimeout(() => { energyChartInstance.resize(); energyChartInstance.resetZoom(); }, 50); }
+            
+            // PENTING: Panggil resize chart setelah perubahan ukuran viewport
+            if (energyChartInstance) { 
+                setTimeout(() => { 
+                    energyChartInstance.resize(); 
+                    energyChartInstance.resetZoom(); 
+                }, 50); 
+            }
         }
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -1407,23 +1437,27 @@
             const isFullscreenNative = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
             const isMobile = window.innerWidth < 768;
 
-            if (isMobile) {
-                if (chartCard.classList.contains('fullscreen-chart')) {
-                    chartCard.classList.remove('fullscreen-chart');
+            if (isMobile || !chartCard.requestFullscreen) {
+                // Fallback untuk mobile atau browser yang tidak support requestFullscreen
+                if (chartCard.classList.contains('fullscreen-chart-wrapper')) {
+                    chartCard.classList.remove('fullscreen-chart-wrapper');
                      if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
                 } else {
-                    chartCard.classList.add('fullscreen-chart');
+                    chartCard.classList.add('fullscreen-chart-wrapper');
                      if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
                 }
                 handleFullscreenChange();
                 return;
             }
 
+            // Native Fullscreen
             if (!isFullscreenNative) {
+                chartCard.classList.add('fullscreen-chart-wrapper'); // Tambahkan kelas wrapper saat masuk
                 requestFullscreen(chartCard);
                 if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
             } else {
                 exitFullscreen();
+                chartCard.classList.remove('fullscreen-chart-wrapper'); // Hapus kelas wrapper saat keluar
                 if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
             }
         }
