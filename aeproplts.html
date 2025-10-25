@@ -1527,16 +1527,22 @@
             const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20', 'V2', 'V14'];
             const rupiahPins = ['V18', 'V19'];
             const summaryEnergyPins = ['V10', 'V21'];
+            const batteryDetailPins = ['V0', 'V7', 'V8', 'V9', 'V3']; // Termasuk V0, V7, V8, V9
 
             if (rupiahPins.includes(pin)) { return Math.max(0, numericValue).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
             if (integerPins.includes(pin)) { return Math.max(0, numericValue).toFixed(0); }
             if (summaryEnergyPins.includes(pin)) { return Math.max(0, numericValue).toFixed(1); }
+            
+            // Atur metrik baterai ke 1 desimal untuk voltase/kapasitas
+            if (batteryDetailPins.includes(pin)) { return Math.max(0, numericValue).toFixed(1); }
+
             return numericValue.toFixed(1);
         }
 
         function getUnit(pin) {
-            if (pin === 'V0' || pin === 'V12') return ' V';
+            if (pin === 'V0' || pin === 'V12' || pin === 'V7' || pin === 'V8') return ' V'; // Tambahkan V7, V8
             if (pin === 'V1' || pin === 'V13') return ' A';
+            if (pin === 'V9') return ' Ah'; // Tambahkan V9
             if (pin === 'V2' || pin === 'V14' || pin === 'V6' || pin === 'V20') return ' W';
             if (pin === 'V3' || pin === 'V10' || pin === 'V11' || pin === 'V15' || pin === 'V21') return ' kWh';
             if (pin === 'V4') return ' jam';
@@ -1788,7 +1794,7 @@
                 let deficitAC = loadP - solarP; 
                 calculatedBatP = deficitAC > 0 ? -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY) : rawBatP_DC;
             } else {
-                calculatedBatP = rawBatP_DC;
+                calculatedBatBatP = rawBatP_DC;
             }
             if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) { calculatedBatP = rawBatP_DC; }
 
@@ -1865,12 +1871,14 @@
                     const unit = getUnit(pin);
 
                     element.textContent = (pin === 'V18' || pin === 'V19') ? formattedValue : formattedValue;
+                    
+                    // PERBAIKAN KRITIS: Memastikan unit ditampilkan
                     if (unitElement) unitElement.textContent = (pin === 'V18' || pin === 'V19') ? '' : unit;
 
                     element.style.transform = 'scale(1.05)';
                     setTimeout(() => { element.style.transform = 'scale(1)'; }, 100);
 
-                    // LOGIC PENYESUAIAN WARNA DI SINI
+                    // LOGIC PENYESUAIAN WARNA
                     let nominalColorClass = 'text-white';
                     let iconColorClass = 'text-white';
 
@@ -1880,14 +1888,14 @@
                     else if (pin === 'V19') { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; } // Penghematan Hari Ini
                     else if (pin === 'V18') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // Penghematan Bulan Ini
 
-                    // Logika warna untuk Detail Sistem: Panel Surya (PENTING)
+                    // Logika warna untuk Detail Sistem: Panel Surya
                     else if (pin === 'V1') { nominalColorClass = 'text-dc-color'; iconColorClass = 'text-dc-color'; } // Arus PV (DC Color)
                     else if (pin === 'V6') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // PV Peak (Pink Med)
                     else if (pin === 'V5') { nominalColorClass = 'text-chart-self-consumption'; iconColorClass = 'text-chart-self-consumption'; } // Eefisiensi PV (Cyan)
                     else if (pin === 'V4') { nominalColorClass = 'text-purple-400'; iconColorClass = 'text-purple-400'; } // Matahari Efektif (Purple)
                     else if (pin === 'V11') { nominalColorClass = 'text-green-400'; iconColorClass = 'text-green-400'; } // Max Energi PV (Green)
 
-                    // Logika warna untuk Detail Sistem: Baterai & Energi
+                    // Logika warna untuk Detail Sistem: Baterai & Energi (V0, V7, V8, V9, V3)
                     else if (pin === 'V0') { nominalColorClass = 'text-pink-med'; iconColorClass = 'text-pink-med'; } // Bus Voltase (Pink Med)
                     else if (pin === 'V7') { nominalColorClass = 'text-blue-bat'; iconColorClass = 'text-blue-bat'; } // Baterai Max (Blue Bat)
                     else if (pin === 'V8') { nominalColorClass = 'text-warning-red'; iconColorClass = 'text-warning-red'; } // Baterai Low (Warning Red)
@@ -1904,7 +1912,6 @@
                     // Logika warna untuk Ringkasan Daya (di bawah judul Grafik)
                     else if (pin === 'V2') { nominalColorClass = 'text-dc-color'; } // Daya PV (DC Color)
                     else if (pin === 'V14') { nominalColorClass = 'text-ac-color'; } // Beban AC (AC Color)
-                    // Self-Consumption dan Potensi Surplus di-handle di luar loop ini
                     
                     // Penerapan kelas warna
                     if (element.closest('.solar-card') || element.closest('.power-summary-card')) {
