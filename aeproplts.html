@@ -1755,13 +1755,13 @@
             const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
             gradient.setAttribute('id', gradientId);
             gradient.setAttribute('x1', '0%'); gradient.setAttribute('y1', '0%');
-            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '30%');
+            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '15%');
             gradient.setAttribute('spreadMethod', 'repeat'); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
 
             const absPower = Math.abs(batPower);
             const isFlowing = absPower > 10;
             let flowBaseColor = overallColorStop;
-            let flowHighlightColor = overallColorStop;
+            let flowHighlightColor = 'var(--color-bar-red)';
 
             if (isFlowing) {
                 flowBaseColor = batPower > 0 ? '#388E3C' : '#8D0000';
