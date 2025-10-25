@@ -277,7 +277,7 @@
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
-                                <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
+                                <svg xmlns:xlink="http://www.w3.org/2000/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
@@ -1450,7 +1450,13 @@
                             ticks: { color: '#AAAAAA', autoSkip: true, maxRotation: 0, maxTicksLimit: 12 }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
-                        y: { min: 0, max: 7000, ticks: { color: '#FFFFFF', callback: function(value) { return value + ' W'; } }, title: { display: true, text: 'Daya (Watt)', color: '#FFFFFF' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                        y: { 
+                            min: 0, 
+                            max: 8000, // **PERUBAHAN KRITIS: Mengatur max Y-axis menjadi 8000**
+                            ticks: { color: '#FFFFFF', callback: function(value) { return value + ' W'; } }, 
+                            title: { display: true, text: 'Daya (Watt)', color: '#FFFFFF' }, 
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' } 
+                        }
                     }
                 }
             });
@@ -1794,7 +1800,7 @@
                 let deficitAC = loadP - solarP; 
                 calculatedBatP = deficitAC > 0 ? -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY) : rawBatP_DC;
             } else {
-                calculatedBatBatP = rawBatP_DC;
+                calculatedBatP = rawBatP_DC;
             }
             if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) { calculatedBatP = rawBatP_DC; }
 
