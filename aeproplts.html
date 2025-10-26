@@ -589,7 +589,7 @@
         const BMS_MQTT_TOPIC_KEY = "316506218";
         const NOMINAL_BATTERY_AH = 100.0; 
         const INVERTER_DISCHARGE_EFFICIENCY = 1.0; 
-        const KWH_CALIBRATION_FACTOR = 1 + (6.2 / 100); 
+        const KWH_CALIBRATION_FACTOR = 1 + (6.0 / 100); 
         const CURRENT_THRESHOLD_A = 0.1;
 
         const STORAGE_KEY_CHARGE = 'dailyChargeWh';
@@ -668,8 +668,15 @@
         // ==========================================================
 
         function loadDailyEnergy() {
+            // Panggil reset di sini saat memuat, untuk memastikan data dimuat adalah data hari ini.
+            resetDailyEnergy(true); 
+            
             dailyChargeWh = parseFloat(localStorage.getItem(STORAGE_KEY_CHARGE) || '0');
             dailyDischargeWh = parseFloat(localStorage.getItem(STORAGE_KEY_DISCHARGE) || '0');
+            
+            // Perbarui tampilan dengan nilai yang dimuat (atau yang sudah direset)
+            document.getElementById("daily_bat_charge_value").textContent = (dailyChargeWh / 1000).toFixed(2) + " kWh";
+            document.getElementById("daily_bat_dischcharge_value").textContent = (dailyDischargeWh / 1000).toFixed(2) + " kWh";
         }
         
         function saveDailyEnergy() {
@@ -677,7 +684,11 @@
              localStorage.setItem(STORAGE_KEY_DISCHARGE, dailyDischargeWh.toString());
         }
 
-        function resetDailyEnergy() {
+        /**
+         * FUNGSI KRITIS: Cek dan reset energi harian jika hari sudah berganti.
+         * @param {boolean} isInitialLoad Menandakan panggilan ini saat inisialisasi.
+         */
+        function resetDailyEnergy(isInitialLoad = false) {
             const now = new Date();
             // Mengambil tanggal hari ini dalam format YYYY-MM-DD
             const todayDate = now.toISOString().split('T')[0]; 
@@ -686,6 +697,10 @@
             // Cek apakah tanggal terakhir reset berbeda dengan tanggal hari ini
             if (lastResetDate !== todayDate) {
                  // **Reset Paksa:**
+                 
+                 if (!isInitialLoad) {
+                    console.log(`[DAILY RESET] Hari telah berganti (${lastResetDate} -> ${todayDate}). Reset energi harian.`);
+                 }
                  
                  // 1. Reset variabel global
                  dailyChargeWh = 0;
@@ -700,7 +715,10 @@
                  document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
                  document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
                  
-                 console.log(`[DAILY RESET] Daily energy reset to 0 and date updated. New date: ${todayDate}`);
+            } else if (isInitialLoad) {
+                // Jika isInitialLoad TRUE dan tanggal SAMA, kita biarkan fungsi loadDailyEnergy 
+                // memuat data yang sudah ada.
+                console.log(`[DAILY CHECK] Tanggal masih sama (${todayDate}). Lanjutkan akumulasi.`);
             }
             
             // Jika tanggal sama, biarkan akumulasi berlanjut.
@@ -968,6 +986,7 @@
                   const totalVoltage = bmsAggregatedData.voltage;
                   const totalCurrent = bmsAggregatedData.current;
                   
+                  // Panggil updateBatteryEnergy di sini untuk akumulasi
                   if (totalVoltage !== DEFAULT_DISPLAY && totalCurrent !== 0) { updateBatteryEnergy(totalVoltage, totalCurrent); }
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
@@ -2109,12 +2128,12 @@
             if (fetchInterval) { clearInterval(fetchInterval); fetchInterval = null; }
 
             loadHistoricalData();
-            loadDailyEnergy();
+            // loadDailyEnergy sekarang akan memanggil resetDailyEnergy() di dalamnya
+            loadDailyEnergy(); 
             dashboard.classList.remove('hidden');
             lastUpdateTime = Date.now();
             
-            document.getElementById("daily_bat_charge_value").textContent = (dailyChargeWh / 1000).toFixed(2) + " kWh";
-            document.getElementById("daily_bat_dischcharge_value").textContent = (dailyDischargeWh / 1000).toFixed(2) + " kWh";
+            // Tampilan sudah diperbarui di loadDailyEnergy
             
             // Set durasi default (1 jam) dan render awal
             setChartDuration(1); // Set default ke 1 jam
