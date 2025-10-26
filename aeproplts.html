@@ -409,10 +409,10 @@
                 <div class="solar-card p-4 sm:p-6">
                     <!-- PEMBARUAN: Menambahkan tombol Zoom 1 Jam dan Simpan Grafik -->
                     <div class="flex flex-wrap justify-start space-x-3 mb-2">
-                        <button onclick="zoomLastHour()" class="px-3 py-1 text-xs font-medium rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition flex items-center mb-2"><i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>1 Jam</button>                      
+                        <button onclick="zoomLastHour()" class="px-3 py-1 text-xs font-medium rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition flex items-center mb-2"><i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>Zoom</button>                      
                         <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center mb-2"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset </button>
-                        <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1 mb-2"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
-                        <button onclick="saveChartAsPNG()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center mb-2"><i data-lucide="save" class="lucide w-4 h-4 mr-1"></i>Simpan</button>
+                        <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1 mb-2"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full</span></button>
+                        <button onclick="saveChartAsPNG()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center mb-2"><i data-lucide="save" class="lucide w-4 h-4 mr-1"></i>Save</button>
                     </div>
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
