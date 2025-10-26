@@ -71,7 +71,7 @@
         body { background-color: var(--solar-dark); font-family: 'Inter', sans-serif; color: #F8FAFC; }
         .solar-card { background-color: var(--solar-card-bg); color: #F8FAFC; border-radius: 16px; box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3); border: 1px solid rgba(71, 85, 105, 0.2); transition: all 0.3s ease; }
         .solar-card:hover { box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5); transform: translateY(-2px); background-color: rgba(20, 20, 48, 0.6); }
-        .diagram-section-container { width: 100%; background: rgba(20, 20, 48, 0.8); padding: 10px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); border-radius: 12px; border: 1px solid rgba(71, 85, 105, 0.2); }
+        .diagram-section-container { width: 100%; background: var(--solar-card-bg); padding: 10px; box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); border-radius: 12px; border: 1px solid rgba(71, 85, 105, 0.2); }
         .svg-container { width: 100%; padding-bottom: 72%; position: relative; }
         .svg-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .st3, .remaining-energy, .pv-detail-text { font-size: 11px; font-weight: 400; fill: #C0C0C0; }
@@ -407,12 +407,12 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
-                    <!-- PEMBARUAN: Menambahkan tombol Zoom 1 Jam dan Simpan Grafik -->
+                    <!-- PEMBARUAN: Tombol Save dihilangkan, Tombol Zoom diubah menjadi zoomDynamic -->
                     <div class="flex flex-wrap justify-start space-x-3 mb-2">
-                        <button onclick="zoomLastHour()" class="px-3 py-1 text-xs font-medium rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition flex items-center mb-2"><i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>Zoom</button>                      
+                        <button onclick="zoomDynamic()" id="dynamic-zoom-button" class="px-3 py-1 text-xs font-medium rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition flex items-center mb-2"><i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>Zoom: 1 Jam</button>                      
                         <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center mb-2"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset </button>
                         <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1 mb-2"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full</span></button>
-                        <button onclick="saveChartAsPNG()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center mb-2"><i data-lucide="save" class="lucide w-4 h-4 mr-1"></i>Save</button>
+                        <!-- Tombol Save Chart As PNG Dihapus: <button onclick="saveChartAsPNG()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center mb-2"><i data-lucide="save" class="lucide w-4 h-4 mr-1"></i>Save</button> -->
                     </div>
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
@@ -566,6 +566,8 @@
         // 24 jam * (3600 detik/jam) / (5 detik/update) = 17280 data points
         const MAX_DATA_POINTS = 17280; 
         const POINTS_PER_HOUR = 3600 / (5000 / 1000); // 720 points/jam
+        const POINTS_PER_30_MIN = POINTS_PER_HOUR / 2; // 360 points/30 menit
+        const POINTS_PER_10_MIN = POINTS_PER_HOUR / 6; // 120 points/10 menit
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_sliding';
         // -------------------------------------------------------------------
 
@@ -1116,7 +1118,7 @@
             const voltageUnitEl = voltageSummaryEl ? voltageSummaryEl.parentNode.querySelector('span:last-child') : null;
             
             const busVoltageSummaryEl = document.getElementById('summary-bus-voltage');
-            // Menemukan elemen unit bus voltage (ml-1 V)
+            // **FIXED TYPO:** busVoltageSummaryL diubah menjadi busVoltageSummaryEl
             const busVoltageUnitEl = busVoltageSummaryEl ? busVoltageSummaryEl.parentNode.querySelector('span:last-child') : null;
             
             // --- PERBAIKAN: Tegangan Pack ---
@@ -1203,7 +1205,7 @@
 
                 batteries.forEach(batt => {
                     const socVal = parseInt(batt.soc);
-                    const { progressColor: cardProgressColor } = getSocColorClasses(socVal);
+                    const { progressColor: cardProgressColor, socColorClass } = getSocColorClasses(socVal); // Hapus const cardSocTextColor di sini
                     const battCurrentVal = tryParseFloat(batt.current);
                     let battStatusClass = 'text-standby';
                     if (!isNaN(battCurrentVal)) {
@@ -1222,7 +1224,8 @@
                     const socBarClass = !isNaN(socVal) ? cardProgressColor : 'bg-gray-500';
                     const socBarWidth = !isNaN(socVal) ? `${batt.soc}%` : '0%';
                     // Perbaikan: Ambil warna teks SOC yang fungsional
-                    const { socColorClass: cardSocTextColor } = getSocColorClasses(socVal);
+                    // Gunakan socColorClass yang sudah dideklarasikan di scope loop.
+                    const cardSocTextColor = socColorClass;
 
 
                     card.innerHTML = `
@@ -1510,6 +1513,14 @@
             });
         }
 
+        // Variabel untuk melacak status zoom dinamis
+        let dynamicZoomLevel = 0; // 0: 1 Jam, 1: 30 Menit, 2: 10 Menit
+        const zoomLevels = [
+            { label: "1 Jam", points: POINTS_PER_HOUR, duration: "1 jam terakhir" },
+            { label: "30 Menit", points: POINTS_PER_30_MIN, duration: "30 menit terakhir" },
+            { label: "10 Menit", points: POINTS_PER_10_MIN, duration: "10 menit terakhir" }
+        ];
+
         /**
          * FUNGSI DIPERBARUI: Mereset zoom ke seluruh rentang data (24 jam terakhir)
          */
@@ -1522,6 +1533,10 @@
             // Menggunakan resetZoom bawaan plugin yang akan mereset ke batas data penuh
             energyChartInstance.resetZoom(); 
             
+            // Atur ulang status zoom
+            dynamicZoomLevel = 0;
+            updateDynamicZoomButton();
+
             // Update grafik (ini akan memicu auto-scaling Y)
             energyChartInstance.update('none'); 
             
@@ -1529,69 +1544,71 @@
         }
 
         /**
-         * FUNGSI: Zoom ke 1 jam data terakhir
+         * FUNGSI BARU: Mengubah tombol zoom dinamis
          */
-        function zoomLastHour() {
-            if (!energyChartInstance || window.realtimeData.labels.length < POINTS_PER_HOUR) {
-                showMessage('Data grafik kurang dari 1 jam. Tidak dapat di-zoom.', 'warning');
-                return;
-            }
+        function updateDynamicZoomButton() {
+            const button = document.getElementById('dynamic-zoom-button');
+            if (!button) return;
 
-            const totalPoints = window.realtimeData.labels.length;
-            
-            // Hitung index awal 1 jam yang lalu
-            const startIndex = Math.max(0, totalPoints - POINTS_PER_HOUR); 
-            const endIndex = totalPoints - 1;
+            // Dapatkan level zoom saat ini (level yang akan diterapkan saat diklik)
+            const currentLevelIndex = dynamicZoomLevel % zoomLevels.length;
+            const currentLevel = zoomLevels[currentLevelIndex];
 
-            // Dapatkan label awal dan akhir
-            const startLabel = window.realtimeData.labels[startIndex];
-            const endLabel = window.realtimeData.labels[endIndex];
-
-            // Menggunakan Chart.js Zoom Plugin untuk melakukan zoom berdasarkan nilai label
-            energyChartInstance.zoomScale('x', {
-                min: startLabel,
-                max: endLabel
-            });
-
-            energyChartInstance.update();
-            showMessage(`Grafik di-zoom ke 1 jam terakhir (dari ${startLabel} hingga ${endLabel}).`, 'success');
+            // Tampilkan level saat ini
+            button.innerHTML = `<i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>Zoom: ${currentLevel.label}`;
+            if (typeof lucide !== 'undefined') { lucide.createIcons(); }
         }
-
 
         /**
-         * FUNGSI: Menyimpan grafik sebagai PNG
+         * FUNGSI BARU: Logika zoom dinamis 3 tingkatan
          */
-        function saveChartAsPNG() {
-            const canvas = document.getElementById('realtime-power-chart');
-            if (!canvas || !energyChartInstance) {
-                showMessage('Gagal menyimpan grafik: Elemen grafik tidak ditemukan.', 'error');
+        function zoomDynamic() {
+            if (!energyChartInstance || window.realtimeData.labels.length === 0) {
+                showMessage('Tidak ada data yang tersedia untuk di-zoom.', 'warning');
+                // Pindah ke level berikutnya untuk klik selanjutnya (meski gagal zoom)
+                dynamicZoomLevel = (dynamicZoomLevel + 1) % zoomLevels.length;
+                updateDynamicZoomButton();
                 return;
             }
 
-            try {
-                // Mendapatkan tanggal dan waktu saat ini untuk nama file
-                const now = new Date();
-                const timestamp = now.toISOString().replace(/[:.]/g, '-'); 
-                const filename = `AEPRO_PLTS_Grafik_${timestamp}.png`;
+            // Dapatkan konfigurasi zoom saat ini
+            const currentLevelIndex = dynamicZoomLevel % zoomLevels.length;
+            const zoomConfig = zoomLevels[currentLevelIndex];
+            
+            const totalPoints = window.realtimeData.labels.length;
+            
+            if (totalPoints < zoomConfig.points) {
+                showMessage(`Data grafik kurang dari ${zoomConfig.label}. Tidak dapat di-zoom.`, 'warning');
+            } else {
+                // Hitung index awal berdasarkan jumlah points yang diminta
+                const startIndex = Math.max(0, totalPoints - zoomConfig.points); 
+                const endIndex = totalPoints - 1;
 
-                // Mendapatkan URI data gambar dari canvas
-                const imageURI = canvas.toDataURL('image/png');
+                // Dapatkan label awal dan akhir
+                const startLabel = window.realtimeData.labels[startIndex];
+                const endLabel = window.realtimeData.labels[endIndex];
 
-                // Membuat link unduhan dan mensimulasikan klik
-                const a = document.createElement('a');
-                a.href = imageURI;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                // Menggunakan Chart.js Zoom Plugin untuk melakukan zoom berdasarkan nilai label
+                energyChartInstance.zoomScale('x', {
+                    min: startLabel,
+                    max: endLabel
+                });
 
-                showMessage(`Grafik berhasil disimpan sebagai ${filename}`, 'success');
-
-            } catch (e) {
-                 console.error("Error saving chart:", e);
-                 showMessage('Gagal menyimpan grafik: Terjadi kesalahan saat memproses gambar.', 'error');
+                energyChartInstance.update();
+                showMessage(`Grafik di-zoom ke ${zoomConfig.duration} (dari ${startLabel} hingga ${endLabel}).`, 'success');
             }
+            
+            // Pindah ke level berikutnya untuk klik selanjutnya
+            dynamicZoomLevel = (dynamicZoomLevel + 1) % zoomLevels.length;
+            updateDynamicZoomButton();
         }
+
+        // FUNGSI saveChartAsPNG() telah dihapus untuk menghilangkan fitur save
+        /*
+        function saveChartAsPNG() {
+            ... (Logic dihapus) ...
+        }
+        */
 
 
         /**
@@ -1934,7 +1951,7 @@
                 let deficitAC = loadP - solarP; 
                 calculatedBatP = deficitAC > 0 ? -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY) : rawBatP_DC;
             } else {
-                calculatedBatBatP = rawBatP_DC;
+                calculatedBatP = rawBatP_DC;
             }
             if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) { calculatedBatP = rawBatP_DC; }
 
@@ -2128,6 +2145,9 @@
             updateDashboard();
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             startMQTT();
+
+            // Set tombol zoom inisial
+            updateDynamicZoomButton(); 
 
             showDiagramStatus('Diagram siap. Menunggu data Blynk API pertama.', 'warning');
         }
