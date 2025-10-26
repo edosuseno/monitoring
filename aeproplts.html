@@ -136,7 +136,30 @@
         @media (min-width: 768px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } /* 5 kolom di tablet/desktop */
         @media (min-width: 1280px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } 
 
-        .fullscreen-chart { position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; background-color: #05050D !important; z-index: 9999; padding: 20px; }
+        /* PERUBAHAN KRITIS: Hapus pengaturan width/height tetap pada fullscreen-chart */
+        .fullscreen-chart { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw !important; /* Gunakan 100vw untuk memastikan lebar penuh */
+            height: 100vh !important; /* Gunakan 100vh untuk memastikan tinggi penuh */
+            background-color: #05050D !important; 
+            z-index: 9999; 
+            padding: 20px; 
+            /* Memastikan chart mengisi ruang di dalam container fullscreen */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Pastikan canvas juga mengisi ruang yang tersedia di mode fullscreen */
+        #realtime-chart-container.full-screen-container { 
+            height: 100% !important; 
+            width: 100% !important; 
+            max-height: 100%;
+        }
+
         #realtime-chart-container { height: 350px; margin-top: 1rem; }
         @media (min-width: 768px) { #realtime-chart-container { height: 350px; } }
         .summary-block { display: flex; align-items: baseline; justify-content: flex-start; }
@@ -331,18 +354,18 @@
                                     </svg>
                                     <svg id="battery_icon" style="overflow: visible;" x="0%"><a href="#"><svg id="bat_outter" y="338.5" width="78.75" height="78.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="213.0"><defs></defs><path fill="var(--color-battery)" d="M10 20H4V6h8L12 20m.67-16H11V2H5v2H3.33C2.6 4 2 4.6 2 5.33v15.34C2 21.4 2.6 22 3.33 22h9.34c.74 0 1.33-.59 1.33-1.33V5.33C14 4.6 13.4 4 12.67 4"></path></svg><svg id="bat_inner" y="342" width="78.75" height="68.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="211.0"></svg></a></svg>
                                     <text id="battery_remaining_energy" x="292.375" y="362" dominant-baseline="central" text-anchor="start" class="remaining-energy" fill="var(--color-battery)">-- Ah</text>
-                                    <svg id="Battery1_SOC" style="overflow: visible; display: inline;"><a href="#"><text id="battery_soc_184" x="292.375" y="383" dominant-baseline="central" text-anchor="start" class="st13" fill="var(--color-battery)">--% | --%</text></a></svg>
+                                    <svg id="Battery1_SOC" style="overflow: visible; display: inline;"><a href="#"><text id="battery_soc_184" x="292.375" y="380" dominant-baseline="central" text-anchor="start" class="st13" fill="var(--color-battery)">--% | --%</text></a></svg>
                                     <svg id="battery_1_runtime" style="overflow: visible; display: inline;">
-                                        <text id="duration" x="292.375" y="400" dominant-baseline="central" text-anchor="start" class="st4" fill="var(--color-inverter)">-- V</text>
+                                        <text id="duration" x="292.375" y="401" dominant-baseline="central" text-anchor="start" class="st4" fill="var(--color-inverter)">-- V</text>
                                         <text id="duration_text" x="292.375" y="415" dominant-baseline="central" text-anchor="start" class="st3" fill="var(--color-battery)">-- A</text>
                                     </svg>
                                     <svg id="battery_daily" style="overflow: visible;">
                                         <svg id="battery_daily_charge" style="overflow: visible;" x="0%" y="0%">
                                             <text id="daily_bat_charge_value" x="100" y="365" dominant-baseline="central" text-anchor="start" class="st10" fill="var(--color-battery)">0.00 kWh</text>
-                                            <text id="daily_bat_charge" x="105" y="380" dominant-baseline="central" text-anchor="start" class="st3" fill="var(--color-battery)">DAILY CHARGE</text>
+                                            <text id="daily_bat_charge" x="105" y="382" dominant-baseline="central" text-anchor="start" class="st3" fill="var(--color-battery)">DAILY CHARGE</text>
                                         </svg>
                                         <svg id="battery_daily_discharge" style="overflow: visible;" x="0%" y="0%">
-                                            <text id="daily_bat_dischcharge_value" x="100" y="400" dominant-baseline="central" text-anchor="start" class="st10" fill="var(--color-battery)">0.00 kWh</text>
+                                            <text id="daily_bat_dischcharge_value" x="100" y="399" dominant-baseline="central" text-anchor="start" class="st10" fill="var(--color-battery)">0.00 kWh</text>
                                             <text id="daily_bat_dischcharge" x="85" y="415" dominant-baseline="central" text-anchor="start" class="st3" fill="var(--color-battery)">DAILY DISCHARGE</text>
                                         </svg>
                                     </svg>
@@ -362,12 +385,12 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-gray-400">Energi Hari Ini</p><i data-lucide="sun" class="lucide w-7 h-7 text-dc-color"></i></div>
                         <div class="summary-block"><span id="v10-kwh-today" class="data-value summary-value text-dc-color loading-animation">...</span><span id="v10-kwh-today-unit" class="summary-unit text-dc-color"></span></div>
-                        <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini (kWh).</p>
+                        <p class="text-xs text-gray-500 mt-1">Total produksi DC hari ini.</p>
                     </div>
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-gray-400">Beban Hari Ini</p><i data-lucide="power-square" class="lucide w-7 h-7 text-ac-color"></i></div>
                         <div class="summary-block"><span id="v21-kwh-today-ac" class="data-value summary-value text-ac-color loading-animation">...</span><span id="v21-kwh-today-ac-unit" class="summary-unit text-ac-color"></span></div>
-                        <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini (kWh).</p>
+                        <p class="text-xs text-gray-500 mt-1">Total konsumsi AC hari ini.</p>
                     </div>
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-gray-400 ">Penghematan Hari Ini</p><i data-lucide="file-text" class="lucide w-7 h-7 text-green-400"></i></div>
@@ -377,7 +400,7 @@
                     <div class="solar-card p-4 summary-kwh-card">
                         <div class="flex justify-between items-start mb-2"><p class="text-sm font-semibold text-gray-400 ">Penghematan Bulan Ini</p><i data-lucide="trending-up" class="lucide w-7 h-7 text-pink-med"></i></div>
                         <div class="summary-rupiah-block"><span class="text-2xl text-gray-400 mr-1 font-bold">Rp</span><span id="v18-rupiah-total" class="data-value summary-value !text-3xl text-pink-med loading-animation !tracking-normal">...</span></div>
-                        <p class="text-xs text-gray-500 mt-1">Akumulasi biaya yang dihemat.</p>
+                        <p class="text-xs text-gray-500 mt-1">Akumulasi biaya listrik yang dihemat.</p>
                     </div>
                 </div>
 
@@ -396,7 +419,7 @@
                     <div class="power-summary-card">
                         <p class="text-sm text-gray-400">Self-Consumption</p>
                         <div class="flex items-baseline mt-1"><span id="self-consumption-calc" class="text-2xl font-bold text-chart-self-consumption loading-animation">...</span><span id="self-consumption-calc-unit" class="text-base text-chart-self-consumption ml-1">%</span></div>
-                        <p class="text-xs text-gray-500 mt-1">Daya PV yang digunakan beban.</p>
+                        <p class="text-xs text-gray-500 mt-1">Daya PV yang digunakan.</p>
                     </div>
                     <div class="power-summary-card">
                         <p class="text-sm text-gray-400">Potensi Surplus</p>
@@ -407,11 +430,12 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
-                    <!-- PEMBARUAN: Tombol Save dihilangkan, Tombol Zoom dinamis juga dihilangkan sesuai permintaan user -->
+                    
                     <div class="flex flex-wrap justify-start space-x-3 mb-2">
                         <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center mb-2"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
                         <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1 mb-2"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
                     </div>
+                    
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
                     </div>
@@ -553,7 +577,7 @@
         const BMS_MQTT_TOPIC_KEY = "316506218";
         const NOMINAL_BATTERY_AH = 100.0; 
         const INVERTER_DISCHARGE_EFFICIENCY = 1.0; 
-        const KWH_CALIBRATION_FACTOR = 1 + (6.0 / 100); 
+        const KWH_CALIBRATION_FACTOR = 1 + (6.2 / 100); 
         const CURRENT_THRESHOLD_A = 0.1;
 
         const STORAGE_KEY_CHARGE = 'dailyChargeWh';
@@ -1431,16 +1455,25 @@
 
         function handleFullscreenChange() {
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
+            const chartContainer = document.getElementById('realtime-chart-container');
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
-            const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
+            
+            // Check native fullscreen status
+            const isFullscreenNative = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            // Check CSS class status for mobile override
+            const isFullscreenClass = chartCard.classList.contains('fullscreen-chart');
+            const isFullscreen = isFullscreenNative || isFullscreenClass;
+
 
             if (isFullscreen) {
                 chartIcon.setAttribute('data-lucide', 'minimize');
                 chartText.textContent = 'Keluar';
+                chartContainer.classList.add('full-screen-container');
             } else {
                 chartIcon.setAttribute('data-lucide', 'maximize');
                 chartText.textContent = 'Full Layar';
+                chartContainer.classList.remove('full-screen-container');
             }
 
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
@@ -1456,13 +1489,16 @@
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const isFullscreenNative = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
             const isMobile = window.innerWidth < 768;
+            const chartContainer = document.getElementById('realtime-chart-container');
 
             if (isMobile) {
                 if (chartCard.classList.contains('fullscreen-chart')) {
                     chartCard.classList.remove('fullscreen-chart');
+                    chartContainer.classList.remove('full-screen-container');
                      if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
                 } else {
                     chartCard.classList.add('fullscreen-chart');
+                    chartContainer.classList.add('full-screen-container');
                      if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
                 }
                 handleFullscreenChange();
@@ -1471,10 +1507,11 @@
 
             if (!isFullscreenNative) {
                 requestFullscreen(chartCard);
-                if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
+                // Menghapus permintaan lock('landscape') di desktop/tablet agar lebih fleksibel
+                // if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
             } else {
                 exitFullscreen();
-                if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
+                // if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
             }
         }
 
@@ -1487,7 +1524,7 @@
                 labels: window.realtimeData.labels,
                 datasets: [
                     {
-                        label: 'PV Power (W)',
+                        label: 'Daya PV (W)', // Label Bahasa Indonesia
                         data: window.realtimeData.pvPower,
                         backgroundColor: 'rgba(191, 255, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
@@ -1495,7 +1532,7 @@
                         spanGaps: true // Izinkan gap jika data kosong (null)
                     },
                     {
-                        label: 'AC Load (W)',
+                        label: 'Beban AC (W)', // Label Bahasa Indonesia
                         data: window.realtimeData.acLoad,
                         backgroundColor: 'rgba(255, 185, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
@@ -1511,11 +1548,13 @@
                 type: 'line',
                 data: dataConfig,
                 options: {
-                    responsive: true, maintainAspectRatio: false, animation: false,
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
-                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)`, color: '#FFFFFF' },
+                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC`, color: '#FFFFFF' },
                         tooltip: { 
                              backgroundColor: 'rgba(20, 20, 48, 0.8)', 
                              titleColor: '#FFFFFF', 
@@ -1529,9 +1568,19 @@
                                 }
                              }
                         },
+                        // KONFIGURASI KRITIS UNTUK ZOOM DI HP
                         zoom: { 
-                            pan: { enabled: true, mode: 'x' }, 
-                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } 
+                            pan: { 
+                                enabled: true, 
+                                mode: 'x', // Hanya geser horizontal
+                                threshold: 5, // Sensitivitas pan/geser yang lebih rendah (lebih mudah digeser)
+                            }, 
+                            zoom: { 
+                                wheel: { enabled: true }, 
+                                pinch: { enabled: true }, // Aktifkan pinch-to-zoom (cubit di HP)
+                                drag: { enabled: true, modifierKey: 'shift' }, // Mengaktifkan drag zoom dengan tombol shift (untuk desktop)
+                                mode: 'x' // Hanya zoom horizontal (sumbu waktu)
+                            } 
                         }
                     },
                     scales: {
