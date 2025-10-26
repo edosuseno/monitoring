@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#05050D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
@@ -16,6 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.0.16/svg.min.js"></script>
+
     <!-- Konfigurasi Tailwind & Variabel CSS -->
     <script>
         tailwind.config = {
@@ -135,29 +136,7 @@
         @media (min-width: 768px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } /* 5 kolom di tablet/desktop */
         @media (min-width: 1280px) { #modalCells { grid-template-columns: repeat(5, minmax(0, 1fr)); } } 
 
-        /* CSS untuk mode Fullscreen yang baru */
-        .fullscreen-chart-wrapper {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            background-color: #05050D !important; 
-            z-index: 9999; 
-            padding: 20px;
-            display: flex; /* Tambahkan flex untuk memastikan kontainer chart anak mengikuti */
-            flex-direction: column;
-        }
-
-        /* Kontainer Chart yang fleksibel di mode Fullscreen */
-        .fullscreen-chart-wrapper #realtime-chart-container {
-            flex-grow: 1; /* Kontainer chart mengisi sisa ruang */
-            height: auto; /* Biarkan Chart.js yang menentukan tinggi, tapi kontainer harus fleksibel */
-            max-height: 100%; /* Batas tinggi */
-        }
-        /* Akhir CSS Fullscreen */
-
-
+        .fullscreen-chart { position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; background-color: #05050D !important; z-index: 9999; padding: 20px; }
         #realtime-chart-container { height: 350px; margin-top: 1rem; }
         @media (min-width: 768px) { #realtime-chart-container { height: 350px; } }
         .summary-block { display: flex; align-items: baseline; justify-content: flex-start; }
@@ -177,13 +156,6 @@
             .battery-metric-grid > div:nth-child(3n)::after { content: none; }
             .battery-metric-grid > div:nth-child(3n-1)::after { content: ""; }
             .battery-metric-grid > div:nth-child(3n-2)::after { content: ""; }
-        }
-
-        /* Gaya untuk tombol durasi yang aktif */
-        .duration-button.active {
-            background-color: #4B87FF; /* blynk-primary */
-            color: white;
-            box-shadow: 0 0 5px rgba(75, 135, 255, 0.5);
         }
     </style>
 </head>
@@ -300,16 +272,16 @@
                                     <a href="#"><text id="pv2_voltage_label" x="230" y="133" dominant-baseline="central" text-anchor="end" class="pv-bus-label">-- V</text></a>
                                     <text id="pv_peak_label_text" x="247" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Peak:</text>
                                     <text id="pv_peak_label" x="273" y="133" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- W</text>
-                                    <text x="197" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Arus PV:</text>
+                                    <text x="197" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Arus:</text>
                                     <a href="#"><text id="pv2_current_label" x="230" y="145" dominant-baseline="central" text-anchor="end" class="pv-bus-label">-- A</text></a>
-                                    <text id="pv_efficiency_value_text" x="247" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Effic :</text>
+                                    <text id="pv_efficiency_value_text" x="247" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">Effic:</text>
                                     <text id="pv_efficiency_value" x="272" y="145" dominant-baseline="central" text-anchor="start" class="pv-bus-label">--%</text>
-                                    <text id="effective_sun_hours_text" x="197" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Sun Efektif:</text>
+                                    <text id="effective_sun_hours_text" x="198" y="157" dominant-baseline="central" text-anchor="end" class="pv-bus-label">Matahari Efektif:</text>
                                     <text id="effective_sun_hours" x="201" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- Hrs</text>
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
-                                <svg xmlns:xlink="http://www.w3.org/2000/xlink" overflow="visible" id="solar-flow">
+                                <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
@@ -435,18 +407,12 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
-                    <!-- Penambahan Pilihan Durasi -->
-                    <div class="flex justify-between items-center mb-4 flex-wrap">
-                        <div class="flex space-x-3 text-sm font-medium">
-                            <button id="duration-1" onclick="setChartDuration(1)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition active" data-duration="1">1 Jam</button>
-                            <button id="duration-3" onclick="setChartDuration(3)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="3">3 Jam</button>
-                            <button id="duration-6" onclick="setChartDuration(6)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="6">6 Jam</button>
-                            <button id="duration-24" onclick="setChartDuration(24)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="24">24 Jam</button>
-                        </div>
-                        <div class="flex justify-end space-x-3 mt-3 sm:mt-0">
-                            <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
-                            <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
-                        </div>
+                    <!-- PEMBARUAN: Menambahkan tombol Zoom 1 Jam dan Simpan Grafik -->
+                    <div class="flex flex-wrap justify-start space-x-3 mb-2">
+                        <button onclick="zoomLastHour()" class="px-3 py-1 text-xs font-medium rounded-lg bg-yellow-600 text-white hover:bg-yellow-700 transition flex items-center mb-2"><i data-lucide="zoom-in" class="lucide w-4 h-4 mr-1"></i>Zoom 1 Jam</button>
+                        <button onclick="saveChartAsPNG()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center mb-2"><i data-lucide="save" class="lucide w-4 h-4 mr-1"></i>Simpan Grafik</button>
+                        <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center mb-2"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
+                        <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1 mb-2"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
                     </div>
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
@@ -541,7 +507,7 @@
                           <p class="text-xs text-gray-500 mt-1" id="current-status-text">Total Arus Sistem</p>
                       </div>
                       <div class="solar-card p-4 shadow-xl">
-                          <div class="flex justify-between items-center mb-2"><i data-lucide="power" class="lucide w-7 h-7 text-pink-400" id="icon-power-summary"></i><div class="flex items-baseline"><span class="text-3xl font-extrabold text-pink-400" id="summary-power">N/A</span><span class="text-3xl font-extrabold text-pink-400 ml-1" id="summary-power-unit">W</span></div></div>
+                          <div class="flex justify-between items-center mb-2"><i data-lucide="power" class="lucide w-7 h-7 text-dc-color" id="icon-power-summary"></i><div class="flex items-baseline"><span class="text-3xl font-extrabold text-dc-color" id="summary-power">N/A</span><span class="text-3xl font-extrabold text-dc-color ml-1" id="summary-power-unit">W</span></div></div>
                           <p class="text-sm font-medium text-gray-400">Daya Baterai</p>
                           <p class="text-xs text-gray-500 mt-1" id="power-status-text">Total Daya Sistem</p>
                       </div>
@@ -596,6 +562,13 @@
         const STORAGE_KEY_DISCHARGE = 'dailyDischargeWh';
         const STORAGE_KEY_RESET_DATE = 'dailyResetDate';
 
+        // --- KONSTANTA UNTUK LOGIKA SLIDING WINDOW (5 detik/data point) ---
+        // 24 jam * (3600 detik/jam) / (5 detik/update) = 17280 data points
+        const MAX_DATA_POINTS = 17280; 
+        const POINTS_PER_HOUR = 3600 / (5000 / 1000); // 720 points/jam
+        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_sliding';
+        // -------------------------------------------------------------------
+
         let lastUpdateTime = Date.now();
         let dailyChargeWh = 0;
         let dailyDischargeWh = 0;
@@ -608,16 +581,8 @@
             'V3': 'v3-pzem-energy', 'V11': 'v11-total-pv',
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
-        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
-        const UPDATE_INTERVAL = 5000;
-        const S_PER_HOUR = 3600;
-        // Interval update 5 detik (5000ms), 1 jam = 3600 detik.
-        // Titik data per jam = 3600s / 5s = 720
-        // Titik data maks (24 jam) = 24 jam * 720 = 17280
-        const MAX_DATA_POINTS = 17280; // Total titik data untuk menyimpan 24 jam
         
-        // VARIABEL DURASI BARU
-        let currentDurationHours = 1; // Default: 1 jam
+        const UPDATE_INTERVAL = 5000;
 
         let fetchInterval = null;
         let serverIp = INSTANT_SERVER_IP;
@@ -625,8 +590,14 @@
         let ENERGY_CALIBRATION_PERCENT = INSTANT_PV_PERCENT;
         let LOAD_CALIBRATION_PERCENT = INSTANT_LOAD_PERCENT;
         let energyChartInstance = null;
-
-        window.realtimeData = { labels: [], pvPower: [], acLoad: [] };
+        
+        // Data diinisialisasi sebagai array kosong, akan diisi dari localStorage
+        window.realtimeData = { 
+            labels: [], 
+            pvPower: [], 
+            acLoad: []
+        };
+        
         let client;
         let batteries = [];
         let currentAddr = null;
@@ -677,37 +648,27 @@
              localStorage.setItem(STORAGE_KEY_DISCHARGE, dailyDischargeWh.toString());
         }
 
+        // FUNGSI INI DIJAGA HANYA UNTUK RESET ENERGI HARIAN (kWh), BUKAN DATA CHART
         function resetDailyEnergy() {
             const now = new Date();
-            // Mengambil tanggal hari ini dalam format YYYY-MM-DD
             const todayDate = now.toISOString().split('T')[0]; 
             const lastResetDate = localStorage.getItem(STORAGE_KEY_RESET_DATE);
 
-            // Cek apakah tanggal terakhir reset berbeda dengan tanggal hari ini
             if (lastResetDate !== todayDate) {
-                 // **Reset Paksa:**
-                 
-                 // 1. Reset variabel global
                  dailyChargeWh = 0;
                  dailyDischargeWh = 0;
-
-                 // 2. Reset localStorage dan simpan tanggal reset baru
                  localStorage.setItem(STORAGE_KEY_RESET_DATE, todayDate); 
                  localStorage.setItem(STORAGE_KEY_CHARGE, '0');
                  localStorage.setItem(STORAGE_KEY_DISCHARGE, '0');
                  
-                 // 3. Memperbarui tampilan secara langsung
                  document.getElementById("daily_bat_charge_value").textContent = "0.00 kWh";
                  document.getElementById("daily_bat_dischcharge_value").textContent = "0.00 kWh";
                  
-                 console.log(`[DAILY RESET] Daily energy reset to 0 and date updated. New date: ${todayDate}`);
+                 console.log(`[DAILY ENERGY RESET] Daily energy reset to 0 and date updated. New date: ${todayDate}`);
             }
-            
-            // Jika tanggal sama, biarkan akumulasi berlanjut.
         }
         
         function updateBatteryEnergy(voltage, current) {
-            // PENTING: Panggil reset harian di sini sebelum akumulasi untuk memastikan data hari sebelumnya tidak tercampur.
             resetDailyEnergy(); 
 
             const now = Date.now();
@@ -794,7 +755,9 @@
             }
         }
 
-        // Fungsi yang lebih spesifik untuk menghapus kelas warna saja, tanpa mengganggu ukuran/font-weight
+        /**
+         * FUNGSI KRITIS: Menambahkan kelas warna Tailwind/CSS khusus
+         */
         function removeMetricColorClasses(element) { 
             if (!element) return;
             // Hapus kelas warna spesifik yang digunakan di BMS summary
@@ -802,9 +765,6 @@
             colorClasses.forEach(c => element.classList.remove(c));
         }
 
-        /**
-         * FUNGSI KRITIS: Menambahkan kelas warna Tailwind/CSS khusus
-         */
         function getSocColorClasses(soc) {
             let textColor = 'text-soc-yellow';
             let progressColor = 'bg-soc-yellow';
@@ -1133,7 +1093,8 @@
             if (currentIconEl) { removeMetricColorClasses(currentIconEl); currentIconEl.classList.add(ampColorClass); }
 
             const powerSummaryEl = document.getElementById('summary-power');
-            const powerIconEl = document.getElementById('icon-power-summary');
+            // FIX: Deklarasi iconIconEl yang menyebabkan error di bagian ini
+            const iconPowerSummary = document.getElementById('icon-power-summary'); 
             const powerUnitEl = document.getElementById('summary-power-unit');
             
             // --- PERBAIKAN: Daya Baterai ---
@@ -1141,7 +1102,10 @@
                 removeMetricColorClasses(powerSummaryEl); 
                 powerSummaryEl.classList.add(powerColorClass, ...CORE_BMS_UNIT_CLASSES); 
             }
-            if (powerIconEl) { removeMetricColorClasses(powerIconEl); powerIconEl.classList.add(powerColorClass); }
+            if (iconPowerSummary) { 
+                removeMetricColorClasses(iconPowerSummary); 
+                iconPowerSummary.classList.add(powerColorClass); 
+            }
             if (powerUnitEl) { 
                 removeMetricColorClasses(powerUnitEl); 
                 powerUnitEl.classList.add(powerColorClass, ...CORE_BMS_UNIT_CLASSES); 
@@ -1175,7 +1139,8 @@
                 busVoltageUnitEl.classList.add('text-purple-400', ...CORE_BMS_UNIT_CLASSES);
             }
 
-
+            // FIX: Deklarasi iconSocEl yang menyebabkan error. Harus ditargetkan dari DOM.
+            const iconSocEl = document.getElementById('icon-soc-summary');
             const avgSOC = aggregated.soc;
             const avgSOH = aggregated.soh;
             const socValue = parseInt(avgSOC);
@@ -1184,7 +1149,6 @@
             const { progressColor: summaryProgressColor, socColorClass } = getSocColorClasses(socValue);
             
             const summarySocEl = document.getElementById('summary-soc');
-            const iconSocEl = document.getElementById('icon-soc-summary');
             const socProgress = document.getElementById("soc-progress-summary");
             const sohProgress = document.getElementById("soh-progress-summary");
 
@@ -1369,20 +1333,45 @@
         // ==========================================================
         // PLTS LOGIC & DIAGRAM LOGIC
         // ==========================================================
+        
+        // FUNGSI UNTUK MENGHASILKAN LABEL WAKTU DENGAN TANGGAL
+        function formatTimeLabel(date) {
+            // Contoh output: "26 Okt 09:30"
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
 
         function loadHistoricalData() {
             const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
+            
             if (savedData) {
                 try {
                     const parsedData = JSON.parse(savedData);
-                    // Pastikan kita hanya menyimpan data hingga MAX_DATA_POINTS
-                    const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
-                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
-                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
-                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
+                    
+                    // Ambil data yang tersimpan
+                    window.realtimeData.labels = parsedData.labels || [];
+                    window.realtimeData.pvPower = parsedData.pvPower || [];
+                    window.realtimeData.acLoad = parsedData.acLoad || [];
+
+                    // Pastikan tidak melebihi batas 24 jam (MAX_DATA_POINTS)
+                    const startIndex = Math.max(0, window.realtimeData.labels.length - MAX_DATA_POINTS);
+                    if (startIndex > 0) {
+                        window.realtimeData.labels = window.realtimeData.labels.slice(startIndex);
+                        window.realtimeData.pvPower = window.realtimeData.pvPower.slice(startIndex);
+                        window.realtimeData.acLoad = window.realtimeData.acLoad.slice(startIndex);
+                    }
+                    
                 } catch (e) {
+                    console.error("Error loading historical data:", e);
                     localStorage.removeItem(STORAGE_KEY_CHART_DATA);
+                    // Jika gagal parse, data dimulai dari kosong (Sliding Window)
+                    window.realtimeData = { labels: [], pvPower: [], acLoad: [] };
                 }
+            }
+             // Reset zoom saat memuat data baru
+            if (energyChartInstance) {
+                energyChartInstance.update(); 
+                resetChartZoom();
             }
         }
 
@@ -1408,8 +1397,7 @@
             const chartCard = document.getElementById('realtime-chart-container').parentElement;
             const chartIcon = document.getElementById('fullscreen-chart-icon');
             const chartText = document.getElementById('fullscreen-chart-text');
-            // Cek apakah native fullscreen aktif ATAU class fullscreen-chart-wrapper aktif (untuk mobile/fallback)
-            const isFullscreen = chartCard.classList.contains('fullscreen-chart-wrapper') || document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+            const isFullscreen = chartCard.classList.contains('fullscreen-chart') || document.fullscreenElement;
 
             if (isFullscreen) {
                 chartIcon.setAttribute('data-lucide', 'minimize');
@@ -1420,14 +1408,7 @@
             }
 
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-            
-            // PENTING: Panggil resize chart setelah perubahan ukuran viewport
-            if (energyChartInstance) { 
-                setTimeout(() => { 
-                    energyChartInstance.resize(); 
-                    energyChartInstance.resetZoom(); 
-                }, 50); 
-            }
+            if (energyChartInstance) { setTimeout(() => { energyChartInstance.resize(); energyChartInstance.resetZoom(); }, 50); }
         }
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -1440,92 +1421,50 @@
             const isFullscreenNative = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
             const isMobile = window.innerWidth < 768;
 
-            if (isMobile || !chartCard.requestFullscreen) {
-                // Fallback untuk mobile atau browser yang tidak support requestFullscreen
-                if (chartCard.classList.contains('fullscreen-chart-wrapper')) {
-                    chartCard.classList.remove('fullscreen-chart-wrapper');
+            if (isMobile) {
+                if (chartCard.classList.contains('fullscreen-chart')) {
+                    chartCard.classList.remove('fullscreen-chart');
                      if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
                 } else {
-                    chartCard.classList.add('fullscreen-chart-wrapper');
+                    chartCard.classList.add('fullscreen-chart');
                      if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
                 }
                 handleFullscreenChange();
                 return;
             }
 
-            // Native Fullscreen
             if (!isFullscreenNative) {
-                chartCard.classList.add('fullscreen-chart-wrapper'); // Tambahkan kelas wrapper saat masuk
                 requestFullscreen(chartCard);
                 if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => {}); }
             } else {
                 exitFullscreen();
-                chartCard.classList.remove('fullscreen-chart-wrapper'); // Hapus kelas wrapper saat keluar
                 if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); }
             }
         }
-
-        /**
-         * FUNGSI KRITIS: Menyesuaikan data yang ditampilkan berdasarkan durasi yang dipilih.
-         */
-        function getChartDataForDuration(durationHours) {
-            const pointsPerHour = S_PER_HOUR / (UPDATE_INTERVAL / 1000); // 3600 / 5 = 720
-            const maxPoints = Math.ceil(durationHours * pointsPerHour); 
-            
-            // Pastikan kita tidak mengambil lebih dari jumlah data yang tersedia atau MAX_DATA_POINTS.
-            const totalStoredPoints = window.realtimeData.labels.length;
-            const pointsToDisplay = Math.min(maxPoints, totalStoredPoints);
-            const startIndex = totalStoredPoints - pointsToDisplay;
-
-            return {
-                labels: window.realtimeData.labels.slice(startIndex),
-                pvPower: window.realtimeData.pvPower.slice(startIndex),
-                acLoad: window.realtimeData.acLoad.slice(startIndex)
-            };
-        }
-
-        function setChartDuration(durationHours) {
-            currentDurationHours = durationHours;
-            
-            // Perbarui status tombol aktif
-            document.querySelectorAll('.duration-button').forEach(btn => {
-                btn.classList.remove('active');
-                if (parseInt(btn.getAttribute('data-duration')) === durationHours) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Render ulang chart dengan data baru
-            renderRealtimeChart();
-            energyChartInstance.resetZoom(); // Reset zoom setiap kali durasi diubah
-        }
-
 
         function renderRealtimeChart() {
              const ctx = document.getElementById('realtime-power-chart');
             if (!ctx) return;
             const context = ctx.getContext('2d');
-            
-            // Ambil data berdasarkan durasi yang aktif
-            const dataToDisplay = getChartDataForDuration(currentDurationHours);
-
 
             const dataConfig = {
-                labels: dataToDisplay.labels,
+                labels: window.realtimeData.labels,
                 datasets: [
                     {
                         label: 'PV Power (W)',
-                        data: dataToDisplay.pvPower,
+                        data: window.realtimeData.pvPower,
                         backgroundColor: 'rgba(191, 255, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
-                        borderWidth: 2, type: 'line', fill: 'origin', tension: 0.2, pointRadius: 0, yAxisID: 'y'
+                        borderWidth: 2, type: 'line', fill: 'origin', tension: 0.2, pointRadius: 1, yAxisID: 'y',
+                        spanGaps: true // Izinkan gap jika data kosong (null)
                     },
                     {
                         label: 'AC Load (W)',
-                        data: dataToDisplay.acLoad,
+                        data: window.realtimeData.acLoad,
                         backgroundColor: 'rgba(255, 185, 0, 0.2)',
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
-                        borderWidth: 2, type: 'line', fill: false, tension: 0.2, pointRadius: 0, yAxisID: 'y'
+                        borderWidth: 2, type: 'line', fill: false, tension: 0.2, pointRadius: 1, yAxisID: 'y',
+                        spanGaps: true // Izinkan gap jika data kosong (null)
                     }
                 ]
             };
@@ -1536,34 +1475,32 @@
                 type: 'line',
                 data: dataConfig,
                 options: {
-                    responsive: true, maintainAspectRatio: false, animation: false, spanGaps: true,
+                    responsive: true, maintainAspectRatio: false, animation: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
-                        // Mengganti teks judul untuk mencerminkan durasi yang diperbarui
-                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
+                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC (24 Jam Terakhir)`, color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
-                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
+                        zoom: { 
+                            pan: { enabled: true, mode: 'x' }, 
+                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } 
+                        }
                     },
                     scales: {
                         x: { 
                             type: 'category', 
                             title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
-                            // Mengubah maxTicksLimit menjadi dinamis
                             ticks: { 
                                 color: '#AAAAAA', 
                                 autoSkip: true, 
-                                maxRotation: 45, // Menaikkan rotasi agar DD Mon HH:MM bisa muat
-                                maxTicksLimit: 
-                                    currentDurationHours <= 1 ? 7 : // 1 Jam: ~7 tick
-                                    currentDurationHours <= 6 ? 13 : // 6 Jam: ~13 tick
-                                    25 // 24 Jam: ~25 tick (1 per jam)
+                                maxRotation: 0, 
+                                maxTicksLimit: 12 // Maksimal 12 label per 24 jam
                             }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
                         y: { 
-                            min: 0, 
-                            max: 8000, 
+                            min: 0, // Sumbu Y dimulai dari 0 Watt
+                            suggestedMax: undefined, // Memaksa auto-scaling berdasarkan data yang terlihat
                             ticks: { color: '#FFFFFF', callback: function(value) { return value + ' W'; } }, 
                             title: { display: true, text: 'Daya (Watt)', color: '#FFFFFF' }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
@@ -1573,37 +1510,112 @@
             });
         }
 
-        function resetChartZoom() { if (energyChartInstance) { energyChartInstance.resetZoom(); } }
+        /**
+         * FUNGSI DIPERBARUI: Mereset zoom ke seluruh rentang data (24 jam terakhir)
+         */
+        function resetChartZoom() {
+            if (!energyChartInstance || window.realtimeData.labels.length === 0) {
+                 showMessage('Grafik kosong, tidak ada yang perlu di-reset.', 'warning');
+                 return;
+            }
+            
+            // Menggunakan resetZoom bawaan plugin yang akan mereset ke batas data penuh
+            energyChartInstance.resetZoom(); 
+            
+            // Update grafik (ini akan memicu auto-scaling Y)
+            energyChartInstance.update('none'); 
+            
+            showMessage('Zoom grafik di-reset ke data penuh 24 jam terakhir.', 'success');
+        }
 
+        /**
+         * FUNGSI: Zoom ke 1 jam data terakhir
+         */
+        function zoomLastHour() {
+            if (!energyChartInstance || window.realtimeData.labels.length < POINTS_PER_HOUR) {
+                showMessage('Data grafik kurang dari 1 jam. Tidak dapat di-zoom.', 'warning');
+                return;
+            }
+
+            const totalPoints = window.realtimeData.labels.length;
+            
+            // Hitung index awal 1 jam yang lalu
+            const startIndex = Math.max(0, totalPoints - POINTS_PER_HOUR); 
+            const endIndex = totalPoints - 1;
+
+            // Dapatkan label awal dan akhir
+            const startLabel = window.realtimeData.labels[startIndex];
+            const endLabel = window.realtimeData.labels[endIndex];
+
+            // Menggunakan Chart.js Zoom Plugin untuk melakukan zoom berdasarkan nilai label
+            energyChartInstance.zoomScale('x', {
+                min: startLabel,
+                max: endLabel
+            });
+
+            energyChartInstance.update();
+            showMessage(`Grafik di-zoom ke 1 jam terakhir (dari ${startLabel} hingga ${endLabel}).`, 'success');
+        }
+
+
+        /**
+         * FUNGSI: Menyimpan grafik sebagai PNG
+         */
+        function saveChartAsPNG() {
+            const canvas = document.getElementById('realtime-power-chart');
+            if (!canvas || !energyChartInstance) {
+                showMessage('Gagal menyimpan grafik: Elemen grafik tidak ditemukan.', 'error');
+                return;
+            }
+
+            try {
+                // Mendapatkan tanggal dan waktu saat ini untuk nama file
+                const now = new Date();
+                const timestamp = now.toISOString().replace(/[:.]/g, '-'); 
+                const filename = `AEPRO_PLTS_Grafik_${timestamp}.png`;
+
+                // Mendapatkan URI data gambar dari canvas
+                const imageURI = canvas.toDataURL('image/png');
+
+                // Membuat link unduhan dan mensimulasikan klik
+                const a = document.createElement('a');
+                a.href = imageURI;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                showMessage(`Grafik berhasil disimpan sebagai ${filename}`, 'success');
+
+            } catch (e) {
+                 console.error("Error saving chart:", e);
+                 showMessage('Gagal menyimpan grafik: Terjadi kesalahan saat memproses gambar.', 'error');
+            }
+        }
+
+
+        /**
+         * DIPERBARUI: Menggunakan Sliding Window 24 jam (5 detik per data point)
+         */
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
-            // Peningkatan KRITIS: Mengubah format label waktu menjadi Tanggal & Jam (DD Mon HH:MM)
-            // Ini akan memastikan rentang 24 jam terlihat benar bahkan melewati tengah malam.
-            const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+            // Format label waktu per data point
+            const timeLabel = formatTimeLabel(now); 
 
-
+            // 1. Geser Window: Jika sudah mencapai batas 24 jam, hapus data tertua
             if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
                 window.realtimeData.labels.shift();
                 window.realtimeData.pvPower.shift();
                 window.realtimeData.acLoad.shift();
             }
 
+            // 2. Tambahkan data terbaru
             window.realtimeData.labels.push(timeLabel);
             window.realtimeData.pvPower.push(pvValue);
             window.realtimeData.acLoad.push(acValue);
 
-            // Kita hanya perlu memperbarui data model, renderRealtimeChart akan dipanggil setiap 5 detik
-            if (energyChartInstance) { 
-                const dataToDisplay = getChartDataForDuration(currentDurationHours);
-                energyChartInstance.data.labels = dataToDisplay.labels;
-                energyChartInstance.data.datasets[0].data = dataToDisplay.pvPower;
-                energyChartInstance.data.datasets[1].data = dataToDisplay.acLoad;
-                
-                // Update judul saat data baru masuk
-                energyChartInstance.options.plugins.title.text = `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`;
-                
-                energyChartInstance.update(); 
-            }
+            // 3. Perbarui grafik dan simpan data
+            if (energyChartInstance) { energyChartInstance.update(); }
             saveHistoricalData();
         }
 
@@ -1758,13 +1770,13 @@
             const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
             gradient.setAttribute('id', gradientId);
             gradient.setAttribute('x1', '0%'); gradient.setAttribute('y1', '0%');
-            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '20%');
+            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '30%');
             gradient.setAttribute('spreadMethod', 'repeat'); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
 
             const absPower = Math.abs(batPower);
             const isFlowing = absPower > 10;
             let flowBaseColor = overallColorStop;
-            let flowHighlightColor = 'var(--color-bar-red)';
+            let flowHighlightColor = overallColorStop;
 
             if (isFlowing) {
                 flowBaseColor = batPower > 0 ? '#388E3C' : '#8D0000';
@@ -1922,12 +1934,13 @@
                 let deficitAC = loadP - solarP; 
                 calculatedBatP = deficitAC > 0 ? -(deficitAC / INVERTER_DISCHARGE_EFFICIENCY) : rawBatP_DC;
             } else {
-                calculatedBatP = rawBatP_DC;
+                calculatedBatBatP = rawBatP_DC;
             }
             if (calculatedBatP === undefined || isNaN(calculatedBatP) || calculatedBatP === Infinity) { calculatedBatP = rawBatP_DC; }
 
             latestDiagramData.batteryPower = calculatedBatP; 
-
+            
+            // Logika untuk efisiensi PV dan rasio autarky/ratio
             let eff = 0;
             const pvPeak = latestDiagramData.pvPeakPower > 0.1 ? latestDiagramData.pvPeakPower : CONFIG_PV_PEAK_WATT_DEFAULT;
             if (pvPeak > 0) { eff = (solarP / pvPeak) * 100; }
@@ -1970,8 +1983,8 @@
 
         async function updateDashboard() {
             if (!authToken) return;
-
-            // PENTING: Panggil reset harian di sini di awal loop 5 detik.
+            
+            // Hapus logika reset tengah malam dari sini (karena sudah dihapus)
             resetDailyEnergy(); 
 
             const pins = Object.keys(PIN_MAPPINGS);
@@ -2063,6 +2076,7 @@
                 }
             });
 
+
             // Perlu memperbarui warna Self-Consumption dan Potensi Surplus secara manual di sini
             const selfConsumptionEl = document.getElementById('self-consumption-calc');
             const selfConsumptionUnitEl = document.getElementById('self-consumption-calc-unit');
@@ -2087,13 +2101,8 @@
             }
 
 
-            if (!energyChartInstance) { 
-                renderRealtimeChart(); 
-            } else {
-                 // Perbarui data chart yang sedang ditampilkan
-                updateRealtimeChartData(currentPvPower, currentAcLoad);
-            }
-
+            if (!energyChartInstance) { renderRealtimeChart(); }
+            updateRealtimeChartData(currentPvPower, currentAcLoad); 
 
             const bmsAggregatedData = getAggregatedBmsData();
             calculateAndRenderDiagram(bmsAggregatedData);
@@ -2116,10 +2125,7 @@
             document.getElementById("daily_bat_charge_value").textContent = (dailyChargeWh / 1000).toFixed(2) + " kWh";
             document.getElementById("daily_bat_dischcharge_value").textContent = (dailyDischargeWh / 1000).toFixed(2) + " kWh";
             
-            // Set durasi default (1 jam) dan render awal
-            setChartDuration(1); // Set default ke 1 jam
             updateDashboard();
-            
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             startMQTT();
 
