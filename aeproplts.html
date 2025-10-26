@@ -1584,18 +1584,14 @@
                 const startIndex = Math.max(0, totalPoints - zoomConfig.points); 
                 const endIndex = totalPoints - 1;
 
-                // Dapatkan label awal dan akhir
-                const startLabel = window.realtimeData.labels[startIndex];
-                const endLabel = window.realtimeData.labels[endIndex];
-
                 // Menggunakan Chart.js Zoom Plugin untuk melakukan zoom berdasarkan nilai label
                 energyChartInstance.zoomScale('x', {
-                    min: startLabel,
-                    max: endLabel
+                    min: window.realtimeData.labels[startIndex],
+                    max: window.realtimeData.labels[endIndex]
                 });
 
                 energyChartInstance.update();
-                showMessage(`Grafik di-zoom ke ${zoomConfig.duration} (dari ${startLabel} hingga ${endLabel}).`, 'success');
+                showMessage(`Grafik di-zoom ke ${zoomConfig.duration} (dari ${window.realtimeData.labels[startIndex]} hingga ${window.realtimeData.labels[endIndex]}).`, 'success');
             }
             
             // Pindah ke level berikutnya untuk klik selanjutnya
