@@ -436,13 +436,8 @@
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
                     <!-- Penambahan Pilihan Durasi -->
-                    <div class="flex justify-between items-center mb-4 flex-wrap">
-                        <div class="flex space-x-3 text-sm font-medium">
-                            <button id="duration-1" onclick="setChartDuration(1)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition active" data-duration="1">1 Jam</button>
-                            <button id="duration-3" onclick="setChartDuration(3)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="3">3 Jam</button>
-                            <button id="duration-6" onclick="setChartDuration(6)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="6">6 Jam</button>
-                            <button id="duration-24" onclick="setChartDuration(24)" class="duration-button px-3 py-1 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition" data-duration="24">24 Jam</button>
-                        </div>
+                    <div class="flex justify-end items-center mb-4 flex-wrap">
+                        <!-- Tombol durasi sudah dihapus sesuai permintaan -->
                         <div class="flex justify-end space-x-3 mt-3 sm:mt-0">
                             <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
                             <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
@@ -617,7 +612,8 @@
         const MAX_DATA_POINTS = 17280; // Total titik data untuk menyimpan 24 jam
         
         // VARIABEL DURASI BARU
-        let currentDurationHours = 1; // Default: 1 jam
+        // Dipaksa 24 jam karena tombol durasi telah dihapus
+        let currentDurationHours = 24; 
 
         let fetchInterval = null;
         let serverIp = INSTANT_SERVER_IP;
@@ -1503,15 +1499,17 @@
             };
         }
 
+        /**
+         * FUNGSI KRITIS: Mengatur durasi chart. Karena tombol dihapus, fungsi ini akan selalu memanggil 24 jam.
+         * Kami mempertahankan fungsi ini karena dipanggil di initApp.
+         */
         function setChartDuration(durationHours) {
-            currentDurationHours = durationHours;
+            // Karena tombol durasi dihapus, kita paksa durasi 24 jam (MAX_DATA_POINTS)
+            currentDurationHours = 24; 
             
-            // Perbarui status tombol aktif
+            // Perbarui status tombol aktif (tidak relevan lagi, tapi dipertahankan untuk membersihkan kelas jika ada)
             document.querySelectorAll('.duration-button').forEach(btn => {
                 btn.classList.remove('active');
-                if (parseInt(btn.getAttribute('data-duration')) === durationHours) {
-                    btn.classList.add('active');
-                }
             });
 
             // Render ulang chart dengan data baru
@@ -1525,7 +1523,7 @@
             if (!ctx) return;
             const context = ctx.getContext('2d');
             
-            // Ambil data berdasarkan durasi yang aktif
+            // Ambil data berdasarkan durasi yang aktif (yang dipaksa 24 jam)
             const dataToDisplay = getChartDataForDuration(currentDurationHours);
 
 
@@ -1562,21 +1560,34 @@
                         // Mengganti teks judul untuk mencerminkan durasi yang diperbarui
                         title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
                         tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
-                        zoom: { pan: { enabled: true, mode: 'x' }, zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' } }
+                        // Menonaktifkan semua tombol zoom/pan default kecuali reset
+                        zoom: { 
+                            pan: { enabled: true, mode: 'x' }, 
+                            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+                            // Hapus tombol-tombol waktu, hanya sisakan reset dan fullscreen
+                            // Properti toolbar: { ... } yang mengontrol tombol waktu dihilangkan/diset ke default (hanya reset/pan/zoom)
+                        }
                     },
                     scales: {
                         x: { 
                             type: 'category', 
-                            title: { display: true, text: 'Waktu', color: '#AAAAAA' }, 
-                            // Mengubah maxTicksLimit menjadi dinamis
+                            title: { display: true, text: 'Waktu (Jam)', color: '#AAAAAA' }, 
+                            // Mengubah format label sumbu X menjadi hanya HH:MM
                             ticks: { 
                                 color: '#AAAAAA', 
                                 autoSkip: true, 
-                                maxRotation: 45, // Menaikkan rotasi agar DD Mon HH:MM bisa muat
-                                maxTicksLimit: 
-                                    currentDurationHours <= 1 ? 7 : // 1 Jam: ~7 tick
-                                    currentDurationHours <= 6 ? 13 : // 6 Jam: ~13 tick
-                                    25 // 24 Jam: ~25 tick (1 per jam)
+                                maxRotation: 0, 
+                                maxTicksLimit: 25, 
+                                // FUNGSI KRITIS: Memotong label menjadi hanya Jam:Menit (HH:MM)
+                                callback: function(val, index) {
+                                    const label = this.getLabelForValue(val);
+                                    if (label) {
+                                        // Cari pola HH:MM di akhir string
+                                        const match = label.match(/(\d{2}:\d{2})$/);
+                                        return match ? match[1] : label;
+                                    }
+                                    return '';
+                                }
                             }, 
                             grid: { color: 'rgba(255, 255, 255, 0.1)' } 
                         },
@@ -1596,9 +1607,9 @@
 
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
-            // Peningkatan KRITIS: Mengubah format label waktu menjadi Tanggal & Jam (DD Mon HH:MM)
-            // Ini akan memastikan rentang 24 jam terlihat benar bahkan melewati tengah malam.
-            const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+            // Peningkatan KRITIS: Mengubah format label waktu menjadi Tanggal & Jam (DD Mon YYYY HH:MM)
+            // Ini akan memastikan rentang 24 jam terlihat benar bahkan melewati tengah malam dan mempertahankan tanggal untuk Tooltip.
+            const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
 
 
             if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
@@ -2135,8 +2146,8 @@
             
             // Tampilan sudah diperbarui di loadDailyEnergy
             
-            // Set durasi default (1 jam) dan render awal
-            setChartDuration(1); // Set default ke 1 jam
+            // Set durasi default (DIPAKSA 24 jam) dan render awal
+            setChartDuration(24); // Set default ke 24 jam
             updateDashboard();
             
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
