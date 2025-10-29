@@ -402,12 +402,17 @@
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line" d="M 239 250 L 239 280" display="" stroke="var(--color-battery)" stroke-width="2"></path>
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line-to-icon" d="M 239 310 L 239 345" display="" stroke="var(--color-battery)" stroke-width="2"></path>
                                         
-                                        <!-- ALIRAN ATAS (BUS KE KOTAK DAYA) -->
+                                        <!-- ALIRAN ATAS (BUS KE KOTAK DAYA) - DOT PERTAMA -->
                                         <circle cx="0" cy="0" r="3.5" fill="var(--color-battery)">
                                             <animateMotion id="bat_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line"></mpath></animateMotion>
                                         </circle>
                                         
-                                        <!-- ALIRAN BAWAH (KOTAK DAYA KE IKON BATERAI) - PERBAIKAN: Dot baru ditambahkan di sini -->
+                                        <!-- ALIRAN ATAS (DOT KEDUA UNTUK DOT POWER ATAS) -->
+                                        <circle cx="0" cy="0" r="3.5" fill="var(--color-battery)">
+                                            <animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line"></mpath></animateMotion>
+                                        </circle>
+                                        
+                                        <!-- ALIRAN BAWAH (KOTAK DAYA KE IKON BATERAI) -->
                                         <circle cx="0" cy="0" r="3.5" fill="var(--color-battery)">
                                             <animateMotion id="bat_flow_anim_3" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line-to-icon"></mpath></animateMotion>
                                         </circle>
@@ -1043,6 +1048,7 @@
             client = mqtt.connect("wss://public.cloud.shiftr.io", { username: "public", password: "public", keepalive: 120 });
 
             client.on("connect", () => {
+              console.log("[MQTT] Terhubung ke Shiftr.");
               client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/AutoPoll/#");
               client.subscribe("sysMon/"+BMS_MQTT_TOPIC_KEY+"/info/#");
             });
@@ -1070,6 +1076,7 @@
                   if (totalVoltage !== DEFAULT_DISPLAY && totalCurrent !== 0) { updateBatteryEnergy(totalVoltage, totalCurrent); }
                 } catch (e) {
                   console.error("Invalid JSON or Processing Error: ", e, e.stack);
+                  console.error("Pesan MQTT Gagal Diproses:", message.toString());
                 }
               }
             });
@@ -2102,13 +2109,13 @@
             // 2. Load Flow: Selalu ke kanan (positive power)
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
             
-            // 3. Battery Flow: bat_flow_anim_1 (garis atas) & bat_flow_anim_3 (garis bawah)
-            const batFlowAnimIds = ['bat_flow_anim_1', 'bat_flow_anim_3'];
+            // 3. Battery Flow: Mengontrol ketiga dot animasi aliran baterai
+            const batFlowAnimIds = ['bat_flow_anim_1', 'bat_flow_anim_2', 'bat_flow_anim_3'];
             
             if (Math.abs(batP_for_visual) > minimumPowerThreshold) {
                 // Gunakan batP_for_visual sebagai penentu arah (+/-)
-                // Positif (Charge): Aliran ke bawah (0;1)
-                // Negatif (Discharge): Aliran ke atas (1;0)
+                // Positif (Charge): Aliran ke bawah (0;1) - Mengisi baterai (arus positif ke baterai)
+                // Negatif (Discharge): Aliran ke atas (1;0) - Mengosongkan baterai (arus negatif dari baterai)
                 controlFlow(batFlowAnimIds, batP_for_visual, Math.abs(batP_for_visual));
             } else {
                 controlFlow(batFlowAnimIds, 0, 0);
@@ -2122,6 +2129,7 @@
 
         async function updateDashboard() {
             if (!authToken) return;
+            console.log("[DASHBOARD] Memulai pembaruan data.");
 
             // PENTING: Panggil reset harian di sini di awal loop 5 detik.
             resetDailyEnergy(); 
@@ -2260,6 +2268,7 @@
         }
 
         function startInstantMonitoring() {
+            console.log("[INIT] Memulai Instant Monitoring.");
             const dashboard = document.getElementById('monitoring-dashboard');
             if (fetchInterval) { clearInterval(fetchInterval); fetchInterval = null; }
 
@@ -2277,6 +2286,7 @@
             
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             startMQTT();
+            console.log("[INIT] Selesai memulai Instant Monitoring.");
 
             showDiagramStatus('Diagram siap. Menunggu data Blynk API pertama.', 'warning');
         }
@@ -2286,6 +2296,7 @@
         // ==========================================================
 
         function initApp() {
+            console.log("[APP] Memulai inisialisasi aplikasi.");
             const closeBatteryModalButton = document.getElementById('closeModalButton');
             if (closeBatteryModalButton) { closeBatteryModalButton.onclick = closeModal; }
             const batteryModal = document.getElementById("batteryModal");
@@ -2304,6 +2315,7 @@
             safeUpdate("bms-logger-ip-footer", 'N/A');
 
             startInstantMonitoring();
+            console.log("[APP] Inisialisasi aplikasi selesai.");
         }
 
         window.onload = initApp;
