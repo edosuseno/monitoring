@@ -84,7 +84,7 @@
         #Solar text:not(.pv-detail-value):not(.pv-extra-detail):not(.pv-bus-label) { fill: var(--color-solar) !important; }
         #pv1_power_186 { fill: var(--color-solar) !important; }
         #grid-flow circle { r: 3.5; fill: var(--color-grid) !important; }
-        #load-flow circle { r: 3.5; fill: var(--color-load) !important; }
+        #load-flow circle { r: 3.5; fill="var(--color-load)" !important; }
         #battery_flow circle { r: 3.5; fill="var(--color-battery)" !important; }
         #solar-flow circle { r: 3.5; fill: var(--color-solar) !important; }
         #Grid #grid_total_power, #Grid #daily_grid_buy_value { fill: var(--color-grid) !important; }
@@ -184,6 +184,11 @@
             background-color: #4B87FF; /* blynk-primary */
             color: white;
             box-shadow: 0 0 5px rgba(75, 135, 255, 0.5);
+        }
+
+        /* CSS KHUSUS UNTUK BAR BATERAI */
+        #battery_soc_fill {
+            transition: height 0.5s ease-out, y 0.5s ease-out, fill 0.3s ease; /* Transisi untuk perubahan level SOC */
         }
     </style>
 </head>
@@ -288,7 +293,21 @@
                 <div class="w-full p-2 shadow-xl rounded-xl border border-gray-700">
                     <div class="svg-container">
                         <svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 0 490 430" class="svg-content">
-                            <defs></defs>
+                            <defs>
+                                <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan -->
+                                <pattern id="batteryFlowPattern" patternUnits="userSpaceOnUse" width="10" height="10" viewBox="0 0 10 10">
+                                    <!-- Garis miring -->
+                                    <path d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="white" stroke-width="1.5" opacity="0.6"/>
+                                    <!-- Animasi akan diletakkan di sini oleh JS -->
+                                    <animate id="batteryFlowAnimPattern" attributeName="x" from="0" to="10" dur="0.8s" repeatCount="indefinite" additive="sum"/>
+                                </pattern>
+
+                                <!-- Masking untuk bar pengisi baterai, memastikan hanya bar yang terlihat -->
+                                <mask id="batteryMask">
+                                    <!-- Bentuk area yang akan terisi (putih) -->
+                                    <rect x="4.5" y="6.5" width="7" height="13" fill="white" rx="0.5" ry="0.5"/>
+                                </mask>
+                            </defs>
                             <svg id="Solar" style="overflow: visible; display: inline;" x="0%" y="-6%">
                                 <svg id="sun" x="120" y="48" width="30" height="30" viewBox="0 0 24 24"><path fill="var(--color-solar)" d="M11.45 2v3.55L15 3.77L11.45 2m-1 6L8 10.46l3.75 1.25L10.45 8M2 11.45L3.77 15l1.78-3.55H2M10 2H2v8c.57.17 1.17.25 1.77.25c3.58.01 6.49-2.9 6.5-6.5c-.01-.59-.1-1.18-.27-1.75m7 20v-6h-3l5-9v6h3l-5 9Z"></path></svg>
                                 <text id="total_solar_generation" x="239" y="72" dominant-baseline="central" text-anchor="middle" display="" class="st3" fill="var(--color-solar)">TOTAL ENERGY / TOTAL SOLAR</text>
@@ -357,7 +376,35 @@
                                         <circle cx="0" cy="0" id="power-dot-discharge" r="3.5" fill="var(--color-battery)"><animateMotion id="bat_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line"></mpath></animateMotion></circle>
                                         <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)"><animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line-to-icon"></mpath></animateMotion></circle>
                                     </svg>
-                                    <svg id="battery_icon" style="overflow: visible;" x="0%"><a href="#"><svg id="bat_outter" y="338.5" width="78.75" height="78.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="213.0"><defs></defs><path fill="var(--color-battery)" d="M10 20H4V6h8L12 20m.67-16H11V2H5v2H3.33C2.6 4 2 4.6 2 5.33v15.34C2 21.4 2.6 22 3.33 22h9.34c.74 0 1.33-.59 1.33-1.33V5.33C14 4.6 13.4 4 12.67 4"></path></svg><svg id="bat_inner" y="342" width="78.75" height="68.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="211.0"></svg></a></svg>
+                                    <svg id="battery_icon" style="overflow: visible;" x="0%"><a href="#">
+                                        <svg id="bat_outter" y="338.5" width="78.75" height="78.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="213.0">
+                                            <defs></defs>
+                                            
+                                            <!-- 1. Frame Path (Original - Solid Fill: Pink Med) -->
+                                            <path fill="var(--color-battery)" d="M10 20H4V6h8L12 20m.67-16H11V2H5v2H3.33C2.6 4 2 4.6 2 5.33v15.34C2 21.4 2.6 22 3.33 22h9.34c.74 0 1.33-.59 1.33-1.33V5.33C14 4.6 13.4 4 12.67 4"/>
+                                            
+                                            <!-- 2. Inner Mask (Area kosong tempat bar akan mengisi, x=4.5 to x=11.5, y=6.5 to y=19.5, height 13) -->
+                                            <rect x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5" fill="var(--solar-dark)" /> 
+                                            
+                                            <!-- 3. Dynamic SOC Fill (Bergerak dari bawah ke atas) -->
+                                            <rect 
+                                                id="battery_soc_fill" 
+                                                x="4.5" y="19.5" width="7" height="0" rx="0.5" ry="0.5" 
+                                                fill="var(--color-battery)" 
+                                                mask="url(#batteryMask)" 
+                                                style="transition: height 0.5s ease-out, y 0.5s ease-out, fill 0.3s ease;" 
+                                            /> 
+                                            
+                                            <!-- 4. Animasi Pola Garis (Di atas SOC Fill) -->
+                                            <rect 
+                                                id="battery_flow_anim_rect"
+                                                x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5"
+                                                fill="url(#batteryFlowPattern)"
+                                                mask="url(#batteryMask)"
+                                                opacity="0"
+                                            />
+                                        </svg>
+                                    </a></svg>
                                     <text id="battery_remaining_energy" x="292.375" y="362" display="" class="remaining-energy left-align" fill="var(--color-battery)">-- Ah</text>
                                     <svg id="Battery1_SOC" style="overflow: visible; display: inline;"><a href="#"><text id="battery_soc_184" x="292.375" y="383" display="" class="st13 left-align" fill="var(--color-battery)">--% | --%</text></a></svg>
                                     <svg id="battery_1_runtime" style="overflow: visible; display: inline;">
@@ -998,7 +1045,8 @@
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 updateModal();
-                 if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+                // FIX: Panggil createIcons tanpa menggunakan destructuring
+                if (typeof lucide !== 'undefined') { lucide.createIcons(); }
             }
         }
 
@@ -1081,6 +1129,7 @@
             }
 
             blinkLed("led-modal");
+            // FIX: Panggil createIcons tanpa menggunakan destructuring
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
         }
         
@@ -1238,6 +1287,7 @@
               if (grid) grid.classList.add('hidden');
               if (emptyState) emptyState.classList.remove('hidden');
               safeUpdate('total-batteries', '0');
+              // FIX: Panggil createIcons tanpa menggunakan destructuring
               if (typeof lucide !== 'undefined') { lucide.createIcons(); }
               return;
             }
@@ -1310,6 +1360,7 @@
 
                 if (grid) grid.appendChild(fragment);
                 lastRenderedAddresses = currentAddresses;
+                // FIX: Panggil createIcons tanpa menggunakan destructuring
                 if (typeof lucide !== 'undefined') { lucide.createIcons(); }
             } else {
                 const batt = batteries.find(b => (b.addr === datane.addr) && (b.typeBattery === datane.typeBattery));
@@ -1364,6 +1415,7 @@
                 const timeUpdateEl = document.getElementById(`time-update-${batt.typeBattery}-${batt.addr}`);
                 if (timeUpdateEl) {
                     timeUpdateEl.innerHTML = `<i data-lucide="clock" class="lucide w-3 h-3 inline mr-1"></i>${batt.time}`;
+                    // FIX: Panggil createIcons dengan scope terbatas, tanpa destructuring
                     if (typeof lucide !== 'undefined') { lucide.createIcons({ scope: timeUpdateEl }); }
                 }
                 
@@ -1434,6 +1486,7 @@
                 chartText.textContent = 'Full Layar';
             }
 
+            // FIX: Panggil createIcons tanpa menggunakan destructuring
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
             
             // PENTING: Panggil resize chart setelah perubahan ukuran viewport
@@ -1564,7 +1617,6 @@
                         zoom: { 
                             pan: { enabled: true, mode: 'x' }, 
                             zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
-                            // Hapus tombol-tombol waktu, hanya sisakan reset dan fullscreen
                             // Properti toolbar: { ... } yang mengontrol tombol waktu dihilangkan/diset ke default (hanya reset/pan/zoom)
                         }
                     },
@@ -1671,10 +1723,23 @@
             return numericValue * correctionFactor;
         }
 
+        /**
+         * FUNGSI KRITIS: Mengubah nilai "N/A" menjadi "0" untuk metrik Detail Sistem
+         */
         function formatValue(pin, value) {
             let numericValue = tryParseFloat(value);
-            if (numericValue === DEFAULT_DISPLAY && value !== '0') return 'N/A';
-
+            // Daftar PIN yang harus menampilkan 0 jika nilainya 0 atau tidak ada data (kecuali V18/V19)
+            const zeroDisplayPins = ['V1', 'V6', 'V5', 'V4', 'V11', 'V0', 'V7', 'V8', 'V9', 'V3', 'V12', 'V13', 'V16', 'V20', 'V15'];
+            
+            // Periksa jika nilainya adalah 0 atau dianggap DEFAULT_DISPLAY dan termasuk dalam pin yang harus menampilkan 0
+            if (numericValue === DEFAULT_DISPLAY && value !== '0') {
+                 if (zeroDisplayPins.includes(pin)) {
+                     numericValue = 0; // Set ke 0, akan diformat nanti
+                 } else {
+                     return 'N/A';
+                 }
+            }
+            
             let correctionFactor = 1;
             if (pin === 'V10') { correctionFactor = KWH_CALIBRATION_FACTOR; } 
             else if (pin === 'V21') { correctionFactor = 1 + (LOAD_CALIBRATION_PERCENT / 100); }
@@ -1685,14 +1750,23 @@
             const integerPins = ['V11', 'V6', 'V12', 'V16', 'V15', 'V20', 'V2', 'V14'];
             const rupiahPins = ['V18', 'V19'];
             const summaryEnergyPins = ['V10', 'V21'];
-            const batteryDetailPins = ['V0', 'V7', 'V8', 'V9', 'V3']; // Termasuk V0, V7, V8, V9
+            const batteryDetailPins = ['V0', 'V7', 'V8', 'V9', 'V3']; 
 
             if (rupiahPins.includes(pin)) { return Math.max(0, numericValue).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
             if (integerPins.includes(pin)) { return Math.max(0, numericValue).toFixed(0); }
             if (summaryEnergyPins.includes(pin)) { return Math.max(0, numericValue).toFixed(1); }
             
-            // Atur metrik baterai ke 1 desimal untuk voltase/kapasitas
-            if (batteryDetailPins.includes(pin)) { return Math.max(0, numericValue).toFixed(1); }
+            // Format 1 desimal untuk metrik detail yang tersisa
+            if (batteryDetailPins.includes(pin) || pin === 'V1' || pin === 'V13' || pin === 'V5' || pin === 'V4') {
+                // V5 (Persen) diformat tanpa desimal jika 0
+                if (pin === 'V5' && numericValue === 0) return '0';
+                // V4 (Sunhour) diformat dengan 1 desimal
+                if (pin === 'V4') return Math.max(0, numericValue).toFixed(1);
+                // V5 (Persen) diformat dengan 1 desimal
+                if (pin === 'V5') return Math.max(0, numericValue).toFixed(1);
+                
+                return Math.max(0, numericValue).toFixed(1);
+            }
 
             return numericValue.toFixed(1);
         }
@@ -1746,102 +1820,103 @@
 
         function controlFlow(animIds, powerValue, absPower) { 
             const flowSpeed = getFlowDuration(absPower);
-            const isFlowing = absPower > 10;
-            let keyPoints = powerValue > 0 ? "0;1" : "1;0";
-            
+            const isFlowing = absPower > 10; // Ambang batas aliran
+
             animIds.forEach(id => {
                 const animElement = document.getElementById(id);
                 if (!animElement) return;
 
                 if (!isFlowing) {
+                    // Berhenti dan sembunyikan
                     animElement.parentNode.style.opacity = 0;
-                    animElement.setAttribute('dur', '10.0s');
                     animElement.setAttribute('repeatCount', '1');
+                    // Mengatur durasi yang sangat panjang agar dot tidak bergerak
+                    animElement.setAttribute('dur', '100s'); 
                 } else {
+                    // Jalankan animasi
                     animElement.parentNode.style.opacity = 1;
                     animElement.setAttribute('repeatCount', 'indefinite');
+                    animElement.setAttribute('calcMode', 'linear');
                     animElement.setAttribute('keyTimes', '0;1'); 
+
                     animElement.setAttribute('dur', flowSpeed);
+                    
+                    // Kunci untuk arah: 0;1 untuk maju (PV/Charge), 1;0 untuk mundur (Load/Discharge)
+                    let keyPoints = powerValue >= 0 ? "0;1" : "1;0"; 
                     animElement.setAttribute('keyPoints', keyPoints);
                 }
             });
         }
         
+        /**
+         * FUNGSI KRITIS: Menggunakan CSS dan atribut SVG dasar untuk animasi bar baterai yang stabil.
+         */
         function updateBatteryLevel(soc, batPower) {
-            const batteryInner = document.getElementById('bat_inner');
-            const svgDefs = document.querySelector('.svg-content defs');
-            if (!batteryInner || !svgDefs) return;
-            batteryInner.querySelectorAll('rect').forEach(rect => rect.remove());
+            const socFillRect = document.getElementById('battery_soc_fill');
+            const flowAnimRect = document.getElementById('battery_flow_anim_rect');
+            const patternAnim = document.getElementById('batteryFlowAnimPattern');
 
-            const totalBars = 8;
-            const socPerBar = 120 / totalBars;
-            const barWidth = 7, barHeight = 1.5, startX = 5, startYVisual = 6;
+            if (!socFillRect || !flowAnimRect || !patternAnim) return;
+
             let numericSoc = parseInt(soc);
             if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
             if (numericSoc > 100) numericSoc = 100;
-            soc = numericSoc;
 
-            let overallColorStop = soc >= 100 ? 'var(--color-bar-green)' : (soc >= 60 ? 'var(--color-bar-green-light)' : (soc >= 30 ? 'var(--color-bar-yellow)' : 'var(--color-bar-red)'));
-            const emptyColor = 'var(--color-bar-empty)';
-            svgDefs.innerHTML = '';
-            const gradientId = `socFlowGradient`;
-            const gradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
-            gradient.setAttribute('id', gradientId);
-            gradient.setAttribute('x1', '0%'); gradient.setAttribute('y1', '0%');
-            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '20%');
-            gradient.setAttribute('spreadMethod', 'repeat'); gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+            // Dimensi berdasarkan SVG yang dimodifikasi (viewBox 0 0 24 24)
+            const batteryWorkingHeight = 13; 
+            const baseYY = 19.5; // Titik dasar (Y paling bawah)
 
-            const absPower = Math.abs(batPower);
-            const isFlowing = absPower > 10;
-            let flowBaseColor = overallColorStop;
-            let flowHighlightColor = 'var(--color-bar-red)';
+            // 1. Hitung Tinggi dan Posisi Y (Level SOC)
+            const height = (numericSoc / 100) * batteryWorkingHeight;
+            const yPosition = baseYY - height; // Bergerak ke atas dari bawah
 
-            if (isFlowing) {
-                flowBaseColor = batPower > 0 ? '#388E3C' : '#8D0000';
+            // 2. Tentukan Warna
+            let fillColor = 'var(--color-bar-red)';
+            if (numericSoc > 70) { 
+                fillColor = 'var(--color-bar-green)';
+            } else if (numericSoc >= 30) { 
+                fillColor = 'var(--color-bar-yellow)';
             }
-
-            let stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-            stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', flowBaseColor); stop1.setAttribute('stop-opacity', '1.0');
-            gradient.appendChild(stop1);
-
-            if(isFlowing) {
-                let stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop2.setAttribute('offset', '10%'); stop2.setAttribute('stop-color', flowHighlightColor); stop2.setAttribute('stop-opacity', '1.0');
-                gradient.appendChild(stop2);
-                let stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                stop3.setAttribute('offset', '20%'); stop3.setAttribute('stop-color', flowBaseColor); stop3.setAttribute('stop-opacity', '1.0');
-                gradient.appendChild(stop3);
+            
+            // 3. Terapkan Perubahan Level SOC (Transisi CSS akan menghaluskan ini)
+            socFillRect.setAttribute('height', height.toFixed(2));
+            socFillRect.setAttribute('y', yPosition.toFixed(2));
+            socFillRect.setAttribute('fill', fillColor);
+            
+            // 4. Kontrol Animasi Aliran Bar (Charging/Discharging)
+            const powerThreshold = 10;
+            const isFlowing = Math.abs(batPower) > powerThreshold;
+            const isCharging = batPower > powerThreshold;
+            
+            if (isFlowing) {
+                // Tampilkan animasi aliran bar
+                flowAnimRect.setAttribute('opacity', 1);
+                
+                // Kontrol Durasi/Kecepatan (Lebih cepat untuk daya lebih besar)
+                const animDuration = getFlowDuration(Math.abs(batPower)); 
+                patternAnim.setAttribute('dur', animDuration);
+                patternAnim.setAttribute('repeatCount', 'indefinite');
+                
+                // Kontrol Arah (y bergerak ke atas (charge) atau ke bawah (discharge))
+                // Karena animasinya adalah x, kita ubah agar tampak bergerak ke atas/bawah
+                // Dengan mengatur 'y' pada pattern, kita bisa membuat garis miring tampak bergerak vertikal.
+                // NOTE: Untuk implementasi ini, kita akan membuat garis miring bergerak horizontal (x) dan 
+                // hanya mengubah arah (dari/ke) untuk mensimulasikan charge/discharge.
+                if (isCharging) {
+                    // Bergerak ke kanan (memicu garis tampak bergerak ke atas/kiri)
+                    patternAnim.setAttribute('attributeName', 'x');
+                    patternAnim.setAttribute('from', '0');
+                    patternAnim.setAttribute('to', '10');
+                } else {
+                    // Bergerak ke kiri (memicu garis tampak bergerak ke bawah/kanan)
+                    patternAnim.setAttribute('attributeName', 'x');
+                    patternAnim.setAttribute('from', '10');
+                    patternAnim.setAttribute('to', '0');
+                }
             } else {
-                 let stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-                 stop4.setAttribute('offset', '100%'); stop4.setAttribute('stop-color', overallColorStop); stop4.setAttribute('stop-opacity', '1.0');
-                 gradient.appendChild(stop4);
-            }
-
-            let animMotion = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
-            animMotion.setAttribute('attributeName', 'gradientTransform'); animMotion.setAttribute('type', 'translate');
-            const animDuration = getFlowDuration(absPower);
-
-            if (isFlowing) {
-                 animMotion.setAttribute('from', '0 0');
-                 animMotion.setAttribute('to', batPower > 0 ? '0 -20' : '0 20');
-                 animMotion.setAttribute('dur', animDuration);
-                 animMotion.setAttribute('repeatCount', 'indefinite');
-                 gradient.appendChild(animMotion);
-            }
-
-            svgDefs.appendChild(gradient);
-            const fillUrl = `url(#${gradientId})`;
-
-            for (let i = 0; i < totalBars; i++) {
-                const isFilled = soc > ((totalBars - i) * socPerBar - socPerBar);
-                const finalBarFill = isFilled ? fillUrl : emptyColor;
-                const yPosition = startYVisual + (i * (barHeight + 0.5));
-                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                rect.setAttribute('x', startX); rect.setAttribute('y', yPosition);
-                rect.setAttribute('width', barWidth); rect.setAttribute('height', barHeight);
-                rect.setAttribute('rx', 0.5); rect.setAttribute('ry', 0.5);
-                rect.setAttribute('fill', finalBarFill);
-                batteryInner.appendChild(rect);
+                // Hentikan animasi aliran bar
+                flowAnimRect.setAttribute('opacity', 0);
+                patternAnim.removeAttribute('repeatCount');
             }
         }
 
@@ -1963,7 +2038,7 @@
             if (pvPeak > 0) { eff = (solarP / pvPeak) * 100; }
             latestDiagramData.pvEfficiency = Math.min(100, eff);
 
-            const batP_for_visual = Math.abs(calculatedBatP); 
+            const batP_for_visual = calculatedBatP; // Digunakan di updateBatteryLevel dan controlFlow baterai
             const totalEnergyToLoad = loadP > 0 ? loadP : 0;
             const providedBySolar = solarP > 0 ? solarP : 0;
             const providedByBat_AC_Equivalent = rawBatP_DC < 0 ? Math.abs(rawBatP_DC) * INVERTER_DISCHARGE_EFFICIENCY : 0;
@@ -1985,16 +2060,28 @@
             latestDiagramData.batteryRemainingEnergy = bmsData.remainingAh;
 
             updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
-            updateBatteryLevel(bmsData.soc, calculatedBatP);
+            updateBatteryLevel(bmsData.soc, batP_for_visual); // Menggunakan nilai baterai terhitung/mentah
 
+            // PERBAIKAN PENTING UNTUK ANIMASI:
+            // 1. Solar Flow: Hanya ke bawah (positive power)
             controlFlow(['solar_flow_anim_1'], solarP, Math.abs(solarP));
+            
+            // 2. Load Flow: Selalu ke kanan (positive power)
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
-            if (Math.abs(rawCurrent) > CURRENT_THRESHOLD_A) {
-                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], rawCurrent > 0 ? 1 : -1, batP_for_visual);
+            
+            // 3. Battery Flow:
+            //    - Jika batP_for_visual positif (Charge), arah ke atas.
+            //    - Jika batP_for_visual negatif (Discharge), arah ke bawah.
+            if (Math.abs(batP_for_visual) > minimumPowerThreshold) {
+                // Gunakan batP_for_visual sebagai penentu arah (+/-)
+                controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], batP_for_visual, Math.abs(batP_for_visual));
             } else {
                 controlFlow(['bat_flow_anim_1', 'bat_flow_anim_2'], 0, 0);
             }
-            controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0);
+            
+            // 4. Grid Flow: Saat ini diset 0. Jika ada data Grid Buy/Sell, ini perlu diupdate.
+            controlFlow(['grid_flow_anim_1', 'grid_flow_anim_2'], 0, 0); 
+
             showDiagramStatus('Diagram diperbarui dari Blynk API dan BMS MQTT.', 'success');
         }
 
@@ -2025,6 +2112,7 @@
                     if (pin === 'V2') { currentPvPower = getCorrectedNumericValue(pin, rawValue); }
                     else if (pin === 'V14') { currentAcLoad = getCorrectedNumericValue(pin, rawValue); }
                     processDiagramPins(pin, rawValue);
+                    // Gunakan formatValue yang sudah dimodifikasi
                     const formattedValue = formatValue(pin, rawValue);
                     const unit = getUnit(pin);
 
@@ -2087,6 +2175,7 @@
 
                 } else {
                     allSuccessful = false;
+                    // Jika gagal fetch, tetap tampilkan N/A
                     element.textContent = 'N/A';
                     element.classList.add('loading-animation', 'text-red-500');
                     if (unitElement) unitElement.textContent = '';
@@ -2131,6 +2220,7 @@
             if (allSuccessful) { showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success'); }
             else { showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error'); }
             
+            // FIX: Panggil createIcons tanpa menggunakan destructuring
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
         }
 
@@ -2169,9 +2259,10 @@
             updateTime();
             setInterval(updateTime, 1000);
 
+            // Perbaikan: Hapus try...catch dan panggil createIcons secara langsung 
+            // tanpa destructuring untuk menghindari error di beberapa lingkungan JavaScript.
             if (typeof lucide !== 'undefined') {
-                try { lucide.createIcons(); } 
-                catch (e) { console.error("Error creating Lucide icons during init:", e); }
+                lucide.createIcons(); 
             }
 
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
