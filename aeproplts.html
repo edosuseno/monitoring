@@ -103,7 +103,8 @@
         .battery-current-disch { fill: var(--color-battery) !important; font-weight: 600; }
         .battery-current-charge { fill="var(--color-load)" !important; font-weight: 600; }
         .soh-default { fill: #C0C0C0 !important; font-weight: 600; }
-        #status-message-diagram, #message-box { display: none !important; }
+        /* Mengubah display: none untuk status/message box menjadi flex/block tapi defaultnya hidden */
+        #status-message-diagram, #message-box { display: none; }
         .led { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; background: #ccc; transition: background-color 0.3s ease; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
         .led.active { 
             background: var(--secondary); 
@@ -192,11 +193,6 @@
             box-shadow: 0 0 5px rgba(75, 135, 255, 0.5);
         }
 
-        /* CSS KHUSUS UNTUK BAR BATERAI LAMA (dihapus/diganti) */
-        #battery_soc_fill {
-            transition: height 0.5s ease-out, y 0.5s ease-out, fill 0.3s ease; /* Transisi untuk perubahan level SOC */
-        }
-        
         /* ---------------------------------------------------- */
         /* CSS BARU UNTUK BAR VERTIKAL */
         /* ---------------------------------------------------- */
@@ -333,7 +329,6 @@
                         <svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 0 490 430" class="svg-content">
                             <defs>
                                 <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan -->
-                                <!-- Pola lama dihapus karena bar diganti dengan segmen -->
                                 <pattern id="batteryFlowPattern" patternUnits="userSpaceOnUse" width="10" height="10" viewBox="0 0 10 10">
                                     <!-- Elemen Path (pola diagonal) -->
                                     <path d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="white" stroke-width="2.0" />
@@ -391,7 +386,7 @@
                                     <text id="pv_placeholder_text" x="247" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">SOC:</text>
                                     <text id="pv_placeholder" x="274" y="157" dominant-baseline="central" text-anchor="start" class="pv-bus-label">-- %</text>
                                 </g>
-                                <svg xmlns:xlink="http://www.w3.org/2000/xlink" overflow="visible" id="solar-flow">
+                                <svg xmlns:xlink="http://www.w3.org/1999/xlink" overflow="visible" id="solar-flow">
                                     <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="solar-line-1" d="M 239 120 L 239 215" display="" stroke="var(--color-solar)" stroke-width="2" class="st12"></path>
                                     <circle cx="0" cy="0" r="3.5" fill="var(--color-solar)"><animateMotion id="solar_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#solar-line-1"></mpath></animateMotion></circle>
                                 </svg>
@@ -437,7 +432,7 @@
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line" d="M 239 250 L 239 280" display="" stroke="var(--color-battery)" stroke-width="2"></path>
                                         <path fill="none" stroke-miterlimit="10" pointer-events="stroke" id="bat-line-to-icon" d="M 239 310 L 239 345" display="" stroke="var(--color-battery)" stroke-width="2"></path>
                                         <circle cx="0" cy="0" id="power-dot-discharge" r="3.5" fill="var(--color-battery)"><animateMotion id="bat_flow_anim_1" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line"></mpath></animateMotion></circle>
-                                        <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)"><animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line"></mpath></animateMotion></circle>
+                                        <circle cx="0" cy="0" id="power-dot-internal" r="3.5" fill="var(--color-battery)"><animateMotion id="bat_flow_anim_2" repeatCount="indefinite" keyTimes="0;1" calcMode="linear" dur="2s"><mpath href="#bat-line-to-icon"></mpath></animateMotion></circle>
                                     </svg>
                                     <svg id="battery_icon" style="overflow: visible;" x="0%"><a href="#">
                                         <svg id="bat_outter" y="338.5" width="78.75" height="78.75" preserveAspectRatio="none" viewBox="0 0 24 24" x="213.0">
@@ -445,13 +440,6 @@
                                             
                                             <!-- 1. Frame Path (Original - Solid Fill: Pink Med) -->
                                             <path fill="var(--color-battery)" d="M10 20H4V6h8L12 20m.67-16H11V2H5v2H3.33C2.6 4 2 4.6 2 5.33v15.34C2 21.4 2.6 22 3.33 22h9.34c.74 0 1.33-.59 1.33-1.33V5.33C14 4.6 13.4 4 12.67 4"/>
-                                            
-                                            <!-- Area kosong tempat bar akan mengisi: x=4.5 to x=11.5, y=6.5 to y=19.5, height 13 -->
-                                            <!-- Total Tinggi Kerja = 13 (dari y=6.5 hingga y=19.5) -->
-                                            
-                                            <!-- 2. Area Bar Baterai - 5 Segmen Vertikal (20% per segmen) -->
-                                            <!-- Tinggi per segmen: 13 / 5 = 2.6 -->
-                                            <!-- Jarak antar segmen: 13 / 5 = 2.6 -->
                                             
                                             <!-- Bar 5 (Paling atas: 80% - 100%) -->
                                             <rect id="battery_bar_5" x="5" y="6.9" width="6" height="2.2" rx="0.3" ry="0.3" fill="var(--battery-empty-color)" class="battery-bar" mask="url(#batteryMask)"/> 
@@ -464,8 +452,7 @@
                                             <!-- Bar 1 (Paling bawah: 0% - 20%) -->
                                             <rect id="battery_bar_1" x="5" y="17.3" width="6" height="2.2" rx="0.3" ry="0.3" fill="var(--battery-empty-color)" class="battery-bar" mask="url(#batteryMask)"/> 
                                             
-                                            <!-- 3. Dynamic SOC Fill LAMA (DIPERTANKAN SEBAGAI FALLBACK/PEMBERSIH) -->
-                                            <!-- Dibuat setinggi 0 agar tidak mengganggu bar segmen -->
+                                            <!-- Dynamic SOC Fill LAMA (DIPERTANKAN SEBAGAI FALLBACK/PEMBERSIH) -->
                                             <rect 
                                                 id="battery_soc_fill" 
                                                 x="4.5" y="19.5" width="7" height="0" rx="0.5" ry="0.5" 
@@ -474,7 +461,7 @@
                                                 style="transition: none;" 
                                             /> 
                                             
-                                            <!-- 4. Animasi Pola Garis LAMA (DIPERTANKAN HANYA UNTUK KEPERLUAN SVG LAMA JIKA ADA) -->
+                                            <!-- Animasi Pola Garis LAMA (DIPERTANKAN HANYA UNTUK KEPERLUAN SVG LAMA JIKA ADA) -->
                                             <rect 
                                                 id="battery_flow_anim_rect"
                                                 x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5"
@@ -732,13 +719,8 @@
         const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
         const UPDATE_INTERVAL = 5000;
         const S_PER_HOUR = 3600;
-        // Interval update 5 detik (5000ms), 1 jam = 3600 detik.
-        // Titik data per jam = 3600s / 5s = 720
-        // Titik data maks (24 jam) = 24 jam * 720 = 17280
-        const MAX_DATA_POINTS = 17280; // Total titik data untuk menyimpan 24 jam
+        const MAX_DATA_POINTS = 17280; 
         
-        // VARIABEL DURASI BARU
-        // Dipaksa 24 jam karena tombol durasi telah dihapus
         let currentDurationHours = 24; 
 
         let fetchInterval = null;
@@ -896,13 +878,49 @@
             safeUpdate('v2-status-time', `Status ${timeStr}`);
             safeUpdate('v14-status-time', `Status ${timeStr}`);
         }
-
+        
         function showMessage(message, type = 'warning') {
-            /* Logic removed to reduce length, but preserved as comment placeholder */
+            const msgBox = document.getElementById('message-box');
+            if (!msgBox) return;
+
+            msgBox.textContent = message;
+            msgBox.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-yellow-900', 'text-yellow-300', 'bg-green-900', 'text-green-300');
+            msgBox.classList.add('block');
+
+            if (type === 'error') {
+                msgBox.classList.add('bg-red-900', 'text-red-300');
+            } else if (type === 'warning') {
+                msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+            } else if (type === 'success') {
+                msgBox.classList.add('bg-green-900', 'text-green-300');
+            }
+
+            // Hilangkan pesan setelah 7 detik
+            setTimeout(() => {
+                msgBox.classList.add('hidden');
+            }, 7000);
         }
 
         function showDiagramStatus(message, type = 'warning') {
-            /* Logic removed to reduce length, but preserved as comment placeholder */
+            const msgBox = document.getElementById('status-message-diagram');
+            if (!msgBox) return;
+
+            msgBox.textContent = message;
+            msgBox.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-yellow-900', 'text-yellow-300', 'bg-green-900', 'text-green-300');
+            msgBox.classList.add('block');
+
+            if (type === 'error') {
+                msgBox.classList.add('bg-red-900', 'text-red-300');
+            } else if (type === 'warning') {
+                msgBox.classList.add('bg-yellow-900', 'text-yellow-300');
+            } else if (type === 'success') {
+                msgBox.classList.add('bg-green-900', 'text-green-300');
+            }
+
+             // Hilangkan pesan setelah 5 detik
+            setTimeout(() => {
+                msgBox.classList.add('hidden');
+            }, 5000);
         }
 
         function closeModal() {
@@ -1634,7 +1652,6 @@
 
         /**
          * FUNGSI KRITIS: Mengatur durasi chart. Karena tombol dihapus, fungsi ini akan selalu memanggil 24 jam.
-         * Kami mempertahankan fungsi ini karena dipanggil di initApp.
          */
         function setChartDuration(durationHours) {
             // Karena tombol durasi dihapus, kita paksa durasi 24 jam (MAX_DATA_POINTS)
@@ -1647,7 +1664,7 @@
 
             // Render ulang chart dengan data baru
             renderRealtimeChart();
-            energyChartInstance.resetZoom(); // Reset zoom setiap kali durasi diubah
+            if (energyChartInstance) { energyChartInstance.resetZoom(); }
         }
 
 
@@ -1692,12 +1709,17 @@
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
                         // Mengganti teks judul untuk mencerminkan durasi yang diperbarui
                         title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
-                        tooltip: { backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1 },
+                        tooltip: { 
+                            backgroundColor: 'rgba(20, 20, 48, 0.8)', 
+                            titleColor: '#FFFFFF', 
+                            bodyColor: '#BFFF00', 
+                            borderColor: 'rgba(71, 85, 105, 0.5)', 
+                            borderWidth: 1 
+                        },
                         // Menonaktifkan semua tombol zoom/pan default kecuali reset
                         zoom: { 
                             pan: { enabled: true, mode: 'x' }, 
                             zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
-                            // Properti toolbar: { ... } yang mengontrol tombol waktu dihilangkan/diset ke default (hanya reset/pan/zoom)
                         }
                     },
                     scales: {
@@ -1740,7 +1762,6 @@
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
             // Peningkatan KRITIS: Mengubah format label waktu menjadi Tanggal & Jam (DD Mon YYYY HH:MM)
-            // Ini akan memastikan rentang 24 jam terlihat benar bahkan melewati tengah malam dan mempertahankan tanggal untuk Tooltip.
             const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
 
 
@@ -1952,8 +1973,7 @@
             
             // Tentukan kelas animasi dan warna
             let activeAnimClass = '';
-            let idleFillClass = 'battery-idle-fill'; 
-            let emptyFillColor = 'var(--battery-empty-color)';
+            let idleFillColor = 'var(--battery-idle-color)'; 
             
             if (isFlowing) {
                 activeAnimClass = isCharging ? 'battery-charging-anim' : 'battery-discharging-anim';
@@ -1968,32 +1988,28 @@
             // Iterasi melalui bar untuk mengatur status dan animasi
             for (let i = 0; i < numBars; i++) {
                 const bar = barElements[i];
+                // Bar 1 adalah yang paling bawah, Bar 5 paling atas.
+                // Logika: Bar aktif jika SOC berada di atas batas bawah segmennya.
                 const minSoc = i * (100 / numBars); // 0, 20, 40, 60, 80
-                const maxSoc = (i + 1) * (100 / numBars); // 20, 40, 60, 80, 100
                 
                 // Hapus semua kelas animasi dan fill sebelum menerapkan yang baru
                 bar.classList.remove('battery-charging-anim', 'battery-discharging-anim', 'battery-idle-fill');
-                
-                if (numericSoc >= maxSoc) {
-                    // Bar terisi penuh
+                bar.style.fill = 'var(--battery-empty-color)'; // Default: kosong
+
+                if (numericSoc > minSoc) {
+                    // Bar terisi
                     bar.style.fill = idleFillColor;
                     bar.style.opacity = 1;
+                    
                     if (isFlowing) {
-                        // Jika ada aliran, bar ini ikut beranimasi
-                        bar.classList.add(activeAnimClass);
-                    }
-                } else if (numericSoc > minSoc && numericSoc < maxSoc) {
-                    // Bar sedang mengisi/mengosongkan (bar aktif)
-                    bar.style.fill = idleFillColor;
-                    bar.style.opacity = 1;
-                    if (isFlowing) {
-                         // Hanya bar aktif yang beranimasi
-                        bar.classList.add(activeAnimClass);
+                        // Cek apakah ini adalah bar yang sedang diisi (charging) atau bar paling atas yang terisi (discharging)
+                        // Logika ini disederhanakan: semua bar yang terisi ikut beranimasi jika ada aliran
+                         bar.classList.add(activeAnimClass);
                     }
                 } else {
                     // Bar kosong
                     bar.style.fill = 'var(--battery-empty-color)';
-                    bar.style.opacity = 1; // Selalu terlihat (frame bar)
+                    bar.style.opacity = 1;
                 }
             }
             
@@ -2359,3 +2375,4 @@
     </script>
 </body>
 </html>
+
