@@ -294,12 +294,11 @@
                     <div class="svg-container">
                         <svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 0 490 430" class="svg-content">
                             <defs>
-                                <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan -->
+                                <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan (Hanya akan digerakkan oleh JS) -->
                                 <pattern id="batteryFlowPattern" patternUnits="userSpaceOnUse" width="10" height="10" viewBox="0 0 10 10">
                                     <!-- Garis miring -->
                                     <path d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="white" stroke-width="1.5" opacity="0.6"/>
-                                    <!-- Animasi akan diletakkan di sini oleh JS -->
-                                    <animate id="batteryFlowAnimPattern" attributeName="x" from="0" to="10" dur="0.8s" repeatCount="indefinite" additive="sum"/>
+                                    <!-- Elemen <animate> yang akan dimanipulasi/dibuat ulang oleh JS -->
                                 </pattern>
 
                                 <!-- Masking untuk bar pengisi baterai, memastikan hanya bar yang terlihat -->
@@ -396,7 +395,6 @@
                                             /> 
                                             
                                             <!-- 4. Animasi Pola Garis (Di atas SOC Fill) -->
-                                            <!-- Elemen ini akan diisi oleh pola garis bergerak saat charging/discharging -->
                                             <rect 
                                                 id="battery_flow_anim_rect"
                                                 x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5"
@@ -1852,13 +1850,14 @@
         
         /**
          * FUNGSI KRITIS: Menggunakan CSS dan atribut SVG dasar untuk animasi bar baterai yang stabil.
+         * MENGHILANGKAN MANIPULASI DOM ANIMAL YANG BERMASALAH.
          */
         function updateBatteryLevel(soc, batPower) {
             const socFillRect = document.getElementById('battery_soc_fill');
             const flowAnimRect = document.getElementById('battery_flow_anim_rect');
-            const patternAnim = document.getElementById('batteryFlowAnimPattern');
+            const patternContainer = document.getElementById('batteryFlowPattern');
 
-            if (!socFillRect || !flowAnimRect || !patternAnim) return;
+            if (!socFillRect || !flowAnimRect || !patternContainer) return;
 
             let numericSoc = parseInt(soc);
             if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
@@ -1885,38 +1884,47 @@
             socFillRect.setAttribute('y', yPosition.toFixed(2));
             socFillRect.setAttribute('fill', fillColor);
             
-            // 4. Kontrol Animasi Aliran Bar (Charging/Discharging)
+            // 4. Kontrol Animasi Aliran Bar (Charging/Discharging) - KEMBALI KE METODE STABIL
             const powerThreshold = 10;
             const isFlowing = Math.abs(batPower) > powerThreshold;
             const isCharging = batPower > powerThreshold;
             
+            let animElement = document.getElementById('batteryFlowAnimPattern');
+
+            // Jika elemen animate tidak ada, buatlah (hanya sekali)
+            if (!animElement) {
+                animElement = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+                animElement.setAttribute('id', 'batteryFlowAnimPattern');
+                animElement.setAttribute('attributeName', 'x');
+                animElement.setAttribute('additive', 'sum');
+                patternContainer.appendChild(animElement);
+            }
+
             if (isFlowing) {
                 // Tampilkan animasi aliran bar
                 flowAnimRect.setAttribute('opacity', 1);
                 
-                // Kontrol Durasi/Kecepatan (Lebih cepat untuk daya lebih besar)
+                // Kontrol Durasi/Kecepatan
                 const animDuration = getFlowDuration(Math.abs(batPower)); 
-                patternAnim.setAttribute('dur', animDuration);
-                patternAnim.setAttribute('repeatCount', 'indefinite');
                 
-                // Kontrol Arah (x bergerak untuk mensimulasikan charge/discharge)
+                // Atur Ulang Animasi secara eksplisit (Ini adalah perbaikan stabilitas)
+                animElement.setAttribute('dur', animDuration);
+                animElement.setAttribute('repeatCount', 'indefinite');
+
                 if (isCharging) {
-                    // Bergerak ke kanan (memicu garis tampak bergerak ke atas/kiri)
-                    patternAnim.setAttribute('attributeName', 'x');
-                    patternAnim.setAttribute('from', '0');
-                    patternAnim.setAttribute('to', '10');
+                    animElement.setAttribute('from', '0');
+                    animElement.setAttribute('to', '10');
                 } else {
-                    // Bergerak ke kiri (memicu garis tampak bergerak ke bawah/kanan)
-                    patternAnim.setAttribute('attributeName', 'x');
-                    patternAnim.setAttribute('from', '10');
-                    patternAnim.setAttribute('to', '0');
+                    animElement.setAttribute('from', '10');
+                    animElement.setAttribute('to', '0');
                 }
+                
             } else {
                 // Hentikan animasi aliran bar secara stabil
                 flowAnimRect.setAttribute('opacity', 0);
-                // Ganti durasi dan repeat count untuk menghentikan animasi secara halus
-                patternAnim.setAttribute('dur', '1000s'); 
-                patternAnim.setAttribute('repeatCount', '1');
+                // Menghentikan animasi dengan durasi sangat panjang dan 1 kali pengulangan
+                animElement.setAttribute('dur', '1000s'); 
+                animElement.setAttribute('repeatCount', '1');
             }
         }
 
@@ -2218,7 +2226,7 @@
             calculateAndRenderDiagram(bmsAggregatedData);
 
             if (allSuccessful) { showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success'); }
-            else { showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Toke<\ctrl61>n dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error'); }
+            else { showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error'); }
             
             // FIX: Panggil createIcons tanpa menggunakan destructuring
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
