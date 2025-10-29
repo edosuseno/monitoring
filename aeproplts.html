@@ -386,7 +386,7 @@
                                             <!-- 2. Inner Mask (Area kosong tempat bar akan mengisi, x=4.5 to x=11.5, y=6.5 to y=19.5, height 13) -->
                                             <rect x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5" fill="var(--solar-dark)" /> 
                                             
-                                            <!-- 3. Dynamic SOC Fill (Bergerak dari bawah ke atas) -->
+                                            <!-- 3. Dynamic SOC Fill (Bar Level - Warna Dasar) -->
                                             <rect 
                                                 id="battery_soc_fill" 
                                                 x="4.5" y="19.5" width="7" height="0" rx="0.5" ry="0.5" 
@@ -396,6 +396,7 @@
                                             /> 
                                             
                                             <!-- 4. Animasi Pola Garis (Di atas SOC Fill) -->
+                                            <!-- Elemen ini akan diisi oleh pola garis bergerak saat charging/discharging -->
                                             <rect 
                                                 id="battery_flow_anim_rect"
                                                 x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5"
@@ -1137,15 +1138,16 @@
          * FUNGSI HELPER BARU: Menghapus kelas latar belakang yang bersaing pada progress bar.
          */
         function clearProgressBarColors(el) {
-            if (!el) return;
-            const classes = Array.from(el.classList);
-            // Target semua prefix bg-soc- dan bg-tailwind yang mungkin bersaing
-            const bgPrefixes = ['bg-soc-', 'bg-red-', 'bg-yellow-', 'bg-green-', 'bg-blue-', 'bg-gray-'];
-            classes.forEach(className => {
-                if (bgPrefixes.some(p => className.startsWith(p))) {
-                    el.classList.remove(className);
-                }
-            });
+            if (el) {
+                const classes = Array.from(el.classList);
+                // Target semua prefix bg-soc- dan bg-tailwind yang mungkin bersaing
+                const bgPrefixes = ['bg-soc-', 'bg-red-', 'bg-yellow-', 'bg-green-', 'bg-blue-', 'bg-gray-'];
+                classes.forEach(className => {
+                    if (bgPrefixes.some(p => className.startsWith(p))) {
+                        el.classList.remove(className);
+                    }
+                });
+            }
         }
 
         const CORE_BMS_UNIT_CLASSES = ['text-3xl', 'font-extrabold'];
@@ -1897,11 +1899,7 @@
                 patternAnim.setAttribute('dur', animDuration);
                 patternAnim.setAttribute('repeatCount', 'indefinite');
                 
-                // Kontrol Arah (y bergerak ke atas (charge) atau ke bawah (discharge))
-                // Karena animasinya adalah x, kita ubah agar tampak bergerak ke atas/bawah
-                // Dengan mengatur 'y' pada pattern, kita bisa membuat garis miring tampak bergerak vertikal.
-                // NOTE: Untuk implementasi ini, kita akan membuat garis miring bergerak horizontal (x) dan 
-                // hanya mengubah arah (dari/ke) untuk mensimulasikan charge/discharge.
+                // Kontrol Arah (x bergerak untuk mensimulasikan charge/discharge)
                 if (isCharging) {
                     // Bergerak ke kanan (memicu garis tampak bergerak ke atas/kiri)
                     patternAnim.setAttribute('attributeName', 'x');
@@ -1914,9 +1912,11 @@
                     patternAnim.setAttribute('to', '0');
                 }
             } else {
-                // Hentikan animasi aliran bar
+                // Hentikan animasi aliran bar secara stabil
                 flowAnimRect.setAttribute('opacity', 0);
-                patternAnim.removeAttribute('repeatCount');
+                // Ganti durasi dan repeat count untuk menghentikan animasi secara halus
+                patternAnim.setAttribute('dur', '1000s'); 
+                patternAnim.setAttribute('repeatCount', '1');
             }
         }
 
@@ -2218,7 +2218,7 @@
             calculateAndRenderDiagram(bmsAggregatedData);
 
             if (allSuccessful) { showMessage(`Data PLTS berhasil diperbarui pada ${new Date().toLocaleTimeString('id-ID')}`, 'success'); }
-            else { showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Token dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error'); }
+            else { showMessage('Beberapa data PLTS gagal dimuat. Periksa Auth Toke<\ctrl61>n dan pastikan server Blynk Anda dapat diakses (CORS/HTTPS).', 'error'); }
             
             // FIX: Panggil createIcons tanpa menggunakan destructuring
             if (typeof lucide !== 'undefined') { lucide.createIcons(); }
