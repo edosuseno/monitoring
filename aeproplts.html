@@ -190,6 +190,39 @@
         #battery_soc_fill {
             transition: height 0.5s ease-out, y 0.5s ease-out, fill 0.3s ease; /* Transisi untuk perubahan level SOC */
         }
+        
+        /* ---------------------------------------------------- */
+        /* CSS KEYFRAME UNTUK ALIRAN BAR BATERAI (LEBIH STABIL) */
+        /* ---------------------------------------------------- */
+
+        /* Animasi gerakan diagonal ke kanan bawah/kiri atas */
+        @keyframes flow-pattern-charge {
+            from { transform: translate(0, 0); }
+            to { transform: translate(10px, 10px); } /* Bergerak ke kanan bawah */
+        }
+
+        @keyframes flow-pattern-discharge {
+            from { transform: translate(0, 0); }
+            to { transform: translate(-10px, -10px); } /* Bergerak ke kiri atas (Aliran keluar) */
+        }
+
+        /* Kelas yang mengontrol animasi pada elemen pattern path */
+        #batteryFlowPath.charging-flow {
+            animation: flow-pattern-charge 0.8s linear infinite;
+        }
+
+        #batteryFlowPath.discharging-flow {
+            animation: flow-pattern-discharge 0.8s linear infinite;
+        }
+
+        #batteryFlowPath {
+            /* Styling dasar untuk garis pola */
+            stroke-dasharray: 4 2; 
+            transform-origin: center center;
+            transition: opacity 0.3s ease;
+            transform-box: fill-box;
+            transform-style: preserve-3d; /* Memaksa GPU rendering */
+        }
     </style>
 </head>
 
@@ -294,11 +327,10 @@
                     <div class="svg-container">
                         <svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-2 0 490 430" class="svg-content">
                             <defs>
-                                <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan (Hanya akan digerakkan oleh JS) -->
+                                <!-- Definisi Pola Garis untuk Animasi Pengisian/Pengosongan -->
                                 <pattern id="batteryFlowPattern" patternUnits="userSpaceOnUse" width="10" height="10" viewBox="0 0 10 10">
-                                    <!-- Garis miring -->
-                                    <path d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="white" stroke-width="1.5" opacity="0.6"/>
-                                    <!-- Elemen <animate> yang akan dimanipulasi/dibuat ulang oleh JS -->
+                                    <!-- Elemen Path yang akan digerakkan oleh CSS Keyframes -->
+                                    <path id="batteryFlowPath" d="M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2" stroke="white" stroke-width="1.5" opacity="0.6"/>
                                 </pattern>
 
                                 <!-- Masking untuk bar pengisi baterai, memastikan hanya bar yang terlihat -->
@@ -394,7 +426,7 @@
                                                 style="transition: height 0.5s ease-out, y 0.5s ease-out, fill 0.3s ease;" 
                                             /> 
                                             
-                                            <!-- 4. Animasi Pola Garis (Di atas SOC Fill) -->
+                                            <!-- 4. Animasi Pola Garis (Overlay untuk Gerakan) -->
                                             <rect 
                                                 id="battery_flow_anim_rect"
                                                 x="4.5" y="6.5" width="7" height="13" rx="0.5" ry="0.5"
@@ -1849,15 +1881,14 @@
         }
         
         /**
-         * FUNGSI KRITIS: Menggunakan CSS dan atribut SVG dasar untuk animasi bar baterai yang stabil.
-         * MENGHILANGKAN MANIPULASI DOM ANIMAL YANG BERMASALAH.
+         * FUNGSI KRITIS: Menggunakan CSS Keyframes untuk animasi bar baterai yang stabil di HP.
          */
         function updateBatteryLevel(soc, batPower) {
             const socFillRect = document.getElementById('battery_soc_fill');
             const flowAnimRect = document.getElementById('battery_flow_anim_rect');
-            const patternContainer = document.getElementById('batteryFlowPattern');
+            const flowPath = document.getElementById('batteryFlowPath'); 
 
-            if (!socFillRect || !flowAnimRect || !patternContainer) return;
+            if (!socFillRect || !flowAnimRect || !flowPath) return;
 
             let numericSoc = parseInt(soc);
             if (isNaN(numericSoc) || numericSoc < 0) numericSoc = 0;
@@ -1884,47 +1915,25 @@
             socFillRect.setAttribute('y', yPosition.toFixed(2));
             socFillRect.setAttribute('fill', fillColor);
             
-            // 4. Kontrol Animasi Aliran Bar (Charging/Discharging) - KEMBALI KE METODE STABIL
+            // 4. Kontrol Animasi Aliran Bar (Charging/Discharging) menggunakan CSS Classes
             const powerThreshold = 10;
             const isFlowing = Math.abs(batPower) > powerThreshold;
             const isCharging = batPower > powerThreshold;
             
-            let animElement = document.getElementById('batteryFlowAnimPattern');
-
-            // Jika elemen animate tidak ada, buatlah (hanya sekali)
-            if (!animElement) {
-                animElement = document.createElementNS("http://www.w3.org/2000/svg", "animate");
-                animElement.setAttribute('id', 'batteryFlowAnimPattern');
-                animElement.setAttribute('attributeName', 'x');
-                animElement.setAttribute('additive', 'sum');
-                patternContainer.appendChild(animElement);
-            }
+            flowPath.classList.remove('charging-flow', 'discharging-flow');
+            flowAnimRect.setAttribute('opacity', 0); // Default: Sembunyikan Animasi
 
             if (isFlowing) {
                 // Tampilkan animasi aliran bar
                 flowAnimRect.setAttribute('opacity', 1);
                 
-                // Kontrol Durasi/Kecepatan
-                const animDuration = getFlowDuration(Math.abs(batPower)); 
-                
-                // Atur Ulang Animasi secara eksplisit (Ini adalah perbaikan stabilitas)
-                animElement.setAttribute('dur', animDuration);
-                animElement.setAttribute('repeatCount', 'indefinite');
-
                 if (isCharging) {
-                    animElement.setAttribute('from', '0');
-                    animElement.setAttribute('to', '10');
+                    flowPath.classList.add('charging-flow');
                 } else {
-                    animElement.setAttribute('from', '10');
-                    animElement.setAttribute('to', '0');
+                    flowPath.classList.add('discharging-flow');
                 }
-                
             } else {
-                // Hentikan animasi aliran bar secara stabil
-                flowAnimRect.setAttribute('opacity', 0);
-                // Menghentikan animasi dengan durasi sangat panjang dan 1 kali pengulangan
-                animElement.setAttribute('dur', '1000s'); 
-                animElement.setAttribute('repeatCount', '1');
+                 // Diam (Idle): opacity sudah 0 dan kelas sudah dihapus di atas.
             }
         }
 
