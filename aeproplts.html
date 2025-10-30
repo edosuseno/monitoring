@@ -549,7 +549,7 @@
                     </div>
                 </div>
 
-                <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya</h2>
+                <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya (Historis 24 Jam dari Server)</h2>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div class="power-summary-card">
                         <p class="text-sm text-gray-400">Daya PV (Input)</p>
@@ -575,9 +575,7 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
-                    <!-- Penambahan Pilihan Durasi -->
                     <div class="flex justify-end items-center mb-4 flex-wrap">
-                        <!-- Tombol durasi sudah dihapus sesuai permintaan -->
                         <div class="flex justify-end space-x-3 mt-3 sm:mt-0">
                             <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
                             <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
@@ -728,6 +726,7 @@
         const KWH_CALIBRATION_FACTOR = 1 + (6.0 / 100); 
         const CURRENT_THRESHOLD_A = 0.1;
 
+        // Ketergantungan Local Storage dihapus
         const STORAGE_KEY_CHARGE = 'dailyChargeWh';
         const STORAGE_KEY_DISCHARGE = 'dailyDischargeWh';
         const STORAGE_KEY_RESET_DATE = 'dailyResetDate';
@@ -744,10 +743,17 @@
             'V3': 'v3-pzem-energy', 'V11': 'v11-total-pv',
             'V12': 'v12-voltage', 'V13': 'v13-current', 'V15': 'v15-energy', 'V16': 'v16-frequency', 'V20': 'v20-inverter-peak',
         };
-        const STORAGE_KEY_CHART_DATA = 'aepro_plts_chart_data_instant';
+        
+        // Data historis hanya disimpan di sini saat runtime, tidak ada Local Storage
+        window.realtimeData = { 
+            labels: [], 
+            pvPower: [], 
+            acLoad: []
+        }; 
+        
+        // MAX_DATA_POINTS tidak lagi digunakan, karena limit diatur oleh History API
         const UPDATE_INTERVAL = 5000;
         const S_PER_HOUR = 3600;
-        const MAX_DATA_POINTS = 17280; 
         
         let currentDurationHours = 24; 
 
@@ -757,8 +763,7 @@
         let ENERGY_CALIBRATION_PERCENT = INSTANT_PV_PERCENT;
         let LOAD_CALIBRATION_PERCENT = INSTANT_LOAD_PERCENT;
         let energyChartInstance = null;
-
-        window.realtimeData = { labels: [], pvPower: [], acLoad: [] };
+        
         let client;
         let batteries = [];
         let currentAddr = null;
@@ -799,6 +804,8 @@
         // UTILITY FUNCTIONS
         // ==========================================================
 
+        // FUNGSI INI TETAP ADA UNTUK DATA AKUMULASI BMS HARIAN (Charge/Discharge) 
+        // yang TIDAK disinkronkan ke Blynk API V10/V21.
         function loadDailyEnergy() {
             resetDailyEnergy(true); 
             dailyChargeWh = parseFloat(localStorage.getItem(STORAGE_KEY_CHARGE) || '0');
@@ -1509,25 +1516,98 @@
         // ==========================================================
         // PLTS LOGIC & DIAGRAM LOGIC
         // ==========================================================
+        
+        // FUNGSI BARU: Mengambil data historis dari Blynk API
+        async function loadHistoricalDataFromBlynk() {
+            const AUTH_TOKEN = INSTANT_AUTH_TOKEN;
+            const SERVER_URL = `https://${INSTANT_SERVER_IP}`;
+            
+            // Meminta data selama 24 jam (1440 menit) dengan granularity 1 menit
+            // Pin V2 dan V14 dikonfirmasi memiliki histori
+            const HISTORY_API_V2 = `${SERVER_URL}/${AUTH_TOKEN}/data/V2?granularity=1m&till=9999999999999&limit=1440`; 
+            const HISTORY_API_V14 = `${SERVER_URL}/${AUTH_TOKEN}/data/V14?granularity=1m&till=9999999999999&limit=1440`; 
 
-        function loadHistoricalData() {
-            const savedData = localStorage.getItem(STORAGE_KEY_CHART_DATA);
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    const startIndex = Math.max(0, parsedData.labels.length - MAX_DATA_POINTS);
-                    window.realtimeData.labels = parsedData.labels.slice(startIndex);
-                    window.realtimeData.pvPower = parsedData.pvPower.slice(startIndex);
-                    window.realtimeData.acLoad = parsedData.acLoad.slice(startIndex);
-                } catch (e) {
-                    localStorage.removeItem(STORAGE_KEY_CHART_DATA);
+            try {
+                const [resV2, resV14] = await Promise.all([
+                    fetch(HISTORY_API_V2),
+                    fetch(HISTORY_API_V14)
+                ]);
+                
+                const dataV2 = await resV2.json();
+                const dataV14 = await resV14.json();
+                
+                if (!Array.isArray(dataV2) || !Array.isArray(dataV14)) {
+                    throw new Error("Blynk API returned non-array data or error. Cek status Data Storage V2/V14.");
                 }
+                
+                // 1. Kosongkan data runtime lama
+                window.realtimeData.labels = [];
+                window.realtimeData.pvPower = [];
+                window.realtimeData.acLoad = [];
+                
+                // 2. Proses data V2 (PV Power) sebagai sumber utama labels
+                dataV2.forEach(item => {
+                    const timestamp = parseInt(item[0]); // item[0] = timestamp (ms)
+                    const date = new Date(timestamp);
+                    
+                    // Format waktu yang sama
+                    const timeLabel = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    
+                    window.realtimeData.labels.push(timeLabel);
+                    window.realtimeData.pvPower.push(parseFloat(item[1]));
+                });
+
+                // 3. Sinkronkan data V14 (AC Load)
+                // Kita akan menggunakan timestamp V2 sebagai acuan.
+                // Jika V14 punya data di timestamp yang sama, gunakan. Jika tidak, pakai nol.
+                
+                const V14_map = new Map(dataV14.map(item => [item[0], parseFloat(item[1])]));
+
+                window.realtimeData.labels.forEach((label, index) => {
+                    // Cari timestamp yang sesuai di V14. Karena data Blynk biasanya sejajar,
+                    // kita asumsikan indexnya sama, tapi ini lebih aman.
+                    const V2_timestamp = dataV2[index] ? parseInt(dataV2[index][0]) : null;
+                    
+                    let loadValue = 0;
+                    if (V2_timestamp !== null && V14_map.has(V2_timestamp.toString())) {
+                         loadValue = V14_map.get(V2_timestamp.toString());
+                    } else if (dataV14[index]) {
+                         // Fallback jika urutan sama tapi timestamp tidak matching
+                         loadValue = parseFloat(dataV14[index][1]);
+                    }
+
+                    // Hanya tambahkan data V14 jika label V2 ada
+                    if (index < window.realtimeData.labels.length) {
+                       window.realtimeData.acLoad.push(loadValue);
+                    }
+                });
+
+                console.log(`[BLYNK HISTORY] Berhasil memuat ${window.realtimeData.labels.length} titik data (V2 & V14) dari server.`);
+                
+            } catch (error) {
+                console.error("Gagal mengambil data historis dari Blynk API:", error);
+                showMessage('Gagal memuat riwayat Daya dari server Blynk. Grafik historis mungkin kosong.', 'error');
+                // Mengosongkan data jika gagal
+                window.realtimeData = { labels: [], pvPower: [], acLoad: [] };
             }
         }
+        
+        // FUNGSI LAMA loadHistoricalData() DIHAPUS
 
-        function saveHistoricalData() {
-            localStorage.setItem(STORAGE_KEY_CHART_DATA, JSON.stringify(window.realtimeData));
+        function getChartDataForDuration(durationHours) {
+            // Karena data sudah dari History API (24 jam), kita hanya perlu menampilkan yang ada
+            const totalStoredPoints = window.realtimeData.labels.length;
+            const pointsToDisplay = totalStoredPoints; // Selalu tampilkan semua data yang didapat dari API
+            const startIndex = 0; // Mulai dari awal
+
+            return {
+                labels: window.realtimeData.labels.slice(startIndex),
+                pvPower: window.realtimeData.pvPower.slice(startIndex),
+                acLoad: window.realtimeData.acLoad.slice(startIndex)
+            };
         }
+
+        // FUNGSI LAMA saveHistoricalData() DIHAPUS
 
         function requestFullscreen(element) {
             if (element.requestFullscreen) { element.requestFullscreen(); } 
@@ -1601,17 +1681,11 @@
         }
 
         function getChartDataForDuration(durationHours) {
-            const pointsPerHour = S_PER_HOUR / (UPDATE_INTERVAL / 1000); 
-            const maxPoints = Math.ceil(durationHours * pointsPerHour); 
-            
-            const totalStoredPoints = window.realtimeData.labels.length;
-            const pointsToDisplay = Math.min(maxPoints, totalStoredPoints);
-            const startIndex = totalStoredPoints - pointsToDisplay;
-
+            // Logika ini disederhanakan karena data sudah diambil 24 jam penuh dari server.
             return {
-                labels: window.realtimeData.labels.slice(startIndex),
-                pvPower: window.realtimeData.pvPower.slice(startIndex),
-                acLoad: window.realtimeData.acLoad.slice(startIndex)
+                labels: window.realtimeData.labels,
+                pvPower: window.realtimeData.pvPower,
+                acLoad: window.realtimeData.acLoad
             };
         }
 
@@ -1665,7 +1739,7 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
-                        title: { display: true, text: `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`, color: '#FFFFFF' },
+                        title: { display: true, text: `Grafik Daya Historis 24 Jam (Dari Server Blynk)`, color: '#FFFFFF' },
                         tooltip: { 
                             backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1,
                             callbacks: {
@@ -1718,8 +1792,11 @@
             const now = new Date();
             const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-
-            if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
+            // Karena kita mengambil data 24 jam penuh dari server, 
+            // kita hanya perlu menambahkan titik terbaru di ujung array.
+            
+            // Hapus titik tertua jika jumlah data melebihi 1440 (24 jam x 60 menit)
+            if (window.realtimeData.labels.length >= 1440) {
                 window.realtimeData.labels.shift();
                 window.realtimeData.pvPower.shift();
                 window.realtimeData.acLoad.shift();
@@ -1735,11 +1812,10 @@
                 energyChartInstance.data.datasets[0].data = dataToDisplay.pvPower;
                 energyChartInstance.data.datasets[1].data = dataToDisplay.acLoad;
                 
-                energyChartInstance.options.plugins.title.text = `Perbandingan Daya PV vs Beban AC (${currentDurationHours} Jam Terakhir)`;
+                energyChartInstance.options.plugins.title.text = `Grafik Daya Historis 24 Jam (Dari Server Blynk)`;
                 
                 energyChartInstance.update(); 
             }
-            saveHistoricalData();
         }
 
         async function fetchPinValue(pin) {
@@ -1747,11 +1823,9 @@
             let protocol = 'https';
             const defaultPort = '8080';
 
-            if (!host.includes(':')) { host = `${host}:${defaultPort}`; }
-            if (serverIp.includes('blynk.cloud')) { protocol = 'https'; } 
-            else if (!serverIp.includes(':')) { host = `${serverIp}:8080`; protocol = 'http'; }
-
-            if (protocol === 'http' && window.location.protocol === 'https:') { protocol = 'https'; }
+            // Server Blynk sudah dikonfirmasi menggunakan HTTPS dan port 9443
+            host = INSTANT_SERVER_IP; 
+            protocol = 'https';
 
             const url = `${protocol}://${host}/${authToken}/get/${pin}`;
 
@@ -2142,6 +2216,7 @@
                     const rawValue = result.value || '0';
                     if (pin === 'V2') { currentPvPower = getCorrectedNumericValue(pin, rawValue); }
                     else if (pin === 'V14') { currentAcLoad = getCorrectedNumericValue(pin, rawValue); }
+                    
                     processDiagramPins(pin, rawValue);
                     const formattedValue = formatValue(pin, rawValue);
                     const unit = getUnit(pin);
@@ -2225,11 +2300,9 @@
                 });
             }
 
-            if (!energyChartInstance) { 
-                renderRealtimeChart(); 
-            } else {
-                updateRealtimeChartData(currentPvPower, currentAcLoad);
-            }
+            // Memperbarui grafik real-time (hanya titik terakhir)
+            updateRealtimeChartData(currentPvPower, currentAcLoad);
+
 
             const bmsAggregatedData = getAggregatedBmsData();
             calculateAndRenderDiagram(bmsAggregatedData);
@@ -2244,13 +2317,14 @@
             const dashboard = document.getElementById('monitoring-dashboard');
             if (fetchInterval) { clearInterval(fetchInterval); fetchInterval = null; }
 
-            loadHistoricalData();
-            loadDailyEnergy(); 
+            loadDailyEnergy(); // Tetap menggunakan local storage untuk energi baterai (Charge/Discharge)
             dashboard.classList.remove('hidden');
             lastUpdateTime = Date.now();
             
+            loadHistoricalDataFromBlynk(); // LANGKAH PENTING: Mengisi data historis dari server
+            
             setChartDuration(24);
-            updateDashboard();
+            updateDashboard(); // Memperbarui data real-time pertama kali
             
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
             startMQTT();
