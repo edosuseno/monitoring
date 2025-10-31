@@ -561,7 +561,7 @@
                     </div>
                 </div>
 
-                <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya (Historis 24 Jam dari Server)</h2>
+                <h2 class="text-xl font-semibold text-gray-300 mb-4 mt-8">Grafik Daya</h2>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div class="power-summary-card">
                         <p class="text-sm text-gray-400">Daya PV (Input)</p>
@@ -911,6 +911,7 @@
 
         function tryParseFloat(value) {
             const parsed = parseFloat(value);
+            // DEFAULT_DISPLAY is 0.0
             return isNaN(parsed) || value === null || value === undefined ? DEFAULT_DISPLAY : parsed;
         }
 
@@ -1655,8 +1656,8 @@
                     const timeLabel = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
                     
                     const pvItem = dataV2.find(d => d.timestamp === timestamp);
-                    const pvValue = pvItem ? pvItem.value : 0;
-                    const loadValue = V14_map.get(timestamp) || 0; // Ambil data load yang sesuai, default 0
+                    const pvValue = pvItem ? pvItem.value : 0; // Pastikan 0 untuk data yang hilang
+                    const loadValue = V14_map.get(timestamp) || 0; // Pastikan 0 untuk data yang hilang
                     
                     // Terapkan koreksi pada data historis (walaupun ini biasanya dilakukan di level widget di Blynk)
                     const correctedPv = pvValue * (1 + (ENERGY_CALIBRATION_PERCENT / 100));
@@ -1945,9 +1946,13 @@
                 window.realtimeData.timestamps.shift(); 
             }
 
+            // Pastikan nilai yang dimasukkan ke chart adalah angka, dan minimal 0
+            const finalPv = Math.max(0, pvValue);
+            const finalAc = Math.max(0, acValue);
+            
             window.realtimeData.labels.push(timeLabel);
-            window.realtimeData.pvPower.push(pvValue);
-            window.realtimeData.acLoad.push(acValue);
+            window.realtimeData.pvPower.push(finalPv);
+            window.realtimeData.acLoad.push(finalAc);
             window.realtimeData.timestamps.push(now.getTime());
 
             if (energyChartInstance) { 
@@ -2009,21 +2014,34 @@
                 }
             }
         }
-
+        
+        // MODIFIKASI: Penegasan nilai 0 dan memastikan nilai chart tidak negatif
         function getCorrectedNumericValue(pin, rawValue) {
              let numericValue = tryParseFloat(rawValue);
-            if (numericValue === DEFAULT_DISPLAY && rawValue !== '0') return 0;
+             
+            // Perbaikan agar nilai chart (V2, V14) tidak pernah negatif dan selalu 0 jika input buruk
+            if (pin === 'V2' || pin === 'V14') {
+                if (isNaN(numericValue) || numericValue < 0) {
+                    numericValue = 0;
+                }
+            }
+
+            // Logika asli: Jika tryParseFloat mengembalikan 0.0 (karena input non-angka) dan input aslinya bukan string '0', 
+            // kita asumsikan 0 (sebab sudah dikoreksi di blok if di atas untuk V2/V14)
+            if (numericValue === DEFAULT_DISPLAY && rawValue !== '0') return 0; 
+            
             const correctionFactor = 1 + (pin === 'V2' ? ENERGY_CALIBRATION_PERCENT : (pin === 'V14' ? LOAD_CALIBRATION_PERCENT : 0)) / 100;
             return numericValue * correctionFactor;
         }
 
         function formatValue(pin, value) {
             let numericValue = tryParseFloat(value);
-            const zeroDisplayPins = ['V1', 'V6', 'V5', 'V4', 'V11', 'V0', 'V7', 'V8', 'V9', 'V3', 'V12', 'V13', 'V16', 'V20', 'V15'];
+            // DIPERBAIKI: Menambahkan 'V2' dan 'V14' ke zeroDisplayPins untuk memaksa tampilan '0 W'
+            const zeroDisplayPins = ['V1', 'V6', 'V5', 'V4', 'V11', 'V0', 'V7', 'V8', 'V9', 'V3', 'V12', 'V13', 'V16', 'V20', 'V15', 'V2', 'V14'];
             
             if (numericValue === DEFAULT_DISPLAY && value !== '0') {
                  if (zeroDisplayPins.includes(pin)) {
-                     numericValue = 0;
+                     numericValue = 0; // Memaksa 0 untuk tampilan di dashboard
                  } else {
                      return 'N/A';
                  }
@@ -2072,13 +2090,14 @@
             const mapping = DIAGRAM_BLYNK_MAPPING[pin];
             if (!mapping) return;
             const pValue = getCorrectedNumericValue(pin, rawValue);
-            if (isNaN(pValue)) return;
+            // if (isNaN(pValue)) return; // Tidak perlu lagi karena getCorrectedNumericValue sudah menjamin angka non-NaN/null
 
             if (mapping.isGlobal) {
                 if(mapping.key === 'vpack') vpack = pValue;
                 if(mapping.key === 'current') current = pValue;
             } else if (mapping.isPower) {
-                latestDiagramData[mapping.key] = parseFloat(Math.abs(pValue).toFixed(1));
+                // Dipastikan 0 atau positif untuk diagram
+                latestDiagramData[mapping.key] = parseFloat(Math.max(0, pValue).toFixed(1));
             } else if (mapping.isDailyEnergy) {
                 const numericValue = tryParseFloat(formatValue(pin, rawValue));
                 latestDiagramData[mapping.key] = numericValue.toFixed(2);
@@ -2208,18 +2227,21 @@
         function updateTextValues(data, batteryV, rawBatteryI) {
             const setText = (id, content) => { const el = document.getElementById(id); if (el) { el.textContent = content; } };
 
-            const solarP = data.solarPower > 0.1 ? data.solarPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
-            const loadP = data.loadPower > 0.1 ? data.loadPower.toFixed(0) : DEFAULT_DISPLAY.toFixed(0);
+            // Pastikan solarP dan loadP minimal 0
+            const solarP = Math.max(0, data.solarPower > 0.1 ? data.solarPower : 0);
+            const loadP = Math.max(0, data.loadPower > 0.1 ? data.loadPower : 0);
+            
             const rawBmsP = data.rawBmsPower;
             const powerThreshold = 10;
+            // Pastikan batPDisplay adalah 0 atau '--' jika di bawah threshold
             let batPDisplay = Math.abs(rawBmsP) > powerThreshold ? Math.abs(rawBmsP).toFixed(0) : DEFAULT_DISPLAY_STR;
 
             const remAh = tryParseFloat(data.batteryRemainingEnergy);
             const remainingAhValue = remAh > 0.01 ? remAh.toFixed(1) : DEFAULT_DISPLAY_STR;
             setText('battery_remaining_energy', `${remainingAhValue} Ah`);
 
-            setText('pv1_power_186', `${solarP} W`);
-            setText('ess_power', `${loadP} W`);
+            setText('pv1_power_186', `${solarP.toFixed(0)} W`);
+            setText('ess_power', `${loadP.toFixed(0)} W`);
             setText('data.batteryPower_190', `${batPDisplay} W`); 
 
             const pvV = data.pvVoltage.replace(' V', '');
@@ -2347,6 +2369,7 @@
             updateTextValues(latestDiagramData, bmsData.voltage, rawCurrent);
             updateBatteryLevel(bmsData.soc, batP_for_visual);
 
+            // Kontrol aliran memastikan tidak ada pergerakan jika daya 0
             controlFlow(['solar_flow_anim_1'], solarP, Math.abs(solarP));
             controlFlow(['load_flow_anim_1', 'load_flow_anim_2'], loadP, Math.abs(loadP));
             if (Math.abs(batP_for_visual) > minimumPowerThreshold) {
@@ -2440,9 +2463,13 @@
 
                 } else {
                     allSuccessful = false;
-                    element.textContent = 'N/A';
+                    element.textContent = '0'; // Tampilkan 0 di dashboard saat gagal
                     element.classList.add('loading-animation', 'text-red-500');
-                    if (unitElement) unitElement.textContent = '';
+                    if (unitElement) unitElement.textContent = getUnit(pin);
+                    
+                    // Jika gagal fetch, pastikan nilai chart juga 0
+                    if (pin === 'V2') currentPvPower = 0;
+                    if (pin === 'V14') currentAcLoad = 0;
                 }
             });
 
