@@ -392,7 +392,7 @@
                                 <!-- CATATAN: Pola animasi garis putih yang lama telah dihapus sesuai permintaan user. -->
                             </defs>
                             <svg id="Solar" style="overflow: visible; display: inline;" x="0%" y="-6%">
-                                <svg id="sun" x="120" y="48" width="30" height="30" viewBox="0 0 24 24"><path fill="var(--color-solar)" d="m11.45 2v3.55l3.55-1.78l-3.55-1.77m-1 6l-3.45 2.46l3.75 1.25l-.3-3.71m-8.45 1.45l1.77 3.55l1.78-3.55h-3.55m-7.27-9.45l-.27-1.75c-.17-.57-.26-1.16-.27-1.75c0-3.6 2.91-6.5 6.5-6.5c.59 0 1.18.08 1.77.25v8c-.57.17-1.17.25-1.77.25c-3.58.01-6.49-2.9-6.5-6.5m14.27 18.27v-6h-3l5-9v6h3l-5 9z"></path></svg>
+                                <svg id="sun" x="120" y="48" width="35" height="40" viewBox="0 0 24 24"><path fill="var(--color-solar)" d="M11.45 2v3.55L15 3.77L11.45 2m-1 6L8 10.46l3.75 1.25L10.45 8M2 11.45L3.77 15l1.78-3.55H2M10 2H2v8c.57.17 1.17.25 1.77.25c3.58.01 6.49-2.9 6.5-6.5c-.01-.59-.1-1.18-.27-1.75m7 20v-6h-3l5-9v6h3l-5 9Z"></path></svg>
                                 <text id="total_solar_generation" x="239" y="72" dominant-baseline="central" text-anchor="middle" display="" class="st3" fill="var(--color-solar)">TOTAL ENERGY / TOTAL SOLAR</text>
                                 <a href="#"><text id="total_solar_value" x="239" y="55" dominant-baseline="central" text-anchor="middle" class="st10" fill="var(--color-solar)">-- kWh / -- kWh</text></a>
                                 <svg width="70" height="30" viewBox="0 0 70 30" overflow="visible" id="pv1" x="204" y="90"><rect width="70" height="30" rx="4.5" ry="4.5" fill="none" stroke-width="1" pointer-events="all" id="pv1" stroke="var(--color-solar)" class=""></rect></svg>
@@ -1808,12 +1808,20 @@
                         zoom: { 
                             pan: { 
                                 enabled: true, 
-                                mode: 'x' 
+                                mode: 'x',
+                                // Menambah sentuhan: Memungkinkan geser/pan dengan sentuhan
+                                onTouch: function(chart, event) {
+                                    // Cek apakah ini multi-sentuhan (pinch) atau satu sentuhan (pan)
+                                    if (event.touches.length === 1) {
+                                        return true; // Aktifkan Pan dengan satu sentuhan
+                                    }
+                                    return false;
+                                } 
                             }, 
                             zoom: { 
                                 // Zoom diaktifkan
                                 wheel: { enabled: true }, 
-                                pinch: { enabled: true }, 
+                                pinch: { enabled: true }, // Aktifkan pinch-to-zoom bawaan plugin
                                 drag: { 
                                     enabled: true, // Zoom dengan blok/drag diaktifkan
                                     backgroundColor: 'rgba(75,135,255, 0.3)', // Warna blok zoom
