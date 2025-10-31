@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- DIKEMBALIKAN KE SEMULA: Memungkinkan zoom pada tingkat browser -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <meta name="theme-color" content="#05050D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="AEPRO PLTS">
@@ -172,6 +173,13 @@
             height: auto; /* Biarkan Chart.js yang menentukan tinggi, tapi kontainer harus fleksibel */
             max-height: 100%; /* Batas tinggi */
         }
+        
+        /* Kontrol bawah harus tetap di bawah di fullscreen */
+        .fullscreen-chart-wrapper #chart-controls-bottom {
+            flex-shrink: 0;
+            padding-top: 1rem;
+        }
+
         /* Akhir CSS Fullscreen */
 
 
@@ -579,14 +587,32 @@
 
                 <!-- GRAFIK ENERGI HISTORIS (CHART.JS) -->
                 <div class="solar-card p-4 sm:p-6">
+                    <!-- Kontrol Atas: Hanya Fullscreen -->
                     <div class="flex justify-end items-center mb-4 flex-wrap">
+                        <!-- Tombol Reset Zoom dan Fullscreen DITUKAR POSISI -->
                         <div class="flex justify-end space-x-3 mt-3 sm:mt-0">
+                            <!-- Tombol Reset Zoom -->
                             <button onclick="resetChartZoom()" class="px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition flex items-center"><i data-lucide="rotate-ccw" class="lucide w-4 h-4 mr-1"></i>Reset Zoom</button>
+                            <!-- Tombol Fullscreen -->
                             <button onclick="toggleFullscreen()" class="px-3 py-1 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition flex items-center space-x-1"><i id="fullscreen-chart-icon" data-lucide="maximize" class="lucide w-4 h-4"></i><span id="fullscreen-chart-text">Full Layar</span></button>
                         </div>
                     </div>
+                    
                     <div id="realtime-chart-container" class="w-full">
                         <canvas id="realtime-power-chart"></canvas>
+                    </div>
+
+                    <!-- BARU: KONTROL DURASI DI BAWAH GRAFIK (Mirip Sumbu X) -->
+                    <div id="chart-controls-bottom" class="mt-2 pt-2 flex justify-center sm:justify-between items-center border-t border-gray-800 flex-wrap">
+                        <div class="flex space-x-2">
+                            <!-- Pilihan Durasi DENGAN UKURAN BARU: 1h, 3h, 6h, 12h, 24h -->
+                            <button onclick="setChartDuration(60)" class="duration-button px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">1h</button>
+                            <button onclick="setChartDuration(180)" class="duration-button px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">3h</button>
+                            <button onclick="setChartDuration(360)" class="duration-button px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">6h</button>
+                            <button onclick="setChartDuration(720)" class="duration-button px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition">12h</button>
+                            <button onclick="setChartDuration(1440)" class="duration-button px-3 py-1 text-xs font-medium rounded-lg bg-gray-700 text-gray-300 active-duration-button transition">24h</button> 
+                        </div>
+                        <!-- Tombol Reset Zoom DIPINDAHKAN KE ATAS -->
                     </div>
                 </div>
 
@@ -752,15 +778,17 @@
         window.realtimeData = { 
             labels: [], 
             pvPower: [], 
-            acLoad: []
+            acLoad: [],
+            timestamps: [] // BARU: Simpan timestamp asli
         }; 
         
-        // MAX_DATA_POINTS tidak lagi digunakan, karena limit diatur oleh History API
-        const MAX_DATA_POINTS = 1440; // Max 24 jam @ 1 menit
+        // Max 24 jam @ 1 menit = 1440
+        const MAX_DATA_POINTS = 1440; 
         const UPDATE_INTERVAL = 5000;
         const S_PER_HOUR = 3600;
         
-        let currentDurationHours = 24; 
+        // DIUBAH: Menggunakan menit sebagai unit durasi, default 24 jam (1440 menit)
+        let currentDurationMinutes = 1440; 
 
         let fetchInterval = null;
         let serverIp = INSTANT_SERVER_IP;
@@ -1600,7 +1628,8 @@
                 window.realtimeData.labels = [];
                 window.realtimeData.pvPower = [];
                 window.realtimeData.acLoad = [];
-                
+                window.realtimeData.timestamps = []; 
+
                 if (dataV2.length === 0 && dataV14.length === 0) {
                      throw new Error("Data historis kosong atau tidak tersedia dari server.");
                 }
@@ -1622,7 +1651,7 @@
 
                 allTimestamps.forEach(timestamp => {
                     const date = new Date(timestamp);
-                    // Gunakan format yang konsisten (HH:MM) untuk sumbu X
+                    // Gunakan format yang konsisten (DD Mon HH:MM) untuk label
                     const timeLabel = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
                     
                     const pvItem = dataV2.find(d => d.timestamp === timestamp);
@@ -1636,6 +1665,7 @@
                     window.realtimeData.labels.push(timeLabel);
                     window.realtimeData.pvPower.push(correctedPv);
                     window.realtimeData.acLoad.push(correctedLoad);
+                    window.realtimeData.timestamps.push(timestamp); // Simpan timestamp
                     validDataCount++;
                 });
 
@@ -1648,28 +1678,78 @@
                 console.error("Gagal memproses data historis GZIP:", error);
                 showMessage('Gagal memuat riwayat Daya dari server Blynk. Grafik historis mungkin kosong atau tidak lengkap.', 'error');
                 // Mengosongkan data jika gagal
-                window.realtimeData = { labels: [], pvPower: [], acLoad: [] };
+                window.realtimeData = { labels: [], pvPower: [], acLoad: [], timestamps: [] };
             }
         }
         
-        function getChartDataForDuration(durationHours) {
-            // Logika ini disederhanakan karena data sudah diambil 24 jam penuh dari server.
+        // FUNGSI GET CHART DATA DIBUAT SEDERHANA UNTUK MENGAMBIL SEMUA DATA
+        function getChartDataForDuration() {
             return {
                 labels: window.realtimeData.labels,
                 pvPower: window.realtimeData.pvPower,
                 acLoad: window.realtimeData.acLoad
             };
         }
+        
+        /**
+         * FUNGSI BARU: Mengatur durasi tampilan grafik dengan memotong data array.
+         * @param {number} durationMinutes - Durasi waktu dalam menit (60, 180, 360, 720, 1440).
+         */
+        function setChartDuration(durationMinutes) {
+            currentDurationMinutes = durationMinutes;
 
-        function setChartDuration(durationHours) {
-            currentDurationHours = 24; 
-            
+            // 1. Tandai tombol yang aktif
             document.querySelectorAll('.duration-button').forEach(btn => {
                 btn.classList.remove('active');
+                if (parseInt(btn.getAttribute('onclick').match(/\d+/)[0]) === durationMinutes) {
+                    btn.classList.add('active');
+                }
             });
 
-            renderRealtimeChart();
-            if (energyChartInstance) { energyChartInstance.resetZoom(); } 
+            if (energyChartInstance) {
+                // Logika pemotongan array: N menit = N data poin (karena granularity 1m)
+                const dataToKeep = durationMinutes; 
+                
+                // Ambil data dari data set lengkap (window.realtimeData)
+                const fullLabels = window.realtimeData.labels;
+                const fullPvPower = window.realtimeData.pvPower;
+                const fullAcLoad = window.realtimeData.acLoad;
+                
+                // Tentukan subset data
+                // Jika data yang tersedia kurang dari yang diminta, ambil semua.
+                const startIndex = Math.max(0, fullLabels.length - dataToKeep);
+                
+                const labelsSubset = fullLabels.slice(startIndex);
+                const pvPowerSubset = fullPvPower.slice(startIndex);
+                const acLoadSubset = fullAcLoad.slice(startIndex);
+
+                // Perbarui data chart
+                energyChartInstance.data.labels = labelsSubset;
+                energyChartInstance.data.datasets[0].data = pvPowerSubset;
+                energyChartInstance.data.datasets[1].data = acLoadSubset;
+
+                const isFull24h = fullLabels.length === labelsSubset.length;
+                
+                let durationText;
+                if (durationMinutes === 60) durationText = '1 Jam';
+                else if (durationMinutes === 180) durationText = '3 Jam';
+                else if (durationMinutes === 360) durationText = '6 Jam';
+                else if (durationMinutes === 720) durationText = '12 Jam';
+                else durationText = '24 Jam Penuh';
+
+                energyChartInstance.options.plugins.title.text = `Grafik Daya Historis (${durationText})`;
+                
+                // Panggil update untuk merefresh grafik dengan data baru yang terpotong
+                energyChartInstance.update(); 
+                
+                // Panggil resetZoom untuk mengatur ulang setiap kali durasi baru dipilih
+                energyChartInstance.resetZoom(); 
+            }
+        }
+
+        function resetChartZoom() { 
+            // Panggil setChartDuration(1440) untuk mengembalikan ke 24 jam penuh dan mereset zoom
+            setChartDuration(1440);
         }
 
         // FUNGSI UNTUK MENANGANI FULLSCREEN
@@ -1744,14 +1824,14 @@
             }
         }
 
-
-        function renderRealtimeChart() {
+        // FUNGSI INI HANYA DIPANGGIL SEKALI SAAT START MONITORING
+        function renderRealtimeChart(initialData) {
              const ctx = document.getElementById('realtime-power-chart');
             if (!ctx) return;
             const context = ctx.getContext('2d');
             
-            const dataToDisplay = getChartDataForDuration(currentDurationHours);
-
+            // Menggunakan data yang sudah dipotong/default 24h (sudah disiapkan oleh setChartDuration)
+            const dataToDisplay = initialData;
 
             const dataConfig = {
                 labels: dataToDisplay.labels,
@@ -1759,22 +1839,20 @@
                     {
                         label: 'PV Power (W)',
                         data: dataToDisplay.pvPower,
-                        // BAR CHART - Gunakan warna solid untuk bar
                         backgroundColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderColor: tailwind.config.theme.extend.colors['chart-pv'],
                         borderWidth: 1, 
-                        type: 'bar', // Diubah menjadi 'bar'
+                        type: 'bar', 
                         fill: false,
                         yAxisID: 'y'
                     },
                     {
                         label: 'AC Load (W)',
                         data: dataToDisplay.acLoad,
-                        // BAR CHART - Gunakan warna solid untuk bar
                         backgroundColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderColor: tailwind.config.theme.extend.colors['chart-load'],
                         borderWidth: 1, 
-                        type: 'bar', // Diubah menjadi 'bar'
+                        type: 'bar', 
                         fill: false, 
                         yAxisID: 'y'
                     }
@@ -1791,7 +1869,6 @@
                     maintainAspectRatio: false, 
                     animation: false, 
                     spanGaps: true,
-                    // Diubah ke mode 'nearest' untuk interaksi yang lebih baik pada bar
                     interaction: { mode: 'nearest', intersect: true }, 
                     plugins: {
                         legend: { labels: { color: '#FFFFFF', usePointStyle: true } },
@@ -1799,7 +1876,6 @@
                         tooltip: { 
                             backgroundColor: 'rgba(20, 20, 48, 0.8)', titleColor: '#FFFFFF', bodyColor: '#BFFF00', borderColor: 'rgba(71, 85, 105, 0.5)', borderWidth: 1,
                             callbacks: {
-                                // Tampilkan label X lengkap di tooltip
                                 title: function(tooltipItems) {
                                     return tooltipItems[0].label;
                                 }
@@ -1808,27 +1884,18 @@
                         zoom: { 
                             pan: { 
                                 enabled: true, 
-                                mode: 'x',
-                                // Menambah sentuhan: Memungkinkan geser/pan dengan sentuhan
-                                onTouch: function(chart, event) {
-                                    // Cek apakah ini multi-sentuhan (pinch) atau satu sentuhan (pan)
-                                    if (event.touches.length === 1) {
-                                        return true; // Aktifkan Pan dengan satu sentuhan
-                                    }
-                                    return false;
-                                } 
+                                mode: 'x' 
                             }, 
                             zoom: { 
-                                // Zoom diaktifkan
                                 wheel: { enabled: true }, 
-                                pinch: { enabled: true }, // Aktifkan pinch-to-zoom bawaan plugin
+                                pinch: { enabled: true }, 
                                 drag: { 
-                                    enabled: true, // Zoom dengan blok/drag diaktifkan
-                                    backgroundColor: 'rgba(75,135,255, 0.3)', // Warna blok zoom
+                                    enabled: true, 
+                                    backgroundColor: 'rgba(75,135,255, 0.3)', 
                                     borderColor: 'rgba(75,135,255, 0.8)',
                                     borderWidth: 1
                                 },
-                                mode: 'x' // Hanya zoom horizontal
+                                mode: 'x' 
                             },
                         }
                     },
@@ -1865,34 +1932,56 @@
             });
         }
 
-        function resetChartZoom() { if (energyChartInstance) { energyChartInstance.resetZoom(); } }
-
         function updateRealtimeChartData(pvValue, acValue) {
             const now = new Date();
             // Format label waktu yang lengkap (sama seperti yang dimuat dari historis)
             const timeLabel = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
             
             // Logika ini disederhanakan: Hapus titik tertua HANYA jika data sudah mencapai batas MAX_DATA_POINTS (24 jam x 60 menit)
-            // Tujuannya agar data real-time bisa ditambahkan ke data historis yang sudah penuh (sliding window).
             if (window.realtimeData.labels.length >= MAX_DATA_POINTS) {
                 window.realtimeData.labels.shift();
                 window.realtimeData.pvPower.shift();
                 window.realtimeData.acLoad.shift();
+                window.realtimeData.timestamps.shift(); 
             }
 
             window.realtimeData.labels.push(timeLabel);
             window.realtimeData.pvPower.push(pvValue);
             window.realtimeData.acLoad.push(acValue);
+            window.realtimeData.timestamps.push(now.getTime());
 
             if (energyChartInstance) { 
-                const dataToDisplay = getChartDataForDuration(currentDurationHours);
-                energyChartInstance.data.labels = dataToDisplay.labels;
-                energyChartInstance.data.datasets[0].data = dataToDisplay.pvPower;
-                energyChartInstance.data.datasets[1].data = dataToDisplay.acLoad;
+                // Jika grafik sedang di-zoom-in (bukan 24h penuh), kita harus menambahkan data baru
+                // lalu memotong lagi agar durasinya tetap N menit terakhir.
                 
-                energyChartInstance.options.plugins.title.text = `Grafik Daya Historis 24 Jam (Data Penuh Server + Realtime)`;
+                const dataToKeep = currentDurationMinutes; 
                 
-                energyChartInstance.update('none'); // Gunakan update 'none' untuk kinerja yang lebih baik
+                // Ambil data dari data set lengkap (window.realtimeData)
+                const fullLabels = window.realtimeData.labels;
+                const fullPvPower = window.realtimeData.pvPower;
+                const fullAcLoad = window.realtimeData.acLoad;
+                
+                // Tentukan subset data
+                const startIndex = Math.max(0, fullLabels.length - dataToKeep);
+                
+                const labelsSubset = fullLabels.slice(startIndex);
+                const pvPowerSubset = fullPvPower.slice(startIndex);
+                const acLoadSubset = fullAcLoad.slice(startIndex);
+
+                energyChartInstance.data.labels = labelsSubset;
+                energyChartInstance.data.datasets[0].data = pvPowerSubset;
+                energyChartInstance.data.datasets[1].data = acLoadSubset;
+                
+                let durationText;
+                if (dataToKeep === 60) durationText = '1 Jam';
+                else if (dataToKeep === 180) durationText = '3 Jam';
+                else if (dataToKeep === 360) durationText = '6 Jam';
+                else if (dataToKeep === 720) durationText = '12 Jam';
+                else durationText = '24 Jam Penuh';
+
+                energyChartInstance.options.plugins.title.text = `Grafik Daya Historis (${durationText} + Realtime)`;
+
+                energyChartInstance.update('none'); 
             }
         }
 
@@ -2401,7 +2490,12 @@
             
             await loadHistoricalDataFromBlynk(); // LANGKAH PENTING: Mengisi data historis dari server
             
-            setChartDuration(24);
+            // 1. Render Chart pertama kali dengan data LENGKAP 24 jam.
+            renderRealtimeChart(getChartDataForDuration()); 
+            
+            // 2. Terapkan durasi default (24 jam) untuk mengaktifkan tombol dan mereset zoom.
+            setChartDuration(1440); 
+            
             updateDashboard(); // Memperbarui data real-time pertama kali
             
             fetchInterval = setInterval(updateDashboard, UPDATE_INTERVAL);
@@ -2430,6 +2524,12 @@
 
             safeUpdate("bms-logger-ip-header-desktop", 'N/A');
             safeUpdate("bms-logger-ip-footer", 'N/A');
+
+            // BARU: Set tombol 24h aktif saat inisialisasi
+            // Catatan: setChartDuration(1440) akan dipanggil di startInstantMonitoring
+            // const initialButton = document.querySelector('button[onclick="setChartDuration(1440)"]');
+            // if(initialButton) { initialButton.classList.add('active'); }
+
 
             startInstantMonitoring();
         }
